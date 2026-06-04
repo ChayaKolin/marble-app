@@ -32,8 +32,8 @@ public class MarbleUserDetails implements UserDetails {
         this.username = user.getUsername();
         this.passwordHash = user.getPasswordHash();
         this.authorities = Stream.concat(
-                Stream.of(new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
-                grantedFeatures.stream().map(f -> new SimpleGrantedAuthority("FEATURE_" + f.name()))
+                Stream.of((GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + user.getRole().name())),
+                grantedFeatures.stream().map(f -> (GrantedAuthority) new SimpleGrantedAuthority("FEATURE_" + f.name()))
         ).toList();
     }
 
@@ -47,8 +47,8 @@ public class MarbleUserDetails implements UserDetails {
         this.username = userId.toString();
         this.passwordHash = null;
         this.authorities = Stream.concat(
-                Stream.of(new SimpleGrantedAuthority("ROLE_" + role.name())),
-                this.grantedFeatures.stream().map(f -> new SimpleGrantedAuthority("FEATURE_" + f.name()))
+                Stream.of((GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.name())),
+                this.grantedFeatures.stream().map(f -> (GrantedAuthority) new SimpleGrantedAuthority("FEATURE_" + f.name()))
         ).toList();
     }
 

@@ -31,13 +31,11 @@ export default function ConsultantCalendar() {
   const today = new Date()
   const [year, setYear] = useState(today.getFullYear())
   const [month, setMonth] = useState(today.getMonth())
-  const [events, setEvents] = useState<CalendarEventResponse[]>([])
   const [byDate, setByDate] = useState<Record<string, CalendarEventResponse[]>>({})
   const [selected, setSelected] = useState<CalendarEventResponse | null>(null)
 
   function load() {
     fetchCalendarEvents().then(data => {
-      setEvents(data)
       setByDate(groupByDate(data))
     })
   }

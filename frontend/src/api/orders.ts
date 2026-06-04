@@ -34,6 +34,7 @@ export interface OrderResponse {
   overrideCity: string | null
   totalGrossAmount: number
   craneRequired: boolean
+  factorySlaDeadline: string | null
   notes: string | null
   createdAt: string
   deletedAt: string | null
