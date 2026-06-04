@@ -24,6 +24,6 @@ RUN mvn clean package -DskipTests
 # ── Stage 3: Runtime image ────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-VOLUME /tmp
+# VOLUME /tmp
 COPY --from=backend-build /workspace/target/*.jar app.jar
 ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "/app.jar"]
