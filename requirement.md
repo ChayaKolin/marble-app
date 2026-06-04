@@ -1,8 +1,3 @@
-Here is your completely updated, comprehensive, enterprise-grade Product Requirements Document (PRD). It is fully tailored to **Kostone Marble**, configured with your official email (`kostonemarble@gmail.com`), and explicitly details the updated hierarchical role structures (Super-Admin vs. Secondary Admin), client dashboard analytics, and customer portal views.
-
-You can save the contents of this block directly as your **`requirement.md`** file in your project directory.
-
-```markdown
 # Product Requirement Document (PRD) & Technical Specification
 ## System Name: Kostone Marble Enterprise Order Management (ERP)
 ## Default System Email: kostonemarble@gmail.com
@@ -10,7 +5,8 @@ You can save the contents of this block directly as your **`requirement.md`** fi
 ---
 
 ## 1. Executive Summary & Business Goals
-Kostone Marble ERP is a highly specialized, niche-specific Enterprise Resource Planning and Order Management system designed exclusively for high-end residential and commercial marble and stone fabrication businesses. The platform guarantees end-to-end operation tracing, from initial client intake to final post-installation verification. 
+
+Kostone Marble ERP is a highly specialized, niche-specific Enterprise Resource Planning and Order Management system designed exclusively for high-end residential and commercial marble and stone fabrication businesses. The platform guarantees end-to-end operation tracing, from initial client intake to final post-installation verification.
 
 The application enforces a rigorous milestone-based workflow ensuring zero technical data dropouts between field measurements, factory layout cutting (תוכנית פריסה), and on-site delivery, while locking fiscal progression parameters to prevent unauthorized financial exposure.
 
@@ -18,113 +14,220 @@ The application enforces a rigorous milestone-based workflow ensuring zero techn
 
 ## 2. User Roles, Hierarchy, & Access Control (RBAC)
 
-The system operates on an explicit hierarchical permission matrix, dividing administrative control dynamically.
+The system operates on an explicit hierarchical permission matrix, dividing administrative control dynamically. Granular per-feature permission toggles replace flat boolean flags — see the `user_permissions` schema in §5 for the full data model.
 
-### 2.1 Role 1: Super-Admin / Owner (The Consultant / Your Husband)
-*   **System Status:** Primary Master User.
-*   **Permissions:** Complete global read/write/delete privileges across all datasets.
-*   **Core Capabilities:**
-    *   Create, edit, archive, and manage all Customer Accounts and Architect profiles.
-    *   Initialize, update, override, or cancel any Order Lifecycle state.
-    *   Unrestricted access to the **Master Analytics & Business Intelligence Dashboard** (detailed monthly summaries, historical revenue comparison, margin tracking, installer performance graphs).
-    *   **Permission Delegation Control:** The only user capable of toggling specific feature visibility/permissions for secondary roles (e.g., granting or revoking Hotman’s metrics access).
+### 2.1 Role 1: Super-Admin / Owner (The Consultant)
+
+- **System Status:** Primary Master User.
+- **Permissions:** Complete global read/write/delete privileges across all datasets.
+- **Core Capabilities:**
+  - Create, edit, archive, and manage all Customer Accounts and Architect profiles.
+  - Initialize, update, override, or cancel any Order Lifecycle state.
+  - Unrestricted access to the **Master Analytics & Business Intelligence Dashboard** (detailed monthly summaries, historical revenue comparison, margin tracking, installer performance graphs).
+  - Full CRUD access to the **Installation Calendar** — create, update, and delete installation events and factory prep tasks.
+  - **Permission Delegation Control:** The only user capable of toggling specific feature visibility/permissions for secondary roles (e.g., granting or revoking Hotman's access to analytics, calendar, financial charts, or installer ratings).
 
 ### 2.2 Role 2: Factory Manager (Hotman)
-*   **System Status:** Secondary Admin User.
-*   **Permissions:** Operational scoped control. Bound to factory, cutting, logistics, and scheduling modules.
-*   **Core Capabilities:**
-    *   Review client measurement layout schemas.
-    *   Generate and upload custom cutting/slab layout blueprints (תוכנית פריסה).
-    *   Input explicit production commitment timelines and track SLA metrics.
-    *   Assign specific delivery dates and dispatch designated Installers.
-    *   **Analytics Constraints:** By default, hidden from advanced financial analytics, monthly margin charts, and gross business metrics. Access to these charts must be explicitly unlocked via a feature flag controlled solely by the Super-Admin.
+
+- **System Status:** Secondary Admin User.
+- **Permissions:** Operational scoped control. Bound to factory, cutting, logistics, and scheduling modules.
+- **Core Capabilities:**
+  - Review client measurement layout schemas.
+  - Generate and upload custom cutting/slab layout blueprints (תוכנית פריסה).
+  - Input explicit production commitment timelines and track SLA metrics.
+  - Assign specific delivery dates and dispatch designated Installers.
+  - **Analytics Constraints:** By default, hidden from advanced financial analytics, monthly margin charts, and gross business metrics. Access is explicitly unlocked via a feature flag controlled solely by the Super-Admin.
+  - **Calendar Access:** Read-only view of the full Installation Calendar — enabled by default for the Factory Manager role, no toggle required. Intended to align factory production sequencing with upcoming installation dates. Write access (`MANAGE_CALENDAR`) can be granted by the Super-Admin when needed in the future.
 
 ### 2.3 Role 3: The Installer
-*   **System Status:** Field Mobile Agent.
-*   **Permissions:** Single-record execution scope via a mobile-optimized interface.
-*   **Core Capabilities:**
-    *   View dedicated, assigned daily calendar routing with specific project addresses, customer contacts, and technical requirements.
-    *   Capture real-time site adjustments or visual deviations via notes.
-    *   Initiate on-screen Signature Canvas components for instant digital customer sign-off post-installation.
+
+- **System Status:** Field Mobile Agent — operates under the Hotman's operational authority but maintains a separate, independent login.
+- **Authentication:** Personal credentials unique to each installer. Login scoped to mobile-optimized interface only.
+- **Permissions:** Single-record execution scope — sees only their own assigned jobs.
+- **Core Capabilities:**
+  - View a personal daily calendar slice showing only their own assigned installations: effective delivery address (order override if set, customer default otherwise), customer contact, time window, floor/apt details, and elevator/access notes.
+  - Capture real-time site adjustments or visual deviations via notes.
+  - **Mobile Signature Flow (Optional):** On job completion, the installer may optionally prompt the customer to sign an on-screen Signature Canvas modal as a post-installation record. This signature is not mandatory and does not gate order completion or the 80% payment confirmation. The Consultant confirms payment separately.
+- **Relationship to Hotman:** Installers are assigned by Hotman via the logistics dispatch module. They do not report directly to the Super-Admin and cannot access financial, analytics, or factory modules.
 
 ### 2.4 Role 4: The Customer
-*   **System Status:** External Portal User.
-*   **Authentication:** Secure, passwordless magic-link authentication or encrypted credentials routed via Email (`kostonemarble@gmail.com`) or WhatsApp.
-*   **Core Capabilities:**
-    *   Access a localized, secure personal portal to view specific Order Details, real-time status tracking, and payment history.
-    *   Review and digitally sign the Pre-Measurement Acknowledgement and the crucial final Slab Layout Plan (תוכנית פריסה).
+
+- **System Status:** External Portal User.
+- **Authentication:** Passwordless magic-link. The system generates a one-time token and delivers it to the customer via Email (`kostonemarble@gmail.com`) or WhatsApp. The customer clicks the link, the token is validated, and a 7-day JWT session is issued. No password is ever created or stored for customers. Tokens are single-use and expire after 24 hours (email) or 2 hours (WhatsApp).
+- **Core Capabilities:**
+  - Access a secure personal portal scoped to their own orders — no cross-customer data is accessible.
+  - View Order Details, real-time status tracking, and payment milestone history.
+  - Review and digitally sign the Pre-Measurement Acknowledgement via the customer portal.
+  - **Mandatory: Sign the Slab Layout Plan (תוכנית פריסה).** This signature is a hard production gate — the order cannot transition to `PRODUCTION` until this is captured. It is the customer's only required signature in the system.
+- **Portal Access Trigger:** The Consultant can send or resend a portal invite at any time via `POST /api/v1/portal/auth/request`. A fresh token is generated and delivered; any previous unused token for that customer is invalidated.
 
 ---
 
 ## 3. Key Business Modules & Conditional Workflow Logic
 
-
 ```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│  ORDER LIFECYCLE — 8-STATUS STATE MACHINE                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
 
-[Lead Input / Client Added]
+[QUOTATION] הצעת מחיר
+  Initial price proposal prepared and sent to customer.
+  total_gross_amount set as provisional estimate.
+│
+▼  Customer agrees. 20% deposit paid and logged via BigDecimal.
+│
+[CLOSED_AWAITING_MEASUREMENT] סגירה איתנו ומחכה למדידה
+  Deal closed. Deposit confirmed. Installer/measurer dispatched to site.
+│
+▼  Field measurements uploaded. Hotman automatically notified.
+│
+[REVIEWING_LAYOUT] לעבור על התוכנית
+  Hotman drafts the kitchen/marble cutting layout (תוכנית פריסה).
+  Layout document uploaded and sent to customer portal for review.
+  │
+  ▼  ◄── HARD GATE: SLAB_LAYOUT_APPROVAL signature MANDATORY
+  │       System refuses PRODUCTION transition if signature absent.
+  │       Customer signs via portal (HTML5 Canvas → digital_signatures).
+  │
+[PRODUCTION] ייצור
+  Signed layout dispatched to factory/sawmill.
+  SLA production timer initiated against Hotman's committed deadline.
+│
+▼  Factory cutting complete. Marble parts ready for delivery.
+│
+[AWAITING_INSTALLATION] מחכה להתקנה
+  Marble slabs in logistics. Installer assigned. Calendar entry auto-created.
+  Installer views job on mobile app. 80% payment due on installation day.
+│
+├──► On-site issue found (cut correction, missing piece, re-polish)
+│    │
+│    ▼
+│   [PENDING_REPAIR] מחכה לתיקון
+│    New return-visit logistics_assignment created (is_primary = FALSE).
+│    SITE_VISIT calendar event auto-generated.
+│    │
+│    ▼  Return visit complete, issue resolved.
+│    │
+│    └──► Back to [AWAITING_INSTALLATION]  (if further work needed)
+│         or directly to [COMPLETED]        (if fully resolved)
+│
+▼  Primary installation complete. 80% payment confirmed by Consultant.
+   Optional: post-installation signature captured on installer device.
+│
+[COMPLETED] מושלם
+  Order fully done. All work and payment confirmed.
 │
 ▼
-[Awaiting 20% Financial Deposit] ──(Blocks Access)──► [Measurement Stage Locked]
-│
-▼ (Paid & Logged via BigDecimal)
-[Unlock Measurement Stage] ──► [Upload Field Measurements] ──► [Notify Hotman (Factory)]
-│
-▼
-[Customer Slab Layout Approval] ◄──(Blocks Production)─── [Hotman Uploads Custom Layout]
-│
-▼ (Signed via HTML5 Canvas)
-[SLA Production Timer Engaged] ──► [Logistics / Installer Dispatched]
-│
-▼
-[Project Completion & Archive] ◄──(Requires 80% Payment)── [On-Site Client Sign-Off]
+[ARCHIVED] ארכיון
+  Order moved to historical archive.
 
+─────────────────────────────────────────────────────────────────────────────
+VALID TRANSITIONS REFERENCE
+─────────────────────────────────────────────────────────────────────────────
+QUOTATION                → CLOSED_AWAITING_MEASUREMENT  (20% deposit paid)
+CLOSED_AWAITING_MEASUREMENT → REVIEWING_LAYOUT          (measurements uploaded)
+REVIEWING_LAYOUT         → PRODUCTION                   (SLAB_LAYOUT_APPROVAL signature present — MANDATORY)
+PRODUCTION               → AWAITING_INSTALLATION        (factory cutting complete)
+AWAITING_INSTALLATION    → COMPLETED                    (installation done, 80% confirmed)
+AWAITING_INSTALLATION    → PENDING_REPAIR               (on-site issue found)
+PENDING_REPAIR           → AWAITING_INSTALLATION        (return visit scheduled)
+PENDING_REPAIR           → COMPLETED                    (repair done, fully resolved)
+COMPLETED                → ARCHIVED                     (manual archiving by Consultant)
+─────────────────────────────────────────────────────────────────────────────
 ```
 
 ### 3.1 Intake, Project Files & Client Management
-*   **Creation Engine:** Allows the Super-Admin to instantly create client profiles containing explicit fields: Customer Full Name, Primary Phone, Email Address, Site Location, Architect/Designer Name, and Architect Contact Info.
-*   **Persistent Document Cloud:** Native support for high-resolution file attachments including original architectural blueprints, apartment layout photos, and technical specification sheets.
+
+- **Creation Engine:** Allows the Super-Admin to instantly create client profiles containing explicit fields: Customer Full Name, Primary Phone, Email Address, Architect/Designer Name, and Architect Contact Info.
+- **Site Address (Mandatory):** A complete site address is required on every customer profile — Street Address, City, Floor, and Apartment Number. This becomes the default delivery address for every order created under that customer.
+- **Order Address Inheritance & Override:** When a new Order is created, the site address is automatically inherited from the customer record and pre-filled in the order form. The Consultant may edit any address field at the order level to redirect delivery to a different location (e.g., a second property). A `NULL` order-level address field means "use the customer default." The effective address is resolved as: `COALESCE(order.site_address, customer.site_address)`.
+- **Persistent Document Cloud:** Native support for high-resolution file attachments including original architectural blueprints, apartment layout photos, and technical specification sheets.
 
 ### 3.2 Technical Customization Metrics
+
 The system logs highly granular data schemas with strict formatting rules:
-*   **Stone Properties:** Material Type/Code, Finish Type (Glossy, Polished, Matte, Honed, Brushed), and exact Square Meters ($m^2$).
-*   **Profile Detailing:** Detailed fields for Counter Edge Profiling (עיבוי קאנט) and Specialized Water Traps/Edges (קאנט מים).
-*   **Sink Specifications:** Comprehensive matrix tracking Brand, Model Name, exact Sizing/Width dimensions, Colorway, and structural Mounting Profiles (Enum: `UNDERMOUNT`, `FLUSH_MOUNT`).
-*   **Fixed Base Fees:** Automatic structural line-item injection for Cooktop Base Enclosures (הכנסה בסיס לסירים) locked at a immutable rate of **200 NIS** per installation unit.
+
+- **Stone Properties:** Material Type/Code, Finish Type (Glossy, Polished, Matte, Honed, Brushed), and exact Square Meters (m²).
+- **Profile Detailing:** Detailed fields for Counter Edge Profiling (עיבוי קאנט) and Specialized Water Traps/Edges (קאנט מים).
+- **Sink Specifications:** Comprehensive matrix tracking Brand, Model Name, exact Sizing/Width dimensions, Colorway, and structural Mounting Profiles (Enum: `UNDERMOUNT`, `FLUSH_MOUNT`).
+- **Fixed Base Fees:** Automatic structural line-item injection for Cooktop Base Enclosures (הכנסה בסיס לסירים) locked at an immutable rate of **200 NIS** per installation unit.
 
 ### 3.3 Logistics Constraints & Cost Allocations
-*   **Structural Flags:** Physical infrastructure fields mapping building access, including elevator dimensions, stairwell width anomalies, and parking proximity.
-*   **Legal & Cost Exclusions:** The system must hard-code and visually append an omnipresent disclaimer across all customer-facing invoices, quotes, and contract sheets: 
-    > **"Crane services (מנוף) are NOT included in the project pricing and are arranged and funded exclusively at the customer’s expense."**
+
+- **Structural Flags:** Physical infrastructure fields mapping building access, including elevator dimensions, stairwell width anomalies, and parking proximity.
+- **Legal & Cost Exclusions:** The system must hard-code and visually append an omnipresent disclaimer across all customer-facing invoices, quotes, and contract sheets:
+  > **"Crane services (מנוף) are NOT included in the project pricing and are arranged and funded exclusively at the customer's expense."**
 
 ### 3.4 Strict Financial Ledger Rules
-*   All financial parameters use Java `BigDecimal` to enforce precise multi-currency decimal tracking without floating-point calculation drift.
-*   **Milestone 1:** 20% Deposit. The system acts as a hard gate. The project state cannot transition to `MEASUREMENT_SCHEDULING` until exactly 20.00% of the calculated gross value is marked as paid in the ledger database.
-*   **Milestone 2:** 80% Balance. This remaining sum is flagged as due upon the exact day of physical installation. The field installer's interface requires confirmation of payment intake or verification of payment prior to releasing digital completion screens.
 
-### 3.5 Measurement & Layout Lifecycle Rules
-*   **Pre-Measurement Gate:** Prior to triggering field actions, the Customer Portal displays a mandatory confirmation dialog: *"Final price, sizing, and specific details are determined exclusively AFTER professional field measurement."*
-*   **Post-Measurement Blueprinting:** Field measurements are uploaded directly to the project directory, automatically alerting Hotman via a system notification event.
-*   **The Cut-Sheet Gate (תוכנית פריסה):** Hotman maps the field measurements onto physical slab cuts and uploads the resulting Layout Document. The project status immediately enters `AWAITING_CUSTOMER_LAYOUT_SIGNATURE`. Production and fabrication are programmatically locked until an authenticated customer canvas signature event is written to the database.
+- All financial parameters use Java `BigDecimal` to enforce precise multi-currency decimal tracking without floating-point calculation drift.
+- **Milestone 1:** 20% Deposit. The system acts as a hard gate. The project state cannot transition from `QUOTATION` to `CLOSED_AWAITING_MEASUREMENT` until exactly 20.00% of the provisional gross value is marked as paid in the ledger database.
+- **Milestone 2:** 80% Balance. This remaining sum is flagged as due upon the exact day of physical installation. The field installer's interface requires confirmation of payment intake or verification of payment prior to releasing digital completion screens.
 
-### 3.6 SLA and Fulfillment Tracking
-*   **Hotman Production SLA:** Upon customer layout approval, a strict, decrementing SLA timer initiates based on the specific calendar deadline committed by Hotman.
-*   **Dispatch Assignment:** Tracks Installer Name, Phone Number, Vehicle ID, and planned Delivery Date.
-*   **Field Handshake:** Post-installation, the Installer app triggers a signature canvas modal. The client must physically sign the device screen to close the order, validating receipt of work and verifying any real-time adjustments.
+### 3.5 Signature Rules Summary
+
+| Signature | Category | Who Signs | Where | Mandatory? | Gates Transition |
+|---|---|---|---|---|---|
+| Pre-Measurement Disclaimer | `PRE_MEASUREMENT_DISCLAIMER` | Customer | Customer Portal | Yes | `QUOTATION` → `CLOSED_AWAITING_MEASUREMENT` acknowledgement |
+| Slab Layout Approval | `SLAB_LAYOUT_APPROVAL` | Customer | Customer Portal | **Yes — hard gate** | `REVIEWING_LAYOUT` → `PRODUCTION` blocked until present |
+| Post-Installation Record | `FINAL_POST_INSTALLATION` | Customer (on installer device) | Installer Mobile App | **No — optional** | Record only; does not gate any transition |
+
+### 3.6 Measurement & Layout Lifecycle Rules
+
+
+- **Pre-Measurement Gate:** When the order is in `CLOSED_AWAITING_MEASUREMENT`, the Customer Portal displays a mandatory acknowledgement dialog before site visit actions are triggered: *"Final price, sizing, and specific details are determined exclusively AFTER professional field measurement."* Captured as `PRE_MEASUREMENT_DISCLAIMER` in `digital_signatures`.
+- **Post-Measurement Blueprinting:** Field measurements are uploaded directly to the project directory, advancing the order to `REVIEWING_LAYOUT` and automatically alerting Hotman via a system notification event.
+- **The Cut-Sheet Gate — MANDATORY Signature (תוכנית פריסה):** While in `REVIEWING_LAYOUT`, Hotman maps the field measurements onto physical slab cuts and uploads the resulting Layout Document to the customer portal. Production and fabrication are programmatically hard-locked: the system must refuse any attempt to transition to `PRODUCTION` if a `SLAB_LAYOUT_APPROVAL` record is absent from `digital_signatures` for this order. This is the only signature strictly required to advance the order lifecycle. Once the customer signs via the portal, the order advances to `PRODUCTION`.
+
+### 3.7 SLA and Fulfillment Tracking
+
+- **Hotman Production SLA:** Upon the order entering `PRODUCTION` (i.e., after `SLAB_LAYOUT_APPROVAL` signature is captured), a strict, decrementing SLA timer initiates based on the specific calendar deadline committed by Hotman. The timer is visible on Hotman's SLA Alert Deck.
+- **Dispatch Assignment:** When the order reaches `AWAITING_INSTALLATION`, Hotman assigns an installer and delivery date. Creating a dispatch assignment automatically generates a linked `calendar_events` entry. The order remains in `AWAITING_INSTALLATION` until the Consultant confirms installation complete and 80% payment received.
+- **PENDING_REPAIR Flow:** If an on-site issue is found (cut correction, missing backsplash, re-polishing), the Consultant moves the order to `PENDING_REPAIR`. A new `logistics_assignment` with `is_primary = FALSE` is created for the return visit, auto-generating a `SITE_VISIT` calendar event. On return visit completion, the Consultant advances the order to `AWAITING_INSTALLATION` (if further work remains) or directly to `COMPLETED`.
+- **Multiple Assignments:** An order may accumulate multiple `logistics_assignments` through PENDING_REPAIR cycles. The first (`is_primary = TRUE`) represents the main installation; all subsequent (`is_primary = FALSE`) represent repair/return visits. Only the primary completion triggers the 80% payment confirmation flow.
+- **Field Handshake (Optional):** Post-installation, the Installer app surfaces an optional signature canvas. If the customer is present and willing, the installer captures a `FINAL_POST_INSTALLATION` signature as a record. This is not a hard gate — the Consultant confirms 80% payment and marks completion independently of this signature.
+
+### 3.8 Installation Calendar & Scheduling
+
+The calendar is a cross-role scheduling hub that surfaces installation events and factory prep tasks in a unified view. Access is role-gated and permission-controlled.
+
+**Calendar Permission Matrix:**
+
+| Action | Consultant | Hotman | Installer |
+|---|---|---|---|
+| View all events | Always | Always (role default) | Own jobs only |
+| Create events | Always | Future: via `MANAGE_CALENDAR` toggle | Never |
+| Edit / Delete events | Always | Future: via `MANAGE_CALENDAR` toggle | Never |
+
+**Permission Logic:**
+
+- **View:** Both Consultant and Hotman have read access to the full calendar by default — no toggle required. This is enforced at the role level, not the permission table.
+- **Manage (write):** Only Consultant can create, edit, or delete events. The `MANAGE_CALENDAR` feature flag exists in `user_permissions` but defaults to `false` for Hotman. When the business is ready to grant Hotman write access, the Consultant flips one toggle — no code changes needed.
+- **Installers:** Always scoped to `assigned_to_user_id = current_user`. No toggle path to broader access.
+- **Financial data:** Never attached to calendar events visible to Hotman or Installers. Only Consultant sees the linked payment balance on event detail panels.
+
+**Key Use Cases:**
+
+- Consultant schedules an installation → linked Installer notified on mobile → appears on Hotman's factory planning view.
+- Hotman sees 4 installations booked for next Tuesday → calibrates SLA timers to ensure cutting completes by Monday.
+- Installer opens app on job day → sees only their events: address, customer contact, order context, time window.
 
 ---
 
 ## 4. Master Analytics & Data Visualizations (Super-Admin Exclusive)
 
-The Master Dashboard is explicitly optimized for executive review. It contains interactive data visualization layers built using highly responsive chart frameworks aligned with Claude Design styling paradigms.
+The Master Dashboard is explicitly optimized for executive review. It contains interactive data visualization layers built using highly responsive chart frameworks.
 
 ### 4.1 Monthly Executive Summaries
-*   **Gross Financial Yield:** Clear tracking of overall revenue generated per calendar month.
-*   **Inflow vs. Receivables Pipeline:** Comparative bar charts showing actual money collected (20% deposits + completed 80% balances) against projected income locked in the pipeline (outstanding balances for orders currently in production or measurement phases).
-*   **Material Volumetric Distribution:** Pie charts tracking the surface volume ($m^2$) processed per stone model/code to optimize factory raw-slab purchasing decisions.
+
+- **Gross Financial Yield:** Clear tracking of overall revenue generated per calendar month.
+- **Inflow vs. Receivables Pipeline:** Comparative bar charts showing actual money collected (20% deposits + completed 80% balances) against projected income locked in the pipeline.
+- **Material Volumetric Distribution:** Pie charts tracking the surface volume (m²) processed per stone model/code to optimize factory raw-slab purchasing decisions.
 
 ### 4.2 Factory Throughput & Logistics Efficiency Metrics
-*   **SLA Compliance Rates:** Time-series line charts tracking Hotman's actual production time against the initially committed factory SLA hours.
-*   **Installer Quality Ratings:** Performance tracking lists indicating structural issue flags or notes recorded post-installation per installer team.
+
+- **SLA Compliance Rates:** Time-series line charts tracking Hotman's actual production time against the initially committed factory SLA hours.
+- **Installer Quality Ratings:** Performance tracking lists indicating structural issue flags or notes recorded post-installation per installer team.
 
 ---
 
@@ -132,18 +235,55 @@ The Master Dashboard is explicitly optimized for executive review. It contains i
 
 ```sql
 CREATE TYPE user_role AS ENUM ('SUPER_ADMIN_OWNER', 'FACTORY_MANAGER', 'INSTALLER');
-CREATE TYPE order_status AS ENUM ('LEAD', 'AWAITING_DEPOSIT', 'MEASUREMENT_PHASE', 'LAYOUT_APPROVAL', 'PRODUCTION', 'LOGISTICS_DISPATCH', 'COMPLETED', 'ARCHIVED');
+CREATE TYPE order_status AS ENUM (
+    'QUOTATION',                -- הצעת מחיר       — Initial price proposal sent to customer
+    'CLOSED_AWAITING_MEASUREMENT', -- סגירה איתנו ומחכה למדידה — Deal signed, deposit paid, awaiting site measurement
+    'REVIEWING_LAYOUT',         -- לעבור על התוכנית — Measurements in, layout drafted; SLAB_LAYOUT_APPROVAL signature required before advancing
+    'PRODUCTION',               -- ייצור            — Approved layout sent to factory/sawmill for cutting
+    'AWAITING_INSTALLATION',    -- מחכה להתקנה      — Marble parts ready; awaiting installation date
+    'PENDING_REPAIR',           -- מחכה לתיקון      — On-site issue found; return visit scheduled
+    'COMPLETED',                -- מושלם            — Installation fully done
+    'ARCHIVED'                  -- ארכיון           — Post-completion archive
+);
 CREATE TYPE sink_mount_style AS ENUM ('UNDERMOUNT', 'FLUSH_MOUNT');
-CREATE TYPE signature_category AS ENUM ('PRE_MEASUREMENT_DISCLAIMER', 'SLAB_LAYOUT_APPROVAL', 'FINAL_POST_INSTALLATION');
+CREATE TYPE signature_category AS ENUM (
+    'PRE_MEASUREMENT_DISCLAIMER', 'SLAB_LAYOUT_APPROVAL', 'FINAL_POST_INSTALLATION'
+);
+-- VIEW_CALENDAR is not a toggle — it is role-default for FACTORY_MANAGER.
+-- MANAGE_CALENDAR is the write-access flag, default false for FACTORY_MANAGER,
+-- grantable by SUPER_ADMIN_OWNER when the business is ready to expand Hotman's access.
+CREATE TYPE feature_key AS ENUM (
+    'VIEW_ANALYTICS',
+    'VIEW_FINANCIAL_CHARTS',
+    'MANAGE_CALENDAR',
+    'VIEW_INSTALLER_RATINGS',
+    'EXPORT_REPORTS'
+);
+CREATE TYPE calendar_event_type AS ENUM (
+    'INSTALLATION', 'PREP_TASK', 'MEASUREMENT', 'SITE_VISIT'
+);
 
+-- Core users table. analytics_visible boolean removed in favour of user_permissions.
 CREATE TABLE users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(100) UNIQUE NOT NULL,
+    full_name VARCHAR(150) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     role user_role NOT NULL DEFAULT 'INSTALLER',
     phone_number VARCHAR(30) NOT NULL,
-    analytics_visible BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Granular, auditable permission flags per user per feature.
+-- Only SUPER_ADMIN_OWNER rows in users may appear in granted_by.
+CREATE TABLE user_permissions (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    feature feature_key NOT NULL,
+    granted BOOLEAN NOT NULL DEFAULT FALSE,
+    granted_by UUID NOT NULL REFERENCES users(id),
+    granted_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE (user_id, feature)
 );
 
 CREATE TABLE customers (
@@ -151,6 +291,11 @@ CREATE TABLE customers (
     full_name VARCHAR(150) NOT NULL,
     phone_number VARCHAR(30) NOT NULL,
     email_address VARCHAR(150) NOT NULL,
+    -- Mandatory default delivery address for all orders under this customer.
+    site_address VARCHAR(300) NOT NULL,
+    site_city VARCHAR(100) NOT NULL,
+    site_floor INT,
+    site_apt VARCHAR(20),
     architect_name VARCHAR(150),
     architect_phone VARCHAR(30),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -159,12 +304,20 @@ CREATE TABLE customers (
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
-    status order_status NOT NULL DEFAULT 'LEAD',
+    status order_status NOT NULL DEFAULT 'QUOTATION',
+    -- Address override: NULL on any field means inherit from customers.site_*.
+    -- Effective address = COALESCE(orders.site_*, customers.site_*).
+    site_address VARCHAR(300),
+    site_city VARCHAR(100),
+    site_floor INT,
+    site_apt VARCHAR(20),
+    -- Logistics access constraints specific to this delivery site.
     elevator_width_meters NUMERIC(4,2),
     elevator_height_meters NUMERIC(4,2),
     crane_required BOOLEAN NOT NULL DEFAULT FALSE,
-    total_gross_amount NUMERIC(12,2) NOT NULL, -- Managed via strict BigDecimal
+    total_gross_amount NUMERIC(12,2) NOT NULL,
     factory_sla_deadline TIMESTAMP WITH TIME ZONE,
+    notes TEXT,
     created_by_user_id UUID NOT NULL REFERENCES users(id),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -173,10 +326,10 @@ CREATE TABLE material_specifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     marble_model_code VARCHAR(100) NOT NULL,
-    finish_type VARCHAR(50) NOT NULL, -- e.g., 'Glossy', 'Polished'
-    square_meters NUMERIC(6,2) NOT NULL, -- Managed via strict BigDecimal
-    counter_edge_detailing VARCHAR(255), -- עיבוי קאנט
-    water_edge_required BOOLEAN NOT NULL DEFAULT FALSE, -- קאנט מים
+    finish_type VARCHAR(50) NOT NULL,
+    square_meters NUMERIC(6,2) NOT NULL,
+    counter_edge_detailing VARCHAR(255),
+    water_edge_required BOOLEAN NOT NULL DEFAULT FALSE,
     cooktop_base_fee NUMERIC(6,2) NOT NULL DEFAULT 200.00
 );
 
@@ -192,33 +345,69 @@ CREATE TABLE sink_specifications (
     mounting_style sink_mount_style NOT NULL DEFAULT 'UNDERMOUNT'
 );
 
+-- Multiple rows per order are valid (return visits).
+-- is_primary = TRUE: main installation — completion triggers 80% payment milestone.
+-- is_primary = FALSE: return visit — completion logged only, no financial event.
+-- Auto-generated calendar_events type: is_primary → INSTALLATION, else SITE_VISIT.
 CREATE TABLE logistics_assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
     installer_user_id UUID NOT NULL REFERENCES users(id),
     delivery_scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    is_primary BOOLEAN NOT NULL DEFAULT TRUE,
     installer_notes TEXT,
     is_completed BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+-- Installation calendar events. INSTALLATION type is auto-created from logistics_assignments.
+-- assigned_to_user_id NULL means the event is visible to all authorized roles.
+CREATE TABLE calendar_events (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    title VARCHAR(200) NOT NULL,
+    event_type calendar_event_type NOT NULL,
+    related_order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
+    related_logistics_id UUID REFERENCES logistics_assignments(id) ON DELETE SET NULL,
+    assigned_to_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    event_date DATE NOT NULL,
+    start_time TIME,
+    end_time TIME,
+    notes TEXT,
+    created_by UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE financial_ledger (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     amount_allocated NUMERIC(12,2) NOT NULL,
-    milestone_tier INT NOT NULL, -- 1 = 20% Deposit, 2 = 80% Balance
+    milestone_tier INT NOT NULL CHECK (milestone_tier IN (1, 2)), -- 1 = 20% Deposit, 2 = 80% Balance
     is_cleared BOOLEAN NOT NULL DEFAULT FALSE,
     cleared_at TIMESTAMP WITH TIME ZONE
+);
+
+-- Magic-link tokens for customer portal access.
+-- Only the SHA-256 hash is stored — the plain token is sent to the customer and never persisted.
+-- On verify: hash the incoming token, look up by token_hash WHERE used_at IS NULL AND expires_at > NOW().
+-- On match: set used_at = NOW() and issue a JWT. Any previous unused token for the same customer
+-- should be invalidated (used_at stamped) when a new one is generated.
+CREATE TABLE customer_portal_tokens (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE CASCADE,
+    token_hash VARCHAR(64) NOT NULL,
+    delivery_channel VARCHAR(10) NOT NULL CHECK (delivery_channel IN ('EMAIL', 'WHATSAPP')),
+    expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
+    used_at TIMESTAMP WITH TIME ZONE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE digital_signatures (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     category signature_category NOT NULL,
-    signature_vector_data TEXT NOT NULL, -- Encoded canvas coordinates or base64 blob
+    signature_vector_data TEXT NOT NULL,
     ip_address VARCHAR(45),
     signed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
 ```
 
 ---
@@ -227,21 +416,23 @@ CREATE TABLE digital_signatures (
 
 ### 6.1 Frontend (UI Layer)
 
-* **Engine:** React 19 via Vite runtime compilation, typed via strict TypeScript.
-* **Design Framework:** TailwindCSS combined with modular design architectures matching Claude Design specs. Highly responsive component layouts optimized for mobile field screens and widescreen analytics views.
-* **Signatures:** HTML5 Canvas capture wrappers parsing interaction maps to compressed base64 payloads.
+- **Engine:** React 19 via Vite runtime compilation, typed via strict TypeScript.
+- **Design Framework:** TailwindCSS with modular component layouts optimized for mobile field screens and widescreen analytics views.
+- **Signatures:** HTML5 Canvas capture wrappers parsing interaction maps to compressed base64 payloads.
+- **Calendar Component:** Full-month and week-view calendar UI. Role-aware rendering: Consultant sees all events with full CRUD controls; Hotman sees all events in read-only mode (role default, no toggle required); Installer sees a personal daily list of their own jobs only.
 
 ### 6.2 Backend (Service Layer)
 
-* **Framework:** Java 21 / Spring Boot 3.x.
-* **Data Accuracy Protection:** Code policies mandate `java.math.BigDecimal` for structural dimensions, metrics, costs, and fees. Floating-point primitives (`float`, `double`) are rejected by lint checkers.
-* **Security:** State-tracking stateless JWT authentication filters reading permissions directly out of encoded claims vectors.
-* **Notifications & Automation Engine:** Integrated Mail Sender profiles bound to the primary system address: **`kostonemarble@gmail.com`**. Automated systems convert layout templates into transactional PDFs and trigger outbound alerts via Twilio/WhatsApp API wrappers.
+- **Framework:** Java 21 / Spring Boot 3.x.
+- **Data Accuracy Protection:** Code policies mandate `java.math.BigDecimal` for structural dimensions, metrics, costs, and fees. Floating-point primitives (`float`, `double`) are rejected by lint checkers.
+- **Security:** Stateless JWT authentication. Permission claims (`granted_features[]`) are encoded into the token at login, read by Spring Security method-level guards (`@PreAuthorize`). Feature flags are re-evaluated at each login — no stale token risk.
+- **Calendar Automation:** On `logistics_assignments` INSERT, a database trigger (or application-layer listener) automatically creates a linked `calendar_events` row. Event type is determined by `is_primary`: `TRUE` → `INSTALLATION`, `FALSE` → `SITE_VISIT`.
+- **Notifications & Automation Engine:** Integrated Mail Sender profiles bound to `kostonemarble@gmail.com`. Automated systems convert layout templates into transactional PDFs and trigger outbound alerts via Twilio/WhatsApp API wrappers.
 
 ### 6.3 Database & Hosting
 
-* **DB Engine:** Production PostgreSQL instance enforcing relational keys and transactional ACID safety boundaries.
-* **Hosting Cloud:** Fully structured for deployment on **Railway.com**, leveraging native container buildpacks and persistent storage provisions for uploaded project assets and cut sheets.
+- **DB Engine:** Production PostgreSQL enforcing relational keys and transactional ACID safety boundaries.
+- **Hosting Cloud:** Railway.com, leveraging native container buildpacks and persistent storage for uploaded project assets and cut sheets.
 
 ---
 
@@ -257,11 +448,12 @@ paths:
   /api/v1/customers:
     post:
       summary: Add a new client account
-      description: Accessible by Super-Admin (Your Husband) to create customer metadata profiles.
+      description: Accessible by Super-Admin to create customer metadata profiles.
       operationId: createCustomer
       responses:
         '201':
           description: Customer record created successfully.
+
   /api/v1/logistics/assignments:
     get:
       summary: Fetch active logistics dispatch matrix
@@ -269,10 +461,16 @@ paths:
       responses:
         '200':
           description: Operational tracking matrix payload returned.
+
   /api/v1/installers/{id}/signoff:
     put:
-      summary: Execute final job validation and closure
-      description: Invoked by the Installer app to submit final on-site client signatures.
+      summary: Mark job complete and optionally capture post-installation signature
+      description: >
+        Invoked by the Installer app to mark a logistics assignment as complete.
+        The post-installation signature (signatureData) is OPTIONAL — omitting it is valid.
+        Marking the job complete does not itself close the order or trigger the 80% payment
+        milestone; the Consultant confirms payment separately. If signatureData is provided,
+        a FINAL_POST_INSTALLATION record is written to digital_signatures as a record only.
       parameters:
         - name: id
           in: path
@@ -286,37 +484,230 @@ paths:
           application/json:
             schema:
               type: object
-              required:
-                - signatureData
               properties:
                 signatureData:
                   type: string
-                  description: Base64 or vector mapping coordinates of the client signature.
+                  description: Optional. Base64 canvas payload of the customer's post-installation signature.
                 installerNotes:
                   type: string
       responses:
         '200':
-          description: Job verified, balance milestone marked, order status updated to COMPLETED.
+          description: Job marked complete. Signature recorded if provided.
 
+  /api/v1/portal/auth/request:
+    post:
+      summary: Request a magic-link for customer portal access
+      description: >
+        Accessible by SUPER_ADMIN_OWNER only. Generates a one-time token, invalidates any
+        existing unused token for this customer, and delivers the magic-link via the specified
+        channel. The plain token is never stored — only its SHA-256 hash.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - customerId
+                - channel
+              properties:
+                customerId:
+                  type: string
+                  format: uuid
+                channel:
+                  type: string
+                  enum: [EMAIL, WHATSAPP]
+      responses:
+        '204':
+          description: Token generated and delivered. No token value returned in response.
+        '404':
+          description: Customer not found.
+
+  /api/v1/portal/auth/verify:
+    get:
+      summary: Validate a magic-link token and issue a portal JWT
+      description: >
+        Public endpoint (no auth required). Accepts the plain token from the magic-link URL.
+        Hashes it, looks up a matching unexpired unused row in customer_portal_tokens.
+        On match: marks token used, returns a 7-day JWT with role CUSTOMER.
+        On failure: returns 401 (expired, already used, or not found — same error, no enumeration).
+      parameters:
+        - name: token
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Valid token. Returns signed JWT.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accessToken:
+                    type: string
+        '401':
+          description: Token invalid, expired, or already used.
+
+  /api/v1/portal/orders:
+    get:
+      summary: Fetch all orders for the authenticated customer
+      description: CUSTOMER role only. Returns all orders linked to the JWT's customer_id.
+      responses:
+        '200':
+          description: List of the customer's orders with status and payment milestone state.
+        '403':
+          description: Not a customer token.
+
+  /api/v1/calendar/events:
+    get:
+      summary: Fetch calendar events for the authenticated user
+      description: >
+        Returns events scoped by role.
+        SUPER_ADMIN_OWNER: all events, full detail including linked financial data.
+        FACTORY_MANAGER: all events, read-only, no financial data. Access is role-default — no permission toggle required.
+        INSTALLER: only events where assigned_to_user_id matches their own user ID.
+      responses:
+        '200':
+          description: List of CalendarEvent objects.
+    post:
+      summary: Create a new calendar event
+      description: >
+        Requires SUPER_ADMIN_OWNER role OR MANAGE_CALENDAR permission.
+        Currently only SUPER_ADMIN_OWNER passes this check.
+        Granting MANAGE_CALENDAR to FACTORY_MANAGER via the permission toggle will unlock this endpoint for Hotman without any code changes.
+      responses:
+        '201':
+          description: Calendar event created.
+        '403':
+          description: Insufficient permissions. MANAGE_CALENDAR not granted.
+
+  /api/v1/calendar/events/{id}:
+    put:
+      summary: Update a calendar event
+      description: Requires SUPER_ADMIN_OWNER role OR MANAGE_CALENDAR permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Event updated.
+        '403':
+          description: Insufficient permissions.
+    delete:
+      summary: Delete a calendar event
+      description: Requires SUPER_ADMIN_OWNER role OR MANAGE_CALENDAR permission.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Event deleted.
+        '403':
+          description: Insufficient permissions.
+
+  /api/v1/admin/permissions/{userId}:
+    put:
+      summary: Toggle a feature permission for a user
+      description: Super-Admin only. Grants or revokes a named feature flag for the target user.
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - feature
+                - granted
+              properties:
+                feature:
+                  type: string
+                  enum: [VIEW_ANALYTICS, VIEW_FINANCIAL_CHARTS, MANAGE_CALENDAR, VIEW_INSTALLER_RATINGS, EXPORT_REPORTS]
+                granted:
+                  type: boolean
+      responses:
+        '200':
+          description: Permission updated. Returns updated permission record.
+        '403':
+          description: Only SUPER_ADMIN_OWNER may modify permissions.
 ```
 
 ---
 
-## 8. UI Architecture & Screen Blueprint Layouts (Claude Design Model)
+## 8. UI Architecture & Screen Blueprint Layouts
 
-Following the modern design system foundations of Claude Design components, the layout emphasizes whitespace, crisp card groupings, distinct typography hierarchy, and a dark slate/neutral colorway accented by clean emerald details for financial clarity.
+Following Claude Design component foundations: whitespace, card groupings, distinct typography hierarchy, dark slate/neutral colorway accented by clean emerald details for financial clarity.
 
-### 8.1 Master Analytics Screen (Super-Admin / Owner View Only)
+### 8.1 Master Analytics Screen (Super-Admin Only)
 
-* **Header Section:** Displays large, clean numeric indicators highlighting Monthly Total Revenue, Open Production Backlog count, and Total Outstanding Accounts Receivable.
-* **Primary Section Left:** Interactive Chart Line plotting current month cash flow vs. historical month performance. Includes toggle overlays for target growth curves.
-* **Primary Section Right:** Material Processing Table outlining exact stone models ($m^2$) sorted by processing volumes.
-* **Hotman Visibility Toggle:** A persistent UI permission toggle button component allowing the Super-Admin to instantly grant/revoke the secondary manager's visibility over the financial analytics dashboard.
+- **Header Section:** Large numeric indicators — Monthly Total Revenue, Open Production Backlog count, Total Outstanding Receivables.
+- **Primary Section Left:** Interactive line chart plotting current month cash flow vs. historical month performance.
+- **Primary Section Right:** Material Processing Table — stone models (m²) sorted by processing volumes.
+- **Hotman Permission Panel:** A persistent card listing all toggleable feature flags for the Hotman user. Each row shows the feature name, current state, and a toggle switch. Changing a toggle fires `PUT /api/v1/admin/permissions/{userId}` immediately.
+
+  ```
+  Hotman Permissions
+  ─────────────────────────────────────────────────────
+  [ ] View Revenue Analytics              default: OFF
+  [ ] View Financial Charts               default: OFF
+  [ ] Manage Calendar (create/edit)       default: OFF  ← flip to give write access later
+  [ ] View Installer Performance Ratings  default: OFF
+  [ ] Export Reports                      default: OFF
+  ─────────────────────────────────────────────────────
+  Note: Hotman always has read access to the calendar
+  and SLA metrics — those are role defaults, not toggles.
+  ```
 
 ### 8.2 Factory Matrix View (Hotman View)
 
-* **SLA Alert Deck:** Grid view displaying active production cards. Each card contains a decrementing colored progress timer indicating remaining hours before the committed cutting deadline expires.
-* **Actionable Blueprints Panel:** Clean file upload container where Hotman can click to view field measurements and drag-and-drop compiled layout PDFs (תוכנית פריסה) for direct portal dispatch.
+- **SLA Alert Deck:** Grid of active production cards with decrementing colored progress timers indicating remaining hours before the cutting deadline expires.
+- **Actionable Blueprints Panel:** File upload container — Hotman views field measurements and uploads compiled layout PDFs (תוכנית פריסה) for customer portal dispatch.
+- **Calendar Preview Strip:** A compact weekly strip at the top of the Hotman view showing upcoming installations. Always visible — no permission toggle required. Helps Hotman calibrate the SLA deck against real delivery pressure. Events are read-only from this view.
+
+### 8.3 Installation Calendar View
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│  JUNE 2026                              [Month] [Week] [Day]   │
+├──────┬──────┬──────┬──────┬──────┬──────┬──────────────────────┤
+│ SUN  │ MON  │ TUE  │ WED  │ THU  │ FRI  │  SAT                 │
+├──────┼──────┼──────┼──────┼──────┼──────┼──────────────────────┤
+│      │  1   │  2   │  3   │  4   │  5   │   6                  │
+│      │      │ [📦] │      │ [🔧] │      │                      │
+│      │      │ Cohen│      │ Levy │      │                      │
+├──────┼──────┼──────┼──────┼──────┼──────┼──────────────────────┤
+│  7   │  8   │  9   │ 10   │ 11   │ 12   │  13                  │
+│      │ [📦] │      │      │ [📦] │      │                      │
+│      │ Brm  │      │      │ Katz │      │                      │
+└──────┴──────┴──────┴──────┴──────┴──────┴──────────────────────┘
+
+  📦 = INSTALLATION event    🔧 = PREP_TASK event
+
+  CONSULTANT VIEW:  Full CRUD. Click event → order details + financials.
+  HOTMAN VIEW:      Read-only (role default, no toggle needed).
+                    Click event → order details only. No financials. No edit controls.
+                    Future: flip MANAGE_CALENDAR toggle → full CRUD unlocks.
+  INSTALLER VIEW:   Personal daily list only. No month grid. Own jobs only.
+```
+
+- Clicking an installation event opens a side panel with: Customer name, effective delivery address (floor + apt included), installer assigned, order status, elevator/access notes, and (for Consultant only) outstanding payment balance and any order-level notes.
+- Creating a new event (Consultant only) opens a modal: title, type, related order lookup, date/time, assignee.
 
 ---
 
@@ -330,14 +721,12 @@ SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=${{Postgres.POSTGRES_PASSWORD}}
 KOSTONE_SYSTEM_EMAIL=kostonemarble@gmail.com
 JWT_SIGNING_KEY=${{REVENUE_SECURITY_CIPHER_KEY}}
-STORAGE_BUCKET_ENDPOINT=[https://storage.railway.app/kostonemarble-assets](https://storage.railway.app/kostonemarble-assets)
-
+STORAGE_BUCKET_ENDPOINT=https://storage.railway.app/kostonemarble-assets
 ```
 
 ### 9.2 Build & Execution Blueprint (`Dockerfile`)
 
 ```dockerfile
-# Multi-stage production container build pattern
 FROM eclipse-temurin:21-jdk-jammy AS build-engine
 WORKDIR /workspace
 COPY . .
@@ -347,14 +736,8 @@ FROM eclipse-temurin:21-jre-jammy
 VOLUME /tmp
 COPY --from=build-engine /workspace/target/*.jar app.jar
 ENTRYPOINT ["java","-Dserver.port=${PORT}","-jar","/app.jar"]
-
 ```
 
 ### 9.3 Database Migration Flow
 
-* All structural modifications must utilize Flyway migration files located inside the `/src/main/resources/db/migration` project subtree.
-* Railway's automated deployment hook parses migration files sequentially on application startup prior to routing traffic to ensure zero database schema downtime.
-
-```
-
-```
+All structural modifications must utilize Flyway migration files located inside `/src/main/resources/db/migration`. Railway's deployment hook parses migration files sequentially on application startup prior to routing traffic to ensure zero database schema downtime.
