@@ -10,6 +10,8 @@ Kostone Marble ERP is a highly specialized, niche-specific Enterprise Resource P
 
 The application enforces a rigorous milestone-based workflow ensuring zero technical data dropouts between field measurements, factory layout cutting (תוכנית פריסה), and on-site delivery, while locking fiscal progression parameters to prevent unauthorized financial exposure.
 
+**Language & Locale:** The entire application UI — all labels, buttons, navigation, status names, messages, notifications, error text, PDFs, and email/WhatsApp communications — is in **Hebrew (עברית)**. The interface is fully RTL (right-to-left). No English text appears to end users. Internal database enum values and API field names remain in English for technical consistency.
+
 ---
 
 ## 2. User Roles, Hierarchy, & Access Control (RBAC)
@@ -233,6 +235,19 @@ The Master Dashboard is explicitly optimized for executive review. It contains i
 
 ## 5. Granular Database Schema (PostgreSQL Relational Mapping)
 
+### 5.1 Data Safety & Integrity Rules
+
+**Soft Delete (Mandatory — orders & customers)**
+The `orders` and `customers` tables must never be hard-deleted. Both tables carry a `deleted_at TIMESTAMP WITH TIME ZONE` column (nullable). A `NULL` value means the record is active. A non-`NULL` value means it has been soft-deleted and must be hidden from all UI views.
+
+- All application queries against `orders` and `customers` must include a `WHERE deleted_at IS NULL` filter by default.
+- The Super-Admin can restore any soft-deleted record by setting `deleted_at = NULL`.
+- A dedicated "Trash" view in the Consultant dashboard lists all soft-deleted orders and customers with a restore action.
+- No `DELETE FROM orders` or `DELETE FROM customers` SQL is ever issued by the application layer. Any such operation is considered a bug.
+
+**Foreign Key Protection**
+All foreign keys that reference `orders` or `customers` use `ON DELETE RESTRICT`. This means the database will refuse any attempt to hard-delete a parent row if child rows exist — providing a second safety layer behind the soft-delete policy. The only exception is `calendar_events.related_order_id`, which uses `ON DELETE SET NULL` because calendar events are non-critical references that should survive independently.
+
 ```sql
 CREATE TYPE user_role AS ENUM ('SUPER_ADMIN_OWNER', 'FACTORY_MANAGER', 'INSTALLER');
 CREATE TYPE order_status AS ENUM (
@@ -286,6 +301,8 @@ CREATE TABLE user_permissions (
     UNIQUE (user_id, feature)
 );
 
+-- Soft delete: never hard-DELETE. Set deleted_at to flag as deleted; NULL = active.
+-- All queries must filter WHERE deleted_at IS NULL.
 CREATE TABLE customers (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name VARCHAR(150) NOT NULL,
@@ -298,9 +315,12 @@ CREATE TABLE customers (
     site_apt VARCHAR(20),
     architect_name VARCHAR(150),
     architect_phone VARCHAR(30),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
+-- Soft delete: never hard-DELETE. Set deleted_at to flag as deleted; NULL = active.
+-- All queries must filter WHERE deleted_at IS NULL.
 CREATE TABLE orders (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
@@ -319,12 +339,13 @@ CREATE TABLE orders (
     factory_sla_deadline TIMESTAMP WITH TIME ZONE,
     notes TEXT,
     created_by_user_id UUID NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 CREATE TABLE material_specifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     marble_model_code VARCHAR(100) NOT NULL,
     finish_type VARCHAR(50) NOT NULL,
     square_meters NUMERIC(6,2) NOT NULL,
@@ -335,7 +356,7 @@ CREATE TABLE material_specifications (
 
 CREATE TABLE sink_specifications (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     brand VARCHAR(100) NOT NULL,
     model_name VARCHAR(100) NOT NULL,
     width_mm INT NOT NULL,
@@ -351,7 +372,7 @@ CREATE TABLE sink_specifications (
 -- Auto-generated calendar_events type: is_primary → INSTALLATION, else SITE_VISIT.
 CREATE TABLE logistics_assignments (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
     installer_user_id UUID NOT NULL REFERENCES users(id),
     delivery_scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
     is_primary BOOLEAN NOT NULL DEFAULT TRUE,
@@ -417,9 +438,12 @@ CREATE TABLE digital_signatures (
 ### 6.1 Frontend (UI Layer)
 
 - **Engine:** React 19 via Vite runtime compilation, typed via strict TypeScript.
-- **Design Framework:** TailwindCSS with modular component layouts optimized for mobile field screens and widescreen analytics views.
+- **Language & Direction:** Full Hebrew (עברית) UI. The root HTML element must declare `<html dir="rtl" lang="he">`. All component layouts, paddings, margins, flex directions, and icon placements must respect RTL flow. TailwindCSS RTL variant (`rtl:`) is used for any directional overrides.
+- **Font:** [Rubik](https://fonts.google.com/specimen/Rubik) via Google Fonts — designed for Hebrew with excellent RTL readability and a clean modern style appropriate for a professional ERP. Applied globally as the base font family.
+- **Locale Settings:** Date format `DD/MM/YYYY` (Israeli standard). Currency display `₪` prefix (NIS). Numbers formatted with comma thousands separator.
+- **Design Framework:** TailwindCSS with modular component layouts optimized for mobile field screens (Installer) and widescreen analytics views (Consultant). All Tailwind directional utilities (`pl-`, `pr-`, `ml-`, `mr-`, `text-left`, `text-right`, `rounded-r-`, `rounded-l-`) reviewed for RTL correctness.
 - **Signatures:** HTML5 Canvas capture wrappers parsing interaction maps to compressed base64 payloads.
-- **Calendar Component:** Full-month and week-view calendar UI. Role-aware rendering: Consultant sees all events with full CRUD controls; Hotman sees all events in read-only mode (role default, no toggle required); Installer sees a personal daily list of their own jobs only.
+- **Calendar Component:** Full-month and week-view calendar UI rendered RTL. Role-aware rendering: Consultant sees all events with full CRUD controls; Hotman sees all events in read-only mode (role default, no toggle required); Installer sees a personal daily list of their own jobs only.
 
 ### 6.2 Backend (Service Layer)
 
@@ -427,7 +451,7 @@ CREATE TABLE digital_signatures (
 - **Data Accuracy Protection:** Code policies mandate `java.math.BigDecimal` for structural dimensions, metrics, costs, and fees. Floating-point primitives (`float`, `double`) are rejected by lint checkers.
 - **Security:** Stateless JWT authentication. Permission claims (`granted_features[]`) are encoded into the token at login, read by Spring Security method-level guards (`@PreAuthorize`). Feature flags are re-evaluated at each login — no stale token risk.
 - **Calendar Automation:** On `logistics_assignments` INSERT, a database trigger (or application-layer listener) automatically creates a linked `calendar_events` row. Event type is determined by `is_primary`: `TRUE` → `INSTALLATION`, `FALSE` → `SITE_VISIT`.
-- **Notifications & Automation Engine:** Integrated Mail Sender profiles bound to `kostonemarble@gmail.com`. Automated systems convert layout templates into transactional PDFs and trigger outbound alerts via Twilio/WhatsApp API wrappers.
+- **Notifications & Automation Engine:** Integrated Mail Sender profiles bound to `kostonemarble@gmail.com`. All outbound email and WhatsApp messages are written in Hebrew. Automated systems convert layout templates into transactional PDFs (Hebrew text, RTL layout) and trigger outbound alerts via Twilio/WhatsApp API wrappers.
 
 ### 6.3 Database & Hosting
 
@@ -654,6 +678,8 @@ paths:
 
 Following Claude Design component foundations: whitespace, card groupings, distinct typography hierarchy, dark slate/neutral colorway accented by clean emerald details for financial clarity.
 
+**All visible text is in Hebrew. Layouts flow right-to-left.** Navigation sits on the right side. Icons that imply direction (arrows, chevrons, back buttons) are mirrored for RTL. The Rubik font is applied globally.
+
 ### 8.1 Master Analytics Screen (Super-Admin Only)
 
 - **Header Section:** Large numeric indicators — Monthly Total Revenue, Open Production Backlog count, Total Outstanding Receivables.
@@ -741,3 +767,19 @@ ENTRYPOINT ["java","-Dserver.port=${PORT}","-jar","/app.jar"]
 ### 9.3 Database Migration Flow
 
 All structural modifications must utilize Flyway migration files located inside `/src/main/resources/db/migration`. Railway's deployment hook parses migration files sequentially on application startup prior to routing traffic to ensure zero database schema downtime.
+
+### 9.4 Automated Database Backups
+
+The production PostgreSQL instance must have automated daily backups enabled with a minimum **30-day retention period**. No order or customer data may ever be unrecoverable.
+
+**Railway.com configuration:**
+- Enable the Railway PostgreSQL plugin's built-in backup schedule (daily snapshots).
+- Retain a minimum of 30 daily snapshots at all times.
+- Backup success/failure alerts must be routed to `kostonemarble@gmail.com`.
+
+**Recovery procedure:**
+- In the event of accidental data loss, restore from the most recent clean snapshot via the Railway dashboard.
+- Before restoring, verify the target snapshot's timestamp against the incident window to select the correct restore point.
+- The soft-delete mechanism (§5.1) is the first line of defence — a full restore is only needed if data was corrupted or the database itself was damaged.
+
+**Backup scope:** Full database snapshots (all tables, all rows including soft-deleted records). Soft-deleted rows must be preserved in backups so they remain restorable by the Super-Admin.
