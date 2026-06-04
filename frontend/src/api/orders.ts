@@ -25,6 +25,8 @@ export interface OrderResponse {
   id: string
   customerId: string
   customerFullName: string
+  customerPhone: string
+  customerEmail: string
   status: OrderStatus
   effectiveAddress: string
   effectiveCity: string

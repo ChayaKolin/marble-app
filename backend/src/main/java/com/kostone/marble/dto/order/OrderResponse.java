@@ -11,6 +11,8 @@ public record OrderResponse(
         UUID id,
         UUID customerId,
         String customerFullName,
+        String customerPhone,
+        String customerEmail,
         OrderStatus status,
         // Effective address (COALESCE applied)
         String effectiveAddress,
@@ -40,6 +42,8 @@ public record OrderResponse(
                 o.getId(),
                 o.getCustomer().getId(),
                 o.getCustomer().getFullName(),
+                o.getCustomer().getPhoneNumber(),
+                o.getCustomer().getEmailAddress(),
                 o.getStatus(),
                 // COALESCE effective address
                 o.effectiveAddress(),

@@ -22,12 +22,17 @@ export default function OrderList() {
   const [search, setSearch] = useState('')
 
   function load() {
-    fetchActiveOrders().then(data => { setOrders(data); setLoading(false) })
+    return fetchActiveOrders().then(data => { setOrders(data); setLoading(false); return data })
   }
 
   function handleUpdated() {
-    load()
-    setSelected(o => orders.find(x => x.id === o?.id) ?? o)
+    // Reload orders then update selected from fresh data (avoids stale closure)
+    load().then(freshOrders => {
+      setSelected(current => current
+        ? (freshOrders.find(o => o.id === current.id) ?? current)
+        : null
+      )
+    })
   }
 
   useEffect(() => { load() }, [])

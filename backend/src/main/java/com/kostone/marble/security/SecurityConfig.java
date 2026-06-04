@@ -17,6 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -33,12 +34,12 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints — no token required
+                // Public: login, portal verify, and uploaded files (now served by FileServeController)
                 .requestMatchers(
-                    "/api/v1/auth/login",
-                    "/api/v1/portal/auth/verify"
+                    AntPathRequestMatcher.antMatcher("/api/v1/auth/login"),
+                    AntPathRequestMatcher.antMatcher("/api/v1/portal/auth/verify"),
+                    AntPathRequestMatcher.antMatcher("/files/**")
                 ).permitAll()
-                // Everything else requires a valid JWT
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex

@@ -150,10 +150,8 @@ public class OrderService {
                     "מעבר לא חוקי מ-" + current.name() + " ל-" + targetStatus.name());
         }
 
-        // Gate 1 — 20% deposit required before CLOSED_AWAITING_MEASUREMENT
-        if (current == QUOTATION && targetStatus == CLOSED_AWAITING_MEASUREMENT) {
-            assertDepositPaid(order);
-        }
+        // No financial gate on QUOTATION → CLOSED_AWAITING_MEASUREMENT.
+        // The measurer is paid (20%) after measuring, not before.
 
         // Gate 2 — SLAB_LAYOUT_APPROVAL signature required before PRODUCTION
         if (current == REVIEWING_LAYOUT && targetStatus == PRODUCTION) {
