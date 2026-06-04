@@ -75,11 +75,11 @@
 
 ## 9. Factory & SLA Module
 
-- [ ] 9.1 Implement layout document upload endpoint: `POST /api/v1/orders/{id}/layout` — attach PDF to order, notify customer
-- [ ] 9.2 Implement `POST /api/v1/orders/{id}/logistics` — create `logistics_assignments` row; trigger calendar event auto-creation via Spring `@TransactionalEventListener`
-- [ ] 9.3 Implement calendar auto-creation listener: `is_primary = TRUE → INSTALLATION`, `is_primary = FALSE → SITE_VISIT`
-- [ ] 9.4 Implement SLA Alert Deck UI (Hotman): display active PRODUCTION orders as cards with decrementing timer; color-code by urgency (green/yellow/red)
-- [ ] 9.5 Implement Blueprints Panel UI (Hotman): file upload for layout PDFs, view field measurements
+- [x] 9.1 Implement layout document upload endpoint: `POST /api/v1/orders/{id}/layout` — attach PDF to order, notify customer
+- [x] 9.2 Implement `POST /api/v1/orders/{id}/logistics` — create `logistics_assignments` row; trigger calendar event auto-creation via Spring `@TransactionalEventListener`
+- [x] 9.3 Implement calendar auto-creation listener: `is_primary = TRUE → INSTALLATION`, `is_primary = FALSE → SITE_VISIT`
+- [x] 9.4 Implement SLA Alert Deck UI (Hotman): display active PRODUCTION orders as cards with decrementing timer; color-code by urgency (green/yellow/red)
+- [x] 9.5 Implement Blueprints Panel UI (Hotman): file upload for layout PDFs, view field measurements
 
 ## 10. Installation Calendar
 

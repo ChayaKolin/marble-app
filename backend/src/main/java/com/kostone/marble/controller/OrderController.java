@@ -3,15 +3,19 @@ package com.kostone.marble.controller;
 import com.kostone.marble.dto.order.CreateOrderRequest;
 import com.kostone.marble.dto.order.OrderResponse;
 import com.kostone.marble.dto.order.TransitionRequest;
+import com.kostone.marble.service.factory.LayoutUploadService;
 import com.kostone.marble.service.order.OrderService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -20,6 +24,7 @@ import java.util.UUID;
 public class OrderController {
 
     private final OrderService orderService;
+    private final LayoutUploadService layoutUploadService;
 
     /** Create — Consultant only. */
     @PostMapping
@@ -62,6 +67,26 @@ public class OrderController {
     @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
     public ResponseEntity<OrderResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.restore(id));
+    }
+
+    /** Upload layout PDF — Hotman or Consultant. Notifies customer. */
+    @PostMapping(value = "/{id}/layout", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    public ResponseEntity<Map<String, String>> uploadLayout(
+            @PathVariable UUID id,
+            @RequestParam("file") MultipartFile file) {
+        String url = layoutUploadService.uploadLayout(id, file);
+        return ResponseEntity.ok(Map.of("layoutDocumentUrl", url));
+    }
+
+    /** Upload field measurements — Consultant. Advances order to REVIEWING_LAYOUT and notifies Hotman. */
+    @PostMapping(value = "/{id}/measurements", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    public ResponseEntity<Map<String, String>> uploadMeasurements(
+            @PathVariable UUID id,
+            @RequestParam("file") MultipartFile file) {
+        String url = layoutUploadService.uploadMeasurements(id, file);
+        return ResponseEntity.ok(Map.of("measurementsDocumentUrl", url));
     }
 
     /**

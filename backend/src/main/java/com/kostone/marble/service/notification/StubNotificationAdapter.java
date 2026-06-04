@@ -24,4 +24,28 @@ public class StubNotificationAdapter implements NotificationPort {
     public void sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl) {
         log.info("[STUB WHATSAPP] To: {} | Name: {} | Link: {}", toPhoneNumber, customerName, magicLinkUrl);
     }
+
+    @Override
+    public void notifyLayoutReady(String customerEmail, String customerPhone, String customerName, String portalUrl) {
+        log.info("[STUB] Layout ready → Customer: {} | Email: {} | WhatsApp: {} | Portal: {}",
+                customerName, customerEmail, customerPhone, portalUrl);
+    }
+
+    @Override
+    public void notifyMeasurementsUploaded(String hotmanPhone, String hotmanName, String orderRef) {
+        log.info("[STUB] Measurements uploaded → Hotman: {} ({}) | Order: {}", hotmanName, hotmanPhone, orderRef);
+    }
+
+    @Override
+    public void notifyInstallerDispatched(String installerPhone, String installerName,
+                                          String customerName, String address, String scheduledDate) {
+        log.info("[STUB] Installer dispatched → {} ({}) | Customer: {} | Address: {} | Date: {}",
+                installerName, installerPhone, customerName, address, scheduledDate);
+    }
+
+    @Override
+    public void notifyJobComplete(String consultantEmail, String installerName, String customerName) {
+        log.info("[STUB] Job complete → Consultant: {} | Installer: {} | Customer: {}",
+                consultantEmail, installerName, customerName);
+    }
 }

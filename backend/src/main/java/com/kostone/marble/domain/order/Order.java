@@ -63,6 +63,12 @@ public class Order {
     @Column(name = "notes")
     private String notes;
 
+    @Column(name = "layout_document_url", length = 500)
+    private String layoutDocumentUrl;
+
+    @Column(name = "measurements_document_url", length = 500)
+    private String measurementsDocumentUrl;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "created_by_user_id", nullable = false)
     private User createdByUser;
