@@ -30,6 +30,8 @@ public record OrderResponse(
         BigDecimal totalGrossAmount,
         OffsetDateTime factorySlaDeadline,
         String notes,
+        String layoutDocumentUrl,
+        String measurementsDocumentUrl,
         OffsetDateTime createdAt,
         OffsetDateTime deletedAt
 ) {
@@ -55,6 +57,8 @@ public record OrderResponse(
                 o.getTotalGrossAmount(),
                 o.getFactorySlaDeadline(),
                 o.getNotes(),
+                o.getLayoutDocumentUrl(),
+                o.getMeasurementsDocumentUrl(),
                 o.getCreatedAt(),
                 o.getDeletedAt()
         );

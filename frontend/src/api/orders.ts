@@ -36,6 +36,8 @@ export interface OrderResponse {
   craneRequired: boolean
   factorySlaDeadline: string | null
   notes: string | null
+  layoutDocumentUrl: string | null
+  measurementsDocumentUrl: string | null
   createdAt: string
   deletedAt: string | null
 }

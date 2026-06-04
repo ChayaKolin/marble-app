@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { type OrderResponse, ORDER_STATUS_HE, fetchActiveOrders } from '../../api/orders'
 import AddOrderModal from './AddOrderModal'
+import OrderDetailView from './OrderDetailView'
 
 const STATUS_COLOR: Record<string, string> = {
   QUOTATION:                   'bg-slate-700 text-slate-300',
@@ -17,10 +18,16 @@ export default function OrderList() {
   const [orders, setOrders] = useState<OrderResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [selected, setSelected] = useState<OrderResponse | null>(null)
   const [search, setSearch] = useState('')
 
   function load() {
-    fetchActiveOrders().then(setOrders).finally(() => setLoading(false))
+    fetchActiveOrders().then(data => { setOrders(data); setLoading(false) })
+  }
+
+  function handleUpdated() {
+    load()
+    setSelected(o => orders.find(x => x.id === o?.id) ?? o)
   }
 
   useEffect(() => { load() }, [])
@@ -30,6 +37,16 @@ export default function OrderList() {
     o.effectiveAddress.includes(search) ||
     o.effectiveCity.includes(search)
   )
+
+  if (selected) {
+    return (
+      <OrderDetailView
+        order={selected}
+        onBack={() => setSelected(null)}
+        onUpdated={handleUpdated}
+      />
+    )
+  }
 
   return (
     <div className="p-4 space-y-4" dir="rtl">
@@ -72,8 +89,9 @@ export default function OrderList() {
         <div className="space-y-2">
           {filtered.map(order => (
             <div key={order.id}
+              onClick={() => setSelected(order)}
               className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-2
-                         hover:border-slate-500 transition-colors">
+                         hover:border-emerald-700 hover:bg-slate-800 cursor-pointer transition-colors">
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
                   <p className="text-slate-100 font-medium">{order.customerFullName}</p>

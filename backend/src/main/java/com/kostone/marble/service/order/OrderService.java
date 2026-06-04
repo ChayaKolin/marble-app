@@ -184,6 +184,14 @@ public class OrderService {
         }
     }
 
+    @Transactional
+    public OrderResponse updateNotes(UUID id, String notes) {
+        Order order = orderRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        order.setNotes(notes);
+        return OrderResponse.from(orderRepository.save(order));
+    }
+
     private User resolveCurrentUser() {
         MarbleUserDetails principal = (MarbleUserDetails)
                 SecurityContextHolder.getContext().getAuthentication().getPrincipal();

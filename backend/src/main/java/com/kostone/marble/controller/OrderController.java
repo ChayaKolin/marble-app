@@ -54,6 +54,15 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getById(id));
     }
 
+    /** Update order notes — Consultant only. */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    public ResponseEntity<OrderResponse> updateNotes(
+            @PathVariable UUID id,
+            @RequestBody java.util.Map<String, String> body) {
+        return ResponseEntity.ok(orderService.updateNotes(id, body.get("notes")));
+    }
+
     /** Soft delete — Consultant only. */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
