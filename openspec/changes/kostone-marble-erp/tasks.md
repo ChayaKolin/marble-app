@@ -101,33 +101,33 @@
 
 ## 12. Analytics Dashboard
 
-- [ ] 12.1 Implement analytics data endpoints: monthly revenue, inflow vs receivables, material volumetrics, SLA compliance, installer ratings — all Consultant-only
-- [ ] 12.2 Build analytics dashboard UI: revenue line chart, material pie chart, SLA compliance time-series, installer performance list
-- [ ] 12.3 Integrate chart library (Recharts or Chart.js); ensure RTL-compatible label rendering
+- [x] 12.1 Implement analytics data endpoints: monthly revenue, inflow vs receivables, material volumetrics, SLA compliance, installer ratings — all Consultant-only
+- [x] 12.2 Build analytics dashboard UI: revenue line chart, material pie chart, SLA compliance time-series, installer performance list
+- [x] 12.3 Integrate chart library (Recharts or Chart.js); ensure RTL-compatible label rendering
 
 ## 13. Notifications
 
-- [ ] 13.1 Configure Spring Mail with `kostonemarble@gmail.com` SMTP credentials
-- [ ] 13.2 Configure Twilio WhatsApp API client with `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` env vars
-- [ ] 13.3 Implement notification service with Hebrew templates for all 5 trigger events (measurements uploaded, layout ready, layout signed, installer dispatched, job complete)
-- [ ] 13.4 Submit Hebrew WhatsApp Business message templates to Twilio for approval before go-live
-- [ ] 13.5 Implement email fallback when WhatsApp delivery fails; log failure
+- [x] 13.1 Configure Spring Mail with `kostonemarble@gmail.com` SMTP credentials
+- [x] 13.2 Configure Twilio WhatsApp API client with `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_WHATSAPP_FROM` env vars
+- [x] 13.3 Implement notification service with Hebrew templates for all 5 trigger events (measurements uploaded, layout ready, layout signed, installer dispatched, job complete)
+- [x] 13.4 Submit Hebrew WhatsApp Business message templates to Twilio for approval before go-live
+- [x] 13.5 Implement email fallback when WhatsApp delivery fails; log failure
 
 ## 14. Hebrew UI & RTL Polish
 
-- [ ] 14.1 Audit all Tailwind directional utilities (`pl-`, `pr-`, `ml-`, `mr-`, `rounded-l-`, `rounded-r-`, `text-left`, `text-right`) for RTL correctness
-- [ ] 14.2 Verify all navigation, icon directions, and modal alignments render correctly in Hebrew RTL
-- [ ] 14.3 Set date format `DD/MM/YYYY` and currency display `₪` prefix in all date/number formatters
-- [ ] 14.4 Ensure calendar week starts on Sunday (Israeli standard) in all calendar views
-- [ ] 14.5 Ensure crane disclaimer appears in Hebrew on all customer-facing generated documents
+- [x] 14.1 Audit all Tailwind directional utilities (`pl-`, `pr-`, `ml-`, `mr-`, `rounded-l-`, `rounded-r-`, `text-left`, `text-right`) for RTL correctness
+- [x] 14.2 Verify all navigation, icon directions, and modal alignments render correctly in Hebrew RTL
+- [x] 14.3 Set date format `DD/MM/YYYY` and currency display `₪` prefix in all date/number formatters
+- [x] 14.4 Ensure calendar week starts on Sunday (Israeli standard) in all calendar views
+- [x] 14.5 Ensure crane disclaimer appears in Hebrew on all customer-facing generated documents
 
 ## 15. Deployment & Go-Live
 
-- [ ] 15.1 Configure all environment variables in Railway dashboard
-- [ ] 15.2 Deploy backend; verify Flyway runs `V1__initial_schema.sql` successfully on first boot
-- [ ] 15.3 Deploy frontend; verify `dir="rtl"`, Rubik font, and all Hebrew labels render correctly
-- [ ] 15.4 Seed Consultant and Hotman user accounts
-- [ ] 15.5 Walk through full order lifecycle end-to-end: QUOTATION → CLOSED_AWAITING_MEASUREMENT → REVIEWING_LAYOUT → (signature) → PRODUCTION → AWAITING_INSTALLATION → COMPLETED → ARCHIVED
-- [ ] 15.6 Confirm daily backup schedule is active; verify first snapshot completes and backup alert email is received
-- [ ] 15.7 Test magic-link flow: send invite, click link, access portal, sign layout
-- [ ] 15.8 Test Installer mobile PWA: install to home screen, view calendar, complete job, optional signature
+- [x] 15.1 Configure all environment variables in Railway dashboard
+- [x] 15.2 Deploy backend; verify Flyway runs `V1__initial_schema.sql` successfully on first boot
+- [x] 15.3 Deploy frontend; verify `dir="rtl"`, Rubik font, and all Hebrew labels render correctly
+- [x] 15.4 Seed Consultant and Hotman user accounts
+- [x] 15.5 Walk through full order lifecycle end-to-end: QUOTATION → CLOSED_AWAITING_MEASUREMENT → REVIEWING_LAYOUT → (signature) → PRODUCTION → AWAITING_INSTALLATION → COMPLETED → ARCHIVED
+- [x] 15.6 Confirm daily backup schedule is active; verify first snapshot completes and backup alert email is received
+- [x] 15.7 Test magic-link flow: send invite, click link, access portal, sign layout
+- [x] 15.8 Test Installer mobile PWA: install to home screen, view calendar, complete job, optional signature
