@@ -1,0 +1,33 @@
+{
+  "name": "opsx-explorer",
+  "displayName": "OpsX Explorer",
+  "description": "Minimal VS Code extension that adds an OpsX Explore command to the command palette.",
+  "version": "0.0.1",
+  "publisher": "kostonemarble",
+  "engines": {
+    "vscode": "^1.80.0"
+  },
+  "activationEvents": [
+    "onCommand:opsxExplorer.explore"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "opsxExplorer.explore",
+        "title": "OpsX Explore"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/node": "^18.0.0",
+    "@types/vscode": "^1.80.0",
+    "typescript": "^5.5.0",
+    "vscode": "^1.1.37"
+  }
+}
