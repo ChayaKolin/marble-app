@@ -94,10 +94,10 @@
 
 ## 11. Customer Portal
 
-- [ ] 11.1 Implement `GET /api/v1/portal/orders` — CUSTOMER role, scoped to JWT's `customer_id`
-- [ ] 11.2 Build customer portal shell: Hebrew RTL, order list with status in Hebrew, payment milestone history
-- [ ] 11.3 Build layout approval screen: display uploaded layout PDF, HTML5 Canvas signature widget, confirm button
-- [ ] 11.4 Build pre-measurement disclaimer screen: Hebrew disclaimer text, accept button triggers `PRE_MEASUREMENT_DISCLAIMER` signature
+- [x] 11.1 Implement `GET /api/v1/portal/orders` — CUSTOMER role, scoped to JWT's `customer_id`
+- [x] 11.2 Build customer portal shell: Hebrew RTL, order list with status in Hebrew, payment milestone history
+- [x] 11.3 Build layout approval screen: display uploaded layout PDF, HTML5 Canvas signature widget, confirm button
+- [x] 11.4 Build pre-measurement disclaimer screen: Hebrew disclaimer text, accept button triggers `PRE_MEASUREMENT_DISCLAIMER` signature
 
 ## 12. Analytics Dashboard
 
