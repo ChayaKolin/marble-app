@@ -1,45 +1,360 @@
-Product Requirement Document (PRD) & Technical SpecificationProject: Kostone Marble Enterprise Order Management & ERP System1. Executive Summary & System OverviewThis application is an end-to-end ERP and Order Management system custom-built for Kostone Marble, a premium marble consulting, fabrication, and installation business. The system bridges critical workflow, communication, and financial gaps between the Consultant (Primary User / Owner), the Factory Manager (Secondary User - "Hotman"), the Installers (Field Crew), and the End Customers.The system enforces strict workflow state machine constraints, maintains a rigorous financial ledger to eliminate leakage, displays rich analytics, and automates notifications and contract signing.System Email (Default sender/receiver of signed contracts): kostonemarble@gmail.com2. User Roles, Hierarchy & Permissions MatrixThe system applies Role-Based Access Control (RBAC) with strict security settings. The Primary User (Consultant/Owner) holds ultimate authority over data visibility.2.1 The Consultant (Primary User / Owner - Kostone Marble)System Role: Super Admin (ROLE_SUPER_ADMIN).Core Capabilities:Client & Lead Intake: Create, update, archive, and manage customers.Workflow Overrides: Manually advance order statuses or bypass system blocks when necessary.Full Financial Ledger Access: View all billing details, payments, revenue, profit margins, and tax documentation.Master Executive Dashboard: Access comprehensive monthly sales trends (running 12-month bar chart), material popularity breakdown (pie chart), lead-to-order conversion rates, and profit margin analysis.Dynamic Permission Toggle: A dedicated settings interface allowing the Consultant to toggle whether the Factory Manager (Hotman) is permitted to see financial statistics and monthly charts.2.2 The Factory Manager (Secondary User - "Hotman")System Role: Factory Manager (ROLE_FACTORY_MANAGER).Core Capabilities:Production Pipeline: View and manage orders in the fabrication and cutting phase (PRODUCTION).Operational Logs: Input slab cutting completion times, log issues with specific slab IDs, and update technical statuses.Logistics & Scheduling: Assign installation dates and dispatch specific installers.Operational Dashboard: View production metrics (throughput, fabrication delays, active inventory, SLA status).Financial Statistics & Monthly Charts (Restricted by Default): Completely hidden. The dashboard will show an empty state placeholder unless the Primary User (Owner) manually toggles the setting "Allow Financial Access to Factory Manager" in the settings panel.2.3 The Installer (Field Crew)System Role: Installer (ROLE_INSTALLER).Core Capabilities:Mobile-Optimized Interface: Lightweight, fast UI adapted for rugged field conditions.Daily Schedule: List of assigned installations in chronological order with addresses, client contact details, and tech specs.Field Checklist: Mandatory verification items (e.g., sink alignment, faucet hole verification, silicone sealing).Digital Sign-off: Capture the customer's on-screen signature upon successful installation to close the order.2.4 The End CustomerSystem Role: Client (ROLE_CUSTOMER).Core Capabilities:Passwordless Secure Portal: Sign in using a phone number with a One-Time Password (OTP) or email magic link.Status Tracker: Visual progress bar showing exactly where their kitchen order is (e.g., "Measurement Scheduled" -> "Fabrication in Progress" -> "Out for Installation").Document Center: Download original layout plans, view chosen material details, and review paid/outstanding balances.Slab Layout Approval: View, annotate, and digitally sign off on the proposed cutting layout (תוכנית פריסה) directly inside their secure portal.3. Comprehensive Workflow & Advanced Feature Set[Lead Intake & Plan Upload] 
-       │
-       ▼
-[Material & Sink Selection] ────► [20% Deposit Locked] ──► [Unlock Field Measurement]
-                                                                 │
-                                                                 ▼
-[Client Slab Approval] ◄─── [Upload Slab Layout] ◄──── [Upload Field Dimensions]
-       │
-       ▼
-[SLA Countdown Starts] ──► [Fabrication & QA] ──► [Schedule Installer & Date]
-                                                                 │
-                                                                 ▼
-                                                    [80% Final Payment Verified]
-                                                                 │
-                                                    [Installation & Final Sign-off]
-3.1 Step 1: Customer Intake & Technical DocumentationCustomer File Profile: Created by the Consultant. Includes Customer Name, Phone, Email, Delivery/Installation Address, and optional Architect/Interior Designer details.Original File Vault: Drag-and-drop secure upload for PDF blueprints, architectural kitchen layouts, and on-site photos of the bare kitchen.3.2 Step 2: Advanced Technical Specifications ConfiguratorMaterial Matrix: Track Slab ID, Marble Model/Code, Slab Finish (Polished/Glossy, Matte/Honed, Leathered/Brushed), and precise $m^2$ calculations.Edge Profiles (קאנט): Configure counter edge detailing (e.g., mitered edge/עיבוי קאנט, water-retaining groove/קאנט מים).Sink & Cutout Specifications: Track Sink Brand, Model, exact dimensions (Width, Length, Depth), Color, and mounting type (Flush-mount/התקנה שטוחה or Undermount/התקנה תחתונה).Faucet Configuration: Select number of faucet holes, diameter, location, and soap dispenser or filter-tap requirements.Fixed Structural Add-ons: Pre-configured fees that cannot be altered, such as the standard Cooktop Heat-Protection Base Installation Fee (הכנסה בסיס לסירים) locked at 200 NIS.Logistics & Access Flags: Explicitly flag elevator size, stairwell width constraints, and carry distance.Default Legal Disclaimer: Automatically rendered on all estimates, customer emails, and PDFs:"Crane services (מנוף), if required due to building accessibility limitations or elevator size constraints, are NOT included in this quote. They must be coordinated and paid for directly by the customer."3.3 Step 3: Financial Milestones & Strict Ledger RulesThe backend Spring Boot API enforces strict business blocks based on payment status:Milestone 1 (20% Deposit): Required immediately to secure the order. The project is locked in AWAITING_DEPOSIT status. The system will block scheduling or dispatching a measurer until a payment of at least 20% of the estimated total is logged.Milestone 2 (80% Balance): Due on the day of installation. Installers are blocked from submitting the completion/sign-off form unless an 80% payment verification (cash receipt, uploaded check photo, or credit transaction ID) is submitted to the order's ledger.3.4 Step 4: Measurement & Fabrication LifecyclePre-Measurement Customer Warning: An automated email is triggered from kostonemarble@gmail.com to the client upon deposit payment:"Please note: Your initial quote is a structural estimate. Final pricing, slab yield optimization, and precise dimensions will be finalized and locked ONLY after our professional measurer completes on-site laser measurements."Dimension Upload: The Consultant uploads the precise digital laser measurement files. The system automatically recalculates total $m^2$ and adjusts the outstanding invoice balance.Slab Layout Optimization (תוכנית פריסה): Hotman (Factory Manager) reviews the exact dimensions, matches them to the client's selected slab, and uploads a visual cutting layout showing exactly where seams will go and how vein matching will look.Mandatory Client Slab Approval: The system sends an automated SMS/WhatsApp link. The client must access their secure portal and digitally sign the slab layout. Fabrication is blocked in the database until this signature payload is stored.3.5 Step 5: SLA Commitment & Production TrackingActive SLA Countdown: Once the layout is approved, a target delivery countdown timer starts based on Hotman's factory commitment time. If the timer falls within 48 hours of expiration and status is not FABRICATED, urgent dashboard alerts are dispatched to the Owner and Hotman.Fabrication Pipeline: Track internal steps: Slab Cutting -> CNC Routing -> Edge Polishing -> Quality Assurance (QA).3.6 Step 6: Dispatch, Installation & Project Sign-offLogistics Assignment: Hotman schedules the installation, assigning: Installer Name, Installer Phone, and Scheduled Date.Field Checklist & Validation: The installer completes the digital on-screen checklist (e.g., seamless joints, silicone caulking, sink water-flow check).Post-Installation Client Sign-off: The customer inspects the kitchen counter alongside the installer, signs off on any on-site custom structural modifications, and signs digitally on the installer's mobile screen. A PDF of this signed delivery protocol is automatically generated and emailed to kostonemarble@gmail.com and the client.4. Analytical Dashboards & Business IntelligenceA core requirement for business optimization and management.4.1 Executive Dashboard (Consultant / Owner of Kostone Marble)Financial Health Metrics: Gross Revenue, Accounts Receivable (uncollected 80% balances), Monthly Net Profit, and outstanding cash-flow forecasts.Monthly Sales Performance: Bar chart comparing new orders and finalized jobs month-over-month over a running 12-month period.Material Matrix Analysis: Pie chart showcasing popular marble models, colors, and supplier distribution.Lead-to-Order Conversion: Visual funnel displaying what percentage of kitchen plans submitted became paid orders.SLA Compliance: Visual speedometer indicating the percentage of orders delivered within the committed factory SLA time.4.2 Factory Dashboard (Hotman - Restricted Financial View)Factory Queue Load: Live count of slabs currently in Cutting, Routing, and Polishing stages.Installer Load Balancing: Calendar view displaying the number of installations assigned to each field team.Material Yield & Waste Tracking: Monthly percentage of slab waste/offcuts to optimize cutting yields.Financial Statistics & Monthly Charts (Subject to Toggle): Only visible if the primary user toggles "Allow Financial Access" in their Settings panel. If disabled, a secure lock icon and placeholder are displayed.5. Granular Database Schema (PostgreSQL)┌───────────────┐        ┌───────────────┐        ┌─────────────────┐
-│     Users     │        │   Customers   │        │     Orders      │
-├───────────────┤        ├───────────────┤        ├─────────────────┤
-│ PK  id        │        │ PK  id        │        │ PK  id          │
-│     role      │◄───────┼─    created_by│   ┌───►│ FK  customer_id │
-└───────────────┘        └───────────────┘   │    │     status      │
-                                             │    └─────────────────┘
-                                             │             │
-                         ┌─────────────────┐ │             ▼
-                         │    Payments     │ │    ┌─────────────────┐
-                         ├─────────────────┤ │    │  MaterialSpecs  │
-                         │ PK  id          │ │    ├─────────────────┤
-                         │ FK  order_id    │─┘    │ PK  id          │
-                         │     payment_type│      │ FK  order_id    │
-                         └─────────────────┘      └─────────────────┘
-5.1 Tables, Keys, and ConstraintsTable: usersColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEY, DEFAULT gen_random_uuid()Unique user identifierusernameVARCHAR(50)UNIQUE, NOT NULLLogin usernamepassword_hashVARCHAR(255)NOT NULLBCrypt encrypted passwordroleVARCHAR(30)NOT NULLSUPER_ADMIN (Owner), FACTORY_MANAGER (Hotman), INSTALLERfull_nameVARCHAR(100)NOT NULLDisplay Namephone_numberVARCHAR(20)NOT NULLPhone number for emergency contact and OTPscreated_atTIMESTAMPDEFAULT CURRENT_TIMESTAMPAccount creation timestampTable: customersColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEYUnique customer identifierfull_nameVARCHAR(150)NOT NULLClient's full namephone_numberVARCHAR(20)NOT NULLPhone number (used for portal login OTP)emailVARCHAR(100)UNIQUE, NOT NULLClient email addressaddressTEXTNOT NULLInstallation delivery addressarchitect_nameVARCHAR(150)NULLAccompanying Architect Namearchitect_phoneVARCHAR(20)NULLArchitect phone numbercreated_byUUIDFOREIGN KEY REFERENCES users(id)The Consultant who logged the customerTable: ordersColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEYUnique order identifiercustomer_idUUIDFOREIGN KEY REFERENCES customers(id)Linked customer profilestatusVARCHAR(50)NOT NULLAWAITING_DEPOSIT, MEASUREMENT, PRODUCTION, etc.elevator_sizeVARCHAR(50)NULLElevator dimensionscrane_requiredBOOLEANDEFAULT FALSEMust flag if crane is needed (Client's expense)sla_deadlineTIMESTAMPNULLTargeted delivery date based on SLAcreated_atTIMESTAMPDEFAULT CURRENT_TIMESTAMPOrder timestampTable: material_specsColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEYUnique spec identifierorder_idUUIDFOREIGN KEY REFERENCES orders(id)Linked ordermarble_modelVARCHAR(100)NOT NULLSpecific marble code/modelfinish_typeVARCHAR(50)NOT NULLPolished/Glossy, Matte, Honedsquare_metersNUMERIC(10,2)NOT NULLPrecise $m^2$ mapped as BigDecimaledge_thicknessVARCHAR(50)NOT NULLMitered/Counter edge detailing detailswater_groovesBOOLEANDEFAULT FALSEFlag for water retaining groovesink_brandVARCHAR(100)NOT NULLSink manufacturersink_modelVARCHAR(100)NOT NULLSink dimensions and modelsink_mountingVARCHAR(50)NOT NULLUndermount or Flush-mountcooktop_base_feeNUMERIC(10,2)DEFAULT 200.00Fixed at 200.00 NISTable: paymentsColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEYUnique transaction identifierorder_idUUIDFOREIGN KEY REFERENCES orders(id)Associated orderpayment_typeVARCHAR(50)NOT NULLDEPOSIT_20_PERCENT or BALANCE_80_PERCENTamountNUMERIC(15,2)NOT NULLExact transaction amount (BigDecimal)methodVARCHAR(50)NOT NULLCash, Check, Credit Card, Bank TransferstatusVARCHAR(30)DEFAULT 'PENDING'PENDING, COMPLETED, FAILEDrecorded_atTIMESTAMPDEFAULT CURRENT_TIMESTAMPPayment timestampTable: signaturesColumn NameData TypeConstraintsDescriptionidUUIDPRIMARY KEYUnique signature identifierorder_idUUIDFOREIGN KEY REFERENCES orders(id)Linked ordersignature_typeVARCHAR(50)NOT NULLPRE_MEASUREMENT, SLAB_LAYOUT, COMPLETIONsignature_payloadTEXTNOT NULLBase64 PNG data or S3 bucket URLsigned_atTIMESTAMPDEFAULT CURRENT_TIMESTAMPSignature timestamp6. API Interface Definitions (OpenAPI 3.0 Format)All calls touching analytical metrics or financial tables require validation in the Spring Boot backend to ensure the user possesses the SUPER_ADMIN role or has had access unlocked via the settings API.6.1 Authentication & ConfigurationPOST /api/v1/auth/otp-send - Generates and dispatches login codes to customers.POST /api/v1/auth/otp-verify - Confirms OTP and issues secure JWT tokens.POST /api/v1/customers - Created by Owner to establish a customer file.GET /api/v1/analytics/financial-trends - Pulls gross revenue, monthly profit, and trends (Owner-only unless toggled).PUT /api/v1/settings/toggle-manager-financials - Toggles whether the Factory Manager can view financial charts.6.2 Project State Machine & LifecyclePOST /api/v1/orders/{id}/payments - Log deposit (20%) or final balance (80%).PUT /api/v1/orders/{id}/field-measurements - Upload final laser measurements (triggers automatic recalculation of $m^2$ and final quote price).POST /api/v1/orders/{id}/slab-layouts - Hotman uploads the cutting layout (moves status to LAYOUT_APPROVAL).POST /api/v1/orders/{id}/client-signoff - Submits client digital signature for the cutting layout (moves order to PRODUCTION).7. Cloud Deployment Checklist (Railway.com)Railway.com hosts the frontend (React), backend (Spring Boot), and database (PostgreSQL) seamlessly.7.1 Required Production Environment VariablesConfigure these variables in your Railway Project Dashboard:# Spring Boot Database Bindings (Automated via Railway Postgres Attachment)
-SPRING_DATASOURCE_URL=${{Postgres.SPRING_DATASOURCE_URL}}
-SPRING_DATASOURCE_USERNAME=${{Postgres.POSTGRES_USER}}
+Here is your completely updated, comprehensive, enterprise-grade Product Requirements Document (PRD). It is fully tailored to **Kostone Marble**, configured with your official email (`kostonemarble@gmail.com`), and explicitly details the updated hierarchical role structures (Super-Admin vs. Secondary Admin), client dashboard analytics, and customer portal views.
+
+You can save the contents of this block directly as your **`requirement.md`** file in your project directory.
+
+```markdown
+# Product Requirement Document (PRD) & Technical Specification
+## System Name: Kostone Marble Enterprise Order Management (ERP)
+## Default System Email: kostonemarble@gmail.com
+
+---
+
+## 1. Executive Summary & Business Goals
+Kostone Marble ERP is a highly specialized, niche-specific Enterprise Resource Planning and Order Management system designed exclusively for high-end residential and commercial marble and stone fabrication businesses. The platform guarantees end-to-end operation tracing, from initial client intake to final post-installation verification. 
+
+The application enforces a rigorous milestone-based workflow ensuring zero technical data dropouts between field measurements, factory layout cutting (תוכנית פריסה), and on-site delivery, while locking fiscal progression parameters to prevent unauthorized financial exposure.
+
+---
+
+## 2. User Roles, Hierarchy, & Access Control (RBAC)
+
+The system operates on an explicit hierarchical permission matrix, dividing administrative control dynamically.
+
+### 2.1 Role 1: Super-Admin / Owner (The Consultant / Your Husband)
+*   **System Status:** Primary Master User.
+*   **Permissions:** Complete global read/write/delete privileges across all datasets.
+*   **Core Capabilities:**
+    *   Create, edit, archive, and manage all Customer Accounts and Architect profiles.
+    *   Initialize, update, override, or cancel any Order Lifecycle state.
+    *   Unrestricted access to the **Master Analytics & Business Intelligence Dashboard** (detailed monthly summaries, historical revenue comparison, margin tracking, installer performance graphs).
+    *   **Permission Delegation Control:** The only user capable of toggling specific feature visibility/permissions for secondary roles (e.g., granting or revoking Hotman’s metrics access).
+
+### 2.2 Role 2: Factory Manager (Hotman)
+*   **System Status:** Secondary Admin User.
+*   **Permissions:** Operational scoped control. Bound to factory, cutting, logistics, and scheduling modules.
+*   **Core Capabilities:**
+    *   Review client measurement layout schemas.
+    *   Generate and upload custom cutting/slab layout blueprints (תוכנית פריסה).
+    *   Input explicit production commitment timelines and track SLA metrics.
+    *   Assign specific delivery dates and dispatch designated Installers.
+    *   **Analytics Constraints:** By default, hidden from advanced financial analytics, monthly margin charts, and gross business metrics. Access to these charts must be explicitly unlocked via a feature flag controlled solely by the Super-Admin.
+
+### 2.3 Role 3: The Installer
+*   **System Status:** Field Mobile Agent.
+*   **Permissions:** Single-record execution scope via a mobile-optimized interface.
+*   **Core Capabilities:**
+    *   View dedicated, assigned daily calendar routing with specific project addresses, customer contacts, and technical requirements.
+    *   Capture real-time site adjustments or visual deviations via notes.
+    *   Initiate on-screen Signature Canvas components for instant digital customer sign-off post-installation.
+
+### 2.4 Role 4: The Customer
+*   **System Status:** External Portal User.
+*   **Authentication:** Secure, passwordless magic-link authentication or encrypted credentials routed via Email (`kostonemarble@gmail.com`) or WhatsApp.
+*   **Core Capabilities:**
+    *   Access a localized, secure personal portal to view specific Order Details, real-time status tracking, and payment history.
+    *   Review and digitally sign the Pre-Measurement Acknowledgement and the crucial final Slab Layout Plan (תוכנית פריסה).
+
+---
+
+## 3. Key Business Modules & Conditional Workflow Logic
+
+
+```
+
+[Lead Input / Client Added]
+│
+▼
+[Awaiting 20% Financial Deposit] ──(Blocks Access)──► [Measurement Stage Locked]
+│
+▼ (Paid & Logged via BigDecimal)
+[Unlock Measurement Stage] ──► [Upload Field Measurements] ──► [Notify Hotman (Factory)]
+│
+▼
+[Customer Slab Layout Approval] ◄──(Blocks Production)─── [Hotman Uploads Custom Layout]
+│
+▼ (Signed via HTML5 Canvas)
+[SLA Production Timer Engaged] ──► [Logistics / Installer Dispatched]
+│
+▼
+[Project Completion & Archive] ◄──(Requires 80% Payment)── [On-Site Client Sign-Off]
+
+```
+
+### 3.1 Intake, Project Files & Client Management
+*   **Creation Engine:** Allows the Super-Admin to instantly create client profiles containing explicit fields: Customer Full Name, Primary Phone, Email Address, Site Location, Architect/Designer Name, and Architect Contact Info.
+*   **Persistent Document Cloud:** Native support for high-resolution file attachments including original architectural blueprints, apartment layout photos, and technical specification sheets.
+
+### 3.2 Technical Customization Metrics
+The system logs highly granular data schemas with strict formatting rules:
+*   **Stone Properties:** Material Type/Code, Finish Type (Glossy, Polished, Matte, Honed, Brushed), and exact Square Meters ($m^2$).
+*   **Profile Detailing:** Detailed fields for Counter Edge Profiling (עיבוי קאנט) and Specialized Water Traps/Edges (קאנט מים).
+*   **Sink Specifications:** Comprehensive matrix tracking Brand, Model Name, exact Sizing/Width dimensions, Colorway, and structural Mounting Profiles (Enum: `UNDERMOUNT`, `FLUSH_MOUNT`).
+*   **Fixed Base Fees:** Automatic structural line-item injection for Cooktop Base Enclosures (הכנסה בסיס לסירים) locked at a immutable rate of **200 NIS** per installation unit.
+
+### 3.3 Logistics Constraints & Cost Allocations
+*   **Structural Flags:** Physical infrastructure fields mapping building access, including elevator dimensions, stairwell width anomalies, and parking proximity.
+*   **Legal & Cost Exclusions:** The system must hard-code and visually append an omnipresent disclaimer across all customer-facing invoices, quotes, and contract sheets: 
+    > **"Crane services (מנוף) are NOT included in the project pricing and are arranged and funded exclusively at the customer’s expense."**
+
+### 3.4 Strict Financial Ledger Rules
+*   All financial parameters use Java `BigDecimal` to enforce precise multi-currency decimal tracking without floating-point calculation drift.
+*   **Milestone 1:** 20% Deposit. The system acts as a hard gate. The project state cannot transition to `MEASUREMENT_SCHEDULING` until exactly 20.00% of the calculated gross value is marked as paid in the ledger database.
+*   **Milestone 2:** 80% Balance. This remaining sum is flagged as due upon the exact day of physical installation. The field installer's interface requires confirmation of payment intake or verification of payment prior to releasing digital completion screens.
+
+### 3.5 Measurement & Layout Lifecycle Rules
+*   **Pre-Measurement Gate:** Prior to triggering field actions, the Customer Portal displays a mandatory confirmation dialog: *"Final price, sizing, and specific details are determined exclusively AFTER professional field measurement."*
+*   **Post-Measurement Blueprinting:** Field measurements are uploaded directly to the project directory, automatically alerting Hotman via a system notification event.
+*   **The Cut-Sheet Gate (תוכנית פריסה):** Hotman maps the field measurements onto physical slab cuts and uploads the resulting Layout Document. The project status immediately enters `AWAITING_CUSTOMER_LAYOUT_SIGNATURE`. Production and fabrication are programmatically locked until an authenticated customer canvas signature event is written to the database.
+
+### 3.6 SLA and Fulfillment Tracking
+*   **Hotman Production SLA:** Upon customer layout approval, a strict, decrementing SLA timer initiates based on the specific calendar deadline committed by Hotman.
+*   **Dispatch Assignment:** Tracks Installer Name, Phone Number, Vehicle ID, and planned Delivery Date.
+*   **Field Handshake:** Post-installation, the Installer app triggers a signature canvas modal. The client must physically sign the device screen to close the order, validating receipt of work and verifying any real-time adjustments.
+
+---
+
+## 4. Master Analytics & Data Visualizations (Super-Admin Exclusive)
+
+The Master Dashboard is explicitly optimized for executive review. It contains interactive data visualization layers built using highly responsive chart frameworks aligned with Claude Design styling paradigms.
+
+### 4.1 Monthly Executive Summaries
+*   **Gross Financial Yield:** Clear tracking of overall revenue generated per calendar month.
+*   **Inflow vs. Receivables Pipeline:** Comparative bar charts showing actual money collected (20% deposits + completed 80% balances) against projected income locked in the pipeline (outstanding balances for orders currently in production or measurement phases).
+*   **Material Volumetric Distribution:** Pie charts tracking the surface volume ($m^2$) processed per stone model/code to optimize factory raw-slab purchasing decisions.
+
+### 4.2 Factory Throughput & Logistics Efficiency Metrics
+*   **SLA Compliance Rates:** Time-series line charts tracking Hotman's actual production time against the initially committed factory SLA hours.
+*   **Installer Quality Ratings:** Performance tracking lists indicating structural issue flags or notes recorded post-installation per installer team.
+
+---
+
+## 5. Granular Database Schema (PostgreSQL Relational Mapping)
+
+```sql
+CREATE TYPE user_role AS ENUM ('SUPER_ADMIN_OWNER', 'FACTORY_MANAGER', 'INSTALLER');
+CREATE TYPE order_status AS ENUM ('LEAD', 'AWAITING_DEPOSIT', 'MEASUREMENT_PHASE', 'LAYOUT_APPROVAL', 'PRODUCTION', 'LOGISTICS_DISPATCH', 'COMPLETED', 'ARCHIVED');
+CREATE TYPE sink_mount_style AS ENUM ('UNDERMOUNT', 'FLUSH_MOUNT');
+CREATE TYPE signature_category AS ENUM ('PRE_MEASUREMENT_DISCLAIMER', 'SLAB_LAYOUT_APPROVAL', 'FINAL_POST_INSTALLATION');
+
+CREATE TABLE users (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    username VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role user_role NOT NULL DEFAULT 'INSTALLER',
+    phone_number VARCHAR(30) NOT NULL,
+    analytics_visible BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE customers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    full_name VARCHAR(150) NOT NULL,
+    phone_number VARCHAR(30) NOT NULL,
+    email_address VARCHAR(150) NOT NULL,
+    architect_name VARCHAR(150),
+    architect_phone VARCHAR(30),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE orders (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    customer_id UUID NOT NULL REFERENCES customers(id) ON DELETE RESTRICT,
+    status order_status NOT NULL DEFAULT 'LEAD',
+    elevator_width_meters NUMERIC(4,2),
+    elevator_height_meters NUMERIC(4,2),
+    crane_required BOOLEAN NOT NULL DEFAULT FALSE,
+    total_gross_amount NUMERIC(12,2) NOT NULL, -- Managed via strict BigDecimal
+    factory_sla_deadline TIMESTAMP WITH TIME ZONE,
+    created_by_user_id UUID NOT NULL REFERENCES users(id),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE material_specifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    marble_model_code VARCHAR(100) NOT NULL,
+    finish_type VARCHAR(50) NOT NULL, -- e.g., 'Glossy', 'Polished'
+    square_meters NUMERIC(6,2) NOT NULL, -- Managed via strict BigDecimal
+    counter_edge_detailing VARCHAR(255), -- עיבוי קאנט
+    water_edge_required BOOLEAN NOT NULL DEFAULT FALSE, -- קאנט מים
+    cooktop_base_fee NUMERIC(6,2) NOT NULL DEFAULT 200.00
+);
+
+CREATE TABLE sink_specifications (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    brand VARCHAR(100) NOT NULL,
+    model_name VARCHAR(100) NOT NULL,
+    width_mm INT NOT NULL,
+    height_mm INT NOT NULL,
+    depth_mm INT NOT NULL,
+    color VARCHAR(50) NOT NULL,
+    mounting_style sink_mount_style NOT NULL DEFAULT 'UNDERMOUNT'
+);
+
+CREATE TABLE logistics_assignments (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+    installer_user_id UUID NOT NULL REFERENCES users(id),
+    delivery_scheduled_date TIMESTAMP WITH TIME ZONE NOT NULL,
+    installer_notes TEXT,
+    is_completed BOOLEAN NOT NULL DEFAULT FALSE
+);
+
+CREATE TABLE financial_ledger (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
+    amount_allocated NUMERIC(12,2) NOT NULL,
+    milestone_tier INT NOT NULL, -- 1 = 20% Deposit, 2 = 80% Balance
+    is_cleared BOOLEAN NOT NULL DEFAULT FALSE,
+    cleared_at TIMESTAMP WITH TIME ZONE
+);
+
+CREATE TABLE digital_signatures (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL REFERENCES orders(id) ON DELETE RESTRICT,
+    category signature_category NOT NULL,
+    signature_vector_data TEXT NOT NULL, -- Encoded canvas coordinates or base64 blob
+    ip_address VARCHAR(45),
+    signed_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+```
+
+---
+
+## 6. Technical Stack & Architecture
+
+### 6.1 Frontend (UI Layer)
+
+* **Engine:** React 19 via Vite runtime compilation, typed via strict TypeScript.
+* **Design Framework:** TailwindCSS combined with modular design architectures matching Claude Design specs. Highly responsive component layouts optimized for mobile field screens and widescreen analytics views.
+* **Signatures:** HTML5 Canvas capture wrappers parsing interaction maps to compressed base64 payloads.
+
+### 6.2 Backend (Service Layer)
+
+* **Framework:** Java 21 / Spring Boot 3.x.
+* **Data Accuracy Protection:** Code policies mandate `java.math.BigDecimal` for structural dimensions, metrics, costs, and fees. Floating-point primitives (`float`, `double`) are rejected by lint checkers.
+* **Security:** State-tracking stateless JWT authentication filters reading permissions directly out of encoded claims vectors.
+* **Notifications & Automation Engine:** Integrated Mail Sender profiles bound to the primary system address: **`kostonemarble@gmail.com`**. Automated systems convert layout templates into transactional PDFs and trigger outbound alerts via Twilio/WhatsApp API wrappers.
+
+### 6.3 Database & Hosting
+
+* **DB Engine:** Production PostgreSQL instance enforcing relational keys and transactional ACID safety boundaries.
+* **Hosting Cloud:** Fully structured for deployment on **Railway.com**, leveraging native container buildpacks and persistent storage provisions for uploaded project assets and cut sheets.
+
+---
+
+## 7. OpenAPI 3.0 API Specification Snippet
+
+```yaml
+openapi: 3.0.3
+info:
+  title: Kostone Marble ERP API Engine
+  version: 1.0.0
+  description: Core backend service routing for Kostone Marble order management and factory systems.
+paths:
+  /api/v1/customers:
+    post:
+      summary: Add a new client account
+      description: Accessible by Super-Admin (Your Husband) to create customer metadata profiles.
+      operationId: createCustomer
+      responses:
+        '201':
+          description: Customer record created successfully.
+  /api/v1/logistics/assignments:
+    get:
+      summary: Fetch active logistics dispatch matrix
+      description: Returns schedules, routing directions, and technical profiles for installers.
+      responses:
+        '200':
+          description: Operational tracking matrix payload returned.
+  /api/v1/installers/{id}/signoff:
+    put:
+      summary: Execute final job validation and closure
+      description: Invoked by the Installer app to submit final on-site client signatures.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - signatureData
+              properties:
+                signatureData:
+                  type: string
+                  description: Base64 or vector mapping coordinates of the client signature.
+                installerNotes:
+                  type: string
+      responses:
+        '200':
+          description: Job verified, balance milestone marked, order status updated to COMPLETED.
+
+```
+
+---
+
+## 8. UI Architecture & Screen Blueprint Layouts (Claude Design Model)
+
+Following the modern design system foundations of Claude Design components, the layout emphasizes whitespace, crisp card groupings, distinct typography hierarchy, and a dark slate/neutral colorway accented by clean emerald details for financial clarity.
+
+### 8.1 Master Analytics Screen (Super-Admin / Owner View Only)
+
+* **Header Section:** Displays large, clean numeric indicators highlighting Monthly Total Revenue, Open Production Backlog count, and Total Outstanding Accounts Receivable.
+* **Primary Section Left:** Interactive Chart Line plotting current month cash flow vs. historical month performance. Includes toggle overlays for target growth curves.
+* **Primary Section Right:** Material Processing Table outlining exact stone models ($m^2$) sorted by processing volumes.
+* **Hotman Visibility Toggle:** A persistent UI permission toggle button component allowing the Super-Admin to instantly grant/revoke the secondary manager's visibility over the financial analytics dashboard.
+
+### 8.2 Factory Matrix View (Hotman View)
+
+* **SLA Alert Deck:** Grid view displaying active production cards. Each card contains a decrementing colored progress timer indicating remaining hours before the committed cutting deadline expires.
+* **Actionable Blueprints Panel:** Clean file upload container where Hotman can click to view field measurements and drag-and-drop compiled layout PDFs (תוכנית פריסה) for direct portal dispatch.
+
+---
+
+## 9. Railway.com Cloud Deployment Roadmap
+
+### 9.1 Environment Variables Matrix Configuration
+
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://<railway-provided-host>:<port>/kostonemarble_db
+SPRING_DATASOURCE_USERNAME=postgres
 SPRING_DATASOURCE_PASSWORD=${{Postgres.POSTGRES_PASSWORD}}
+KOSTONE_SYSTEM_EMAIL=kostonemarble@gmail.com
+JWT_SIGNING_KEY=${{REVENUE_SECURITY_CIPHER_KEY}}
+STORAGE_BUCKET_ENDPOINT=[https://storage.railway.app/kostonemarble-assets](https://storage.railway.app/kostonemarble-assets)
 
-# Core Security & Email Rules
-JWT_SIGNING_KEY=your_extremely_long_production_cryptographic_secret_string_here
-APP_SECURITY_ALLOW_MANAGER_ANALYTICS=false
-SYSTEM_ADMIN_EMAIL=kostonemarble@gmail.com
+```
 
-# AWS S3 Configuration (Object Storage for Images, Blueprints, and Signatures)
-AWS_S3_ACCESS_KEY=your_production_aws_access_key
-AWS_S3_SECRET_KEY=your_production_aws_secret_key
-AWS_S3_BUCKET_NAME=production-marble-app-vault
-7.2 Database Migrations & Deployment PipelineAll database schema changes must be managed using Flyway or Liquibase migrations located inside src/main/resources/db/migration in the Java codebase.Once the GitHub repository (ChayaKolin/marble-app) is connected to Railway, a build is triggered on every git push. Railway automatically runs the migration files, brings the database up to date, and runs the Spring Boot server.
+### 9.2 Build & Execution Blueprint (`Dockerfile`)
+
+```dockerfile
+# Multi-stage production container build pattern
+FROM eclipse-temurin:21-jdk-jammy AS build-engine
+WORKDIR /workspace
+COPY . .
+RUN ./mvnw clean package -DskipTests
+
+FROM eclipse-temurin:21-jre-jammy
+VOLUME /tmp
+COPY --from=build-engine /workspace/target/*.jar app.jar
+ENTRYPOINT ["java","-Dserver.port=${PORT}","-jar","/app.jar"]
+
+```
+
+### 9.3 Database Migration Flow
+
+* All structural modifications must utilize Flyway migration files located inside the `/src/main/resources/db/migration` project subtree.
+* Railway's automated deployment hook parses migration files sequentially on application startup prior to routing traffic to ensure zero database schema downtime.
+
+```
+
+```
