@@ -62,9 +62,9 @@
 
 ## 7. Financial Ledger
 
-- [ ] 7.1 Implement `POST /api/v1/orders/{id}/payments` — create `financial_ledger` entry with BigDecimal amount; Consultant only
-- [ ] 7.2 Implement `PUT /api/v1/orders/{id}/payments/{ledgerId}/clear` — mark milestone as cleared
-- [ ] 7.3 Add BigDecimal validation: reject any ledger entry where `amount_allocated` uses floating-point source
+- [x] 7.1 Implement `POST /api/v1/orders/{id}/payments` — create `financial_ledger` entry with BigDecimal amount; Consultant only
+- [x] 7.2 Implement `PUT /api/v1/orders/{id}/payments/{ledgerId}/clear` — mark milestone as cleared
+- [x] 7.3 Add BigDecimal validation: reject any ledger entry where `amount_allocated` uses floating-point source
 
 ## 8. Digital Signatures
 
