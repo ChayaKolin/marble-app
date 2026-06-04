@@ -57,6 +57,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* send to customer */
   const [sendChannel, setSendChannel] = useState<'EMAIL' | 'WHATSAPP'>('WHATSAPP')
+  const [portalLink, setPortalLink]   = useState('')
+  const [copied, setCopied]           = useState(false)
 
   /* logistics */
   const [installers, setInstallers] = useState<any[]>([])
@@ -152,10 +154,20 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   async function sendToCustomer() {
     setBusy('send')
     try {
-      await axios.post('/api/v1/portal/auth/request', { customerId: order.customerId, channel: sendChannel })
-      flash(`קישור לאישור נשלח ללקוח ב-${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'}`)
-    } catch (e: any) { flash('שגיאה בשליחה — בדוק שפרטי הלקוח מולאו', false) }
+      const res = await axios.post('/api/v1/portal/auth/request', { customerId: order.customerId, channel: sendChannel })
+      const url = res.data?.portalUrl ?? ''
+      setPortalLink(url)
+      flash(`✓ קישור נשלח${sendChannel === 'WHATSAPP' ? ' לוואטסאפ' : ' למייל'} — ניתן גם להעתיק ידנית`)
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשליחה', false) }
     finally { setBusy('') }
+  }
+
+  async function copyPortalLink() {
+    try {
+      await navigator.clipboard.writeText(portalLink)
+      setCopied(true)
+      setTimeout(() => setCopied(false), 2000)
+    } catch { flash('לא ניתן להעתיק — העתיקי ידנית', false) }
   }
 
   async function uploadPhoto(file: File) {
@@ -443,9 +455,26 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               </div>
 
               <button onClick={sendToCustomer} disabled={busy === 'send'}
-                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors mb-4">
+                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors mb-3">
                 {busy === 'send' ? 'שולח...' : `📤 שלח הצעה מפורטת ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'} של הלקוח`}
               </button>
+
+              {/* Portal link — shown after sending so consultant can also share manually */}
+              {portalLink && (
+                <div className="mb-4 bg-slate-800 border border-purple-800/50 rounded-xl p-3 space-y-2">
+                  <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני (שלחי לוואטסאפ או אימייל):</p>
+                  <div className="flex items-center gap-2">
+                    <p className="flex-1 text-purple-300 text-xs font-mono break-all bg-slate-900 rounded px-2 py-1.5 select-all">
+                      {portalLink}
+                    </p>
+                    <button onClick={copyPortalLink}
+                      className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white transition-colors">
+                      {copied ? '✓ הועתק' : 'העתק'}
+                    </button>
+                  </div>
+                  <p className="text-slate-500 text-xs">⏱ הקישור תקף ל-24 שעות (אימייל) / 2 שעות (וואטסאפ)</p>
+                </div>
+              )}
 
               <hr className="border-slate-700 mb-4" />
 

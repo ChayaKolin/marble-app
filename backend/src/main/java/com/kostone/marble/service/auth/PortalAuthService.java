@@ -44,8 +44,9 @@ public class PortalAuthService {
      * stores the SHA-256 hash, and delivers the plain token to the customer.
      * Called by Consultant only (enforced at controller layer).
      */
+    /** Returns the magic-link URL so the caller can display or copy it. */
     @Transactional
-    public void requestPortalAccess(PortalAuthRequest request) {
+    public String requestPortalAccess(PortalAuthRequest request) {
         Customer customer = customerRepository.findByIdAndDeletedAtIsNull(request.customerId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
@@ -76,6 +77,7 @@ public class PortalAuthService {
         } else {
             notificationPort.sendMagicLinkEmail(customer.getEmailAddress(), customer.getFullName(), magicLink);
         }
+        return magicLink;
     }
 
     /**

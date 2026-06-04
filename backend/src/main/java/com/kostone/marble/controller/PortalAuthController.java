@@ -18,12 +18,13 @@ public class PortalAuthController {
 
     private final PortalAuthService portalAuthService;
 
-    /** Consultant sends or resends a magic-link to a customer. */
+    /** Consultant sends or resends a magic-link to a customer.
+     *  Returns the portal URL so the consultant can also share it manually. */
     @PostMapping("/request")
     @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
-    public ResponseEntity<Void> requestAccess(@Valid @RequestBody PortalAuthRequest request) {
-        portalAuthService.requestPortalAccess(request);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<java.util.Map<String, String>> requestAccess(@Valid @RequestBody PortalAuthRequest request) {
+        String portalUrl = portalAuthService.requestPortalAccess(request);
+        return ResponseEntity.ok(java.util.Map.of("portalUrl", portalUrl));
     }
 
     /** Public — customer clicks magic-link. Returns a 7-day JWT on success. */
