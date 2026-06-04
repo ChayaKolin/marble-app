@@ -83,14 +83,14 @@
 
 ## 10. Installation Calendar
 
-- [ ] 10.1 Implement `GET /api/v1/calendar/events` — role-scoped: Consultant gets all; Hotman gets all read-only; Installer gets own only
-- [ ] 10.2 Implement `POST /api/v1/calendar/events` — Consultant or MANAGE_CALENDAR permission required
-- [ ] 10.3 Implement `PUT` and `DELETE /api/v1/calendar/events/{id}` — same permission guard
-- [ ] 10.4 Build full-month RTL calendar UI component (Consultant): Hebrew day/month labels, week starts Sunday, CRUD controls
-- [ ] 10.5 Build read-only calendar view (Hotman): same month view, no edit controls, financial data hidden in event panel
-- [ ] 10.6 Build Installer daily list view (mobile): own jobs only, shows effective address, time window, access notes
-- [ ] 10.7 Add Calendar Preview Strip to Hotman dashboard (compact weekly strip, always visible)
-- [ ] 10.8 Implement event detail side panel: role-filtered fields (financial data visible to Consultant only)
+- [x] 10.1 Implement `GET /api/v1/calendar/events` — role-scoped: Consultant gets all; Hotman gets all read-only; Installer gets own only
+- [x] 10.2 Implement `POST /api/v1/calendar/events` — Consultant or MANAGE_CALENDAR permission required
+- [x] 10.3 Implement `PUT` and `DELETE /api/v1/calendar/events/{id}` — same permission guard
+- [x] 10.4 Build full-month RTL calendar UI component (Consultant): Hebrew day/month labels, week starts Sunday, CRUD controls
+- [x] 10.5 Build read-only calendar view (Hotman): same month view, no edit controls, financial data hidden in event panel
+- [x] 10.6 Build Installer daily list view (mobile): own jobs only, shows effective address, time window, access notes
+- [x] 10.7 Add Calendar Preview Strip to Hotman dashboard (compact weekly strip, always visible)
+- [x] 10.8 Implement event detail side panel: role-filtered fields (financial data visible to Consultant only)
 
 ## 11. Customer Portal
 
