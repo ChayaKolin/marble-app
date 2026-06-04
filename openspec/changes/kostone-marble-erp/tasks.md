@@ -68,10 +68,10 @@
 
 ## 8. Digital Signatures
 
-- [ ] 8.1 Implement `POST /api/v1/orders/{id}/signatures` — create `digital_signatures` record; accept `category`, `signatureData` (base64), `ipAddress`
-- [ ] 8.2 Implement pre-measurement disclaimer signature capture in customer portal UI (HTML5 Canvas → `PRE_MEASUREMENT_DISCLAIMER`)
-- [ ] 8.3 Implement layout approval signature capture in customer portal UI (HTML5 Canvas → `SLAB_LAYOUT_APPROVAL`)
-- [ ] 8.4 Implement optional post-installation signature in Installer mobile UI (HTML5 Canvas → `FINAL_POST_INSTALLATION`)
+- [x] 8.1 Implement `POST /api/v1/orders/{id}/signatures` — create `digital_signatures` record; accept `category`, `signatureData` (base64), `ipAddress`
+- [x] 8.2 Implement pre-measurement disclaimer signature capture in customer portal UI (HTML5 Canvas → `PRE_MEASUREMENT_DISCLAIMER`)
+- [x] 8.3 Implement layout approval signature capture in customer portal UI (HTML5 Canvas → `SLAB_LAYOUT_APPROVAL`)
+- [x] 8.4 Implement optional post-installation signature in Installer mobile UI (HTML5 Canvas → `FINAL_POST_INSTALLATION`)
 
 ## 9. Factory & SLA Module
 
