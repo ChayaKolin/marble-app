@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
 import { type CustomerResponse, fetchActiveCustomers } from '../../api/customers'
 import AddCustomerModal from './AddCustomerModal'
+import AddOrderModal from './AddOrderModal'
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState<CustomerResponse[]>([])
   const [loading, setLoading] = useState(true)
   const [showAdd, setShowAdd] = useState(false)
+  const [addOrderForCustomer, setAddOrderForCustomer] = useState<string | null>(null)
   const [search, setSearch] = useState('')
 
   function load() {
@@ -89,6 +91,15 @@ export default function CustomerList() {
                   אדריכל: {c.architectName}
                 </span>
               )}
+              {/* Quick order button */}
+              <button
+                onClick={e => { e.stopPropagation(); setAddOrderForCustomer(c.id) }}
+                className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-emerald-800/60
+                           hover:bg-emerald-700 text-emerald-300 border border-emerald-700/50
+                           transition-colors"
+              >
+                + הזמנה
+              </button>
             </div>
           ))}
         </div>
@@ -98,6 +109,13 @@ export default function CustomerList() {
         <AddCustomerModal
           onClose={() => setShowAdd(false)}
           onCreated={() => { setShowAdd(false); load() }}
+        />
+      )}
+      {addOrderForCustomer && (
+        <AddOrderModal
+          preselectedCustomerId={addOrderForCustomer}
+          onClose={() => setAddOrderForCustomer(null)}
+          onCreated={() => { setAddOrderForCustomer(null) }}
         />
       )}
     </div>
