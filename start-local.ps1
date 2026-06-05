@@ -1,7 +1,5 @@
-# ─────────────────────────────────────────────────────────────────────────────
-#  start-local.ps1  —  הרצה מלאה של Marble App לוקלית
-#  הרץ: .\start-local.ps1
-# ─────────────────────────────────────────────────────────────────────────────
+# start-local.ps1 — Run Marble App locally
+# Usage: .\start-local.ps1
 
 $ErrorActionPreference = "Stop"
 
@@ -10,54 +8,50 @@ $MVN     = "C:\tools\maven\apache-maven-3.9.9\bin\mvn.cmd"
 $DB_NAME = "kostonemarble_db"
 $DB_USER = "postgres"
 $ROOT    = $PSScriptRoot
-
-Write-Host ""
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "   Marble App — Local Startup Script  " -ForegroundColor Cyan
-Write-Host "======================================" -ForegroundColor Cyan
-Write-Host ""
-
-# ── 1. קרא סיסמת PostgreSQL ──────────────────────────────────────────────────
 $envFile = Join-Path $ROOT ".env"
 
+Write-Host ""
+Write-Host "======================================" -ForegroundColor Cyan
+Write-Host "   Marble App - Local Startup         " -ForegroundColor Cyan
+Write-Host "======================================" -ForegroundColor Cyan
+Write-Host ""
+
+# 1. Read DB password from .env or prompt
+$DB_PASS = $null
 if (Test-Path $envFile) {
-    $existing = Get-Content $envFile | Where-Object { $_ -match "^PGPASSWORD=(.+)" }
-    if ($existing) {
-        $DB_PASS = ($existing -replace "^PGPASSWORD=", "").Trim()
-        Write-Host "✔ נמצא .env קיים עם סיסמת DB." -ForegroundColor Green
+    $line = Get-Content $envFile | Where-Object { $_ -match "^PGPASSWORD=(.+)" }
+    if ($line) {
+        $DB_PASS = ($line -replace "^PGPASSWORD=", "").Trim()
+        Write-Host "[OK] Found .env with DB password." -ForegroundColor Green
     }
 }
 
 if (-not $DB_PASS) {
-    $secPass = Read-Host "הכנס סיסמת PostgreSQL (משתמש postgres)" -AsSecureString
+    $sec = Read-Host "Enter PostgreSQL password (user: postgres)" -AsSecureString
     $DB_PASS = [Runtime.InteropServices.Marshal]::PtrToStringAuto(
-                  [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secPass))
+                  [Runtime.InteropServices.Marshal]::SecureStringToBSTR($sec))
 }
 
-# ── 2. וודא שה-DB קיים ───────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "בודק חיבור ל-PostgreSQL..." -ForegroundColor Yellow
+# 2. Check PostgreSQL connection and create DB if needed
+Write-Host "Checking PostgreSQL connection..." -ForegroundColor Yellow
 $env:PGPASSWORD = $DB_PASS
-
-$dbCheck = & $PSQL -U $DB_USER -h localhost -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>&1
+$check = & $PSQL -U $DB_USER -h localhost -tAc "SELECT 1 FROM pg_database WHERE datname='$DB_NAME'" 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Host "✘ לא ניתן להתחבר ל-PostgreSQL. בדוק שהסיסמה נכונה." -ForegroundColor Red
+    Write-Host "[ERROR] Cannot connect to PostgreSQL. Check your password." -ForegroundColor Red
     exit 1
 }
-
-if ($dbCheck -ne "1") {
-    Write-Host "יוצר database '$DB_NAME'..." -ForegroundColor Yellow
+if ($check -ne "1") {
+    Write-Host "Creating database '$DB_NAME'..." -ForegroundColor Yellow
     & $PSQL -U $DB_USER -h localhost -c "CREATE DATABASE $DB_NAME;" 2>&1 | Out-Null
-    Write-Host "✔ Database נוצר." -ForegroundColor Green
+    Write-Host "[OK] Database created." -ForegroundColor Green
 } else {
-    Write-Host "✔ Database '$DB_NAME' כבר קיים." -ForegroundColor Green
+    Write-Host "[OK] Database '$DB_NAME' exists." -ForegroundColor Green
 }
 
-# ── 3. כתוב / עדכן .env ──────────────────────────────────────────────────────
+# 3. Write .env if missing
 if (-not (Test-Path $envFile)) {
-    $jwtKey = -join ((48..57) + (97..102) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
-
-    @"
+    $jwtKey = "k0st0n3M4rbl3S3cur3K3yF0rJWTAuth3nt1c4t10nS3cr3t2024KostonePr0d"
+    $content = @"
 PGHOST=localhost
 PGPORT=5432
 PGDATABASE=$DB_NAME
@@ -72,72 +66,65 @@ KOSTONE_EMAIL_PASSWORD=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
-"@ | Set-Content $envFile -Encoding utf8
-    Write-Host "✔ קובץ .env נוצר." -ForegroundColor Green
+"@
+    $content | Set-Content $envFile -Encoding utf8
+    Write-Host "[OK] .env file created." -ForegroundColor Green
 }
 
-# ── 4. טען משתני סביבה מה-.env ───────────────────────────────────────────────
+# 4. Load env vars into current process
 Get-Content $envFile | Where-Object { $_ -match "^[A-Z]" } | ForEach-Object {
     $parts = $_ -split "=", 2
-    [System.Environment]::SetEnvironmentVariable($parts[0], $parts[1], "Process")
+    if ($parts.Count -eq 2) {
+        [System.Environment]::SetEnvironmentVariable($parts[0], $parts[1], "Process")
+    }
 }
-Write-Host "✔ משתני סביבה נטענו." -ForegroundColor Green
+Write-Host "[OK] Environment variables loaded." -ForegroundColor Green
 
-# ── 5. צור upload dir ─────────────────────────────────────────────────────────
+# 5. Create upload dir
 New-Item -ItemType Directory -Force -Path "C:\tmp\uploads" | Out-Null
 
-# ── 6. הרץ Backend בחלון נפרד ────────────────────────────────────────────────
-Write-Host ""
-Write-Host "מפעיל Backend (Spring Boot על פורט 8080)..." -ForegroundColor Yellow
+# 6. Build env setup string for backend window
+$envLines = Get-Content $envFile | Where-Object { $_ -match "^[A-Z]" }
+$envSetup = ($envLines | ForEach-Object {
+    $p = $_ -split "=", 2
+    if ($p.Count -eq 2) { "`$env:$($p[0]) = '$($p[1])';" }
+}) -join " "
 
-$envBlock = Get-Content $envFile | Where-Object { $_ -match "^[A-Z]" } | ForEach-Object {
-    $parts = $_ -split "=", 2
-    "`$env:$($parts[0]) = '$($parts[1])';"
-}
-$envSetup = $envBlock -join " "
-
+# 7. Start backend in new window
+Write-Host "Starting Backend (Spring Boot on port 8080)..." -ForegroundColor Yellow
 $backendCmd = "$envSetup cd '$ROOT\backend'; & '$MVN' spring-boot:run"
-
 Start-Process powershell -ArgumentList "-NoExit", "-Command", $backendCmd -WindowStyle Normal
+Write-Host "[OK] Backend window opened." -ForegroundColor Green
 
-Write-Host "✔ Backend מופעל בחלון נפרד." -ForegroundColor Green
-
-# ── 7. הרץ Frontend בחלון נפרד ───────────────────────────────────────────────
-Write-Host "מפעיל Frontend (Vite על פורט 5173)..." -ForegroundColor Yellow
-
+# 8. Start frontend in new window
+Write-Host "Starting Frontend (Vite on port 5173)..." -ForegroundColor Yellow
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ROOT\frontend'; npm run dev" -WindowStyle Normal
+Write-Host "[OK] Frontend window opened." -ForegroundColor Green
 
-Write-Host "✔ Frontend מופעל בחלון נפרד." -ForegroundColor Green
-
-# ── 8. המתן ופתח דפדפן ───────────────────────────────────────────────────────
+# 9. Wait for backend then open browser
 Write-Host ""
-Write-Host "ממתין לעלות הסרבר (30 שניות)..." -ForegroundColor Yellow
-
+Write-Host "Waiting for backend to start (up to 120s)..." -ForegroundColor Yellow
 $backendUp = $false
-for ($i = 0; $i -lt 30; $i++) {
-    Start-Sleep 1
+for ($i = 1; $i -le 60; $i++) {
+    Start-Sleep 2
     try {
-        $r = Invoke-WebRequest -Uri "http://localhost:8080/actuator/health" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        if ($r.StatusCode -eq 200) { $backendUp = $true; break }
+        Invoke-WebRequest -Uri "http://localhost:8080/api/v1/auth/login" -Method POST `
+            -Body '{}' -ContentType "application/json" -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop | Out-Null
     } catch {
-        try {
-            $r2 = Invoke-WebRequest -Uri "http://localhost:8080/api/auth/login" -Method POST -UseBasicParsing -TimeoutSec 2 -ErrorAction Stop
-        } catch {
-            if ($_.Exception.Response -ne $null) { $backendUp = $true; break }
-        }
+        if ($_.Exception.Response -ne $null) { $backendUp = $true; break }
     }
-    Write-Host "  ... ($($i+1)/30)" -ForegroundColor DarkGray
+    if ($i % 5 -eq 0) { Write-Host "  ...${i}0s" -ForegroundColor DarkGray }
 }
 
 if ($backendUp) {
-    Write-Host "✔ Backend עלה בהצלחה!" -ForegroundColor Green
+    Write-Host "[OK] Backend is up!" -ForegroundColor Green
 } else {
-    Write-Host "⚠ Backend לא הגיב תוך 30 שניות — בדוק את החלון שלו." -ForegroundColor Yellow
+    Write-Host "[WARN] Backend did not respond in time - check its window." -ForegroundColor Yellow
 }
 
 Start-Process "http://localhost:5173"
 Write-Host ""
 Write-Host "======================================" -ForegroundColor Cyan
-Write-Host "  האפליקציה רצה על http://localhost:5173" -ForegroundColor Cyan
+Write-Host "  App running at http://localhost:5173 " -ForegroundColor Cyan
 Write-Host "======================================" -ForegroundColor Cyan
 Write-Host ""
