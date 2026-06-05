@@ -10,6 +10,7 @@ RUN npm run build
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jdk-jammy AS backend-build
 WORKDIR /workspace
+RUN apt-get update -q && apt-get install -y -q maven
 
 COPY backend/pom.xml .
 COPY backend/src ./src
