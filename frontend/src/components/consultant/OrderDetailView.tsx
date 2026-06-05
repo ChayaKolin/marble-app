@@ -166,7 +166,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     try {
       await navigator.clipboard.writeText(portalLink)
       setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setTimeout(() => setCopied(false), 3000)
     } catch { flash('לא ניתן להעתיק — העתיקי ידנית', false) }
   }
 
