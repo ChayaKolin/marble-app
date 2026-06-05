@@ -5,24 +5,26 @@ COPY frontend/package*.json ./
 RUN npm install
 COPY frontend/ ./
 RUN npm run build
-# Output: /frontend/dist/
 
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
-# Use official Maven image — includes both Maven 3.9 and Java 21
 FROM maven:3.9.9-eclipse-temurin-21 AS backend-build
 WORKDIR /workspace
 
 COPY backend/pom.xml .
 COPY backend/src ./src
 
-# Embed the built frontend into Spring Boot's static resources
-# Spring Boot serves everything in /static at the root URL automatically
+# Embed frontend into Spring Boot static resources
 COPY --from=frontend-build /frontend/dist ./src/main/resources/static
 
-RUN mvn clean package -DskipTests
+# Build and verify JAR was created
+RUN mvn clean package -DskipTests && \
+    echo "=== BUILD COMPLETE ===" && \
+    ls -lh target/*.jar && \
+    cp target/marble-0.0.1-SNAPSHOT.jar /app.jar
 
-# ── Stage 3: Runtime image ────────────────────────────────────────────────────
+# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-COPY --from=backend-build /workspace/target/*.jar app.jar
-ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "/app.jar"]
+COPY --from=backend-build /app.jar app.jar
+RUN ls -lh app.jar && echo "JAR ready"
+ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "/app/app.jar"]
