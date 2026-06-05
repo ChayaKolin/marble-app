@@ -21,9 +21,9 @@ Write-Host ""
 $envFile = Join-Path $ROOT ".env"
 
 if (Test-Path $envFile) {
-    $existing = Get-Content $envFile | Where-Object { $_ -match "^SPRING_DATASOURCE_PASSWORD=(.+)" }
+    $existing = Get-Content $envFile | Where-Object { $_ -match "^PGPASSWORD=(.+)" }
     if ($existing) {
-        $DB_PASS = ($existing -replace "^SPRING_DATASOURCE_PASSWORD=", "").Trim()
+        $DB_PASS = ($existing -replace "^PGPASSWORD=", "").Trim()
         Write-Host "✔ נמצא .env קיים עם סיסמת DB." -ForegroundColor Green
     }
 }
@@ -58,9 +58,11 @@ if (-not (Test-Path $envFile)) {
     $jwtKey = -join ((48..57) + (97..102) | Get-Random -Count 64 | ForEach-Object { [char]$_ })
 
     @"
-SPRING_DATASOURCE_URL=jdbc:postgresql://localhost:5432/$DB_NAME
-SPRING_DATASOURCE_USERNAME=$DB_USER
-SPRING_DATASOURCE_PASSWORD=$DB_PASS
+PGHOST=localhost
+PGPORT=5432
+PGDATABASE=$DB_NAME
+PGUSER=$DB_USER
+PGPASSWORD=$DB_PASS
 JWT_SIGNING_KEY=$jwtKey
 BASE_URL=http://localhost:5173
 UPLOAD_DIR=C:/tmp/uploads
