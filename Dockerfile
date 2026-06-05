@@ -8,7 +8,8 @@ RUN npm run build
 # Output: /frontend/dist/
 
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
-FROM eclipse-temurin:21-jdk-jammy AS backend-build
+# Use official Maven image — includes both Maven 3.9 and Java 21
+FROM maven:3.9.9-eclipse-temurin-21 AS backend-build
 WORKDIR /workspace
 
 COPY backend/pom.xml .
@@ -23,6 +24,5 @@ RUN mvn clean package -DskipTests
 # ── Stage 3: Runtime image ────────────────────────────────────────────────────
 FROM eclipse-temurin:21-jre-jammy
 WORKDIR /app
-# VOLUME /tmp
 COPY --from=backend-build /workspace/target/*.jar app.jar
 ENTRYPOINT ["java", "-Dserver.port=${PORT:-8080}", "-jar", "/app.jar"]
