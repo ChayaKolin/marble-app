@@ -34,7 +34,18 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public: login, portal verify, and uploaded files (now served by FileServeController)
+                // Static frontend resources — always public
+                .requestMatchers(
+                    AntPathRequestMatcher.antMatcher("/"),
+                    AntPathRequestMatcher.antMatcher("/index.html"),
+                    AntPathRequestMatcher.antMatcher("/assets/**"),
+                    AntPathRequestMatcher.antMatcher("/*.js"),
+                    AntPathRequestMatcher.antMatcher("/*.css"),
+                    AntPathRequestMatcher.antMatcher("/*.ico"),
+                    AntPathRequestMatcher.antMatcher("/*.svg"),
+                    AntPathRequestMatcher.antMatcher("/*.png")
+                ).permitAll()
+                // Public API endpoints
                 .requestMatchers(
                     AntPathRequestMatcher.antMatcher("/api/v1/auth/login"),
                     AntPathRequestMatcher.antMatcher("/api/v1/portal/auth/verify"),
