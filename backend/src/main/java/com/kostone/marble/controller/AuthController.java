@@ -38,4 +38,16 @@ public class AuthController {
                 )).toList()
         );
     }
+
+    /** List factory managers — used by the permissions panel. */
+    @GetMapping("/users/hotmen")
+    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    public ResponseEntity<List<Map<String, Object>>> listHotmen() {
+        return ResponseEntity.ok(
+            userRepository.findByRole(UserRole.FACTORY_MANAGER).stream()
+                .map(u -> Map.<String,Object>of(
+                    "id", u.getId(), "fullName", u.getFullName()
+                )).toList()
+        );
+    }
 }

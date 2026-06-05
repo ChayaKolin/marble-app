@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import axios from 'axios'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   PieChart, Pie, Cell,
@@ -35,15 +36,16 @@ function KpiCard({ label, value, sub }: { label: string; value: string; sub?: st
   )
 }
 
-// Placeholder hotmanUserId — in production this comes from the users list API
-const HOTMAN_USER_ID_PLACEHOLDER = '00000000-0000-0000-0000-000000000001'
-
 export default function AnalyticsDashboard() {
   const [data, setData] = useState<AnalyticsDashboardResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const [hotmanId, setHotmanId] = useState<string | null>(null)
 
   useEffect(() => {
     fetchDashboard().then(setData).finally(() => setLoading(false))
+    axios.get<{ id: string; fullName: string }[]>('/api/v1/auth/users/hotmen')
+      .then(r => { if (r.data.length > 0) setHotmanId(r.data[0].id) })
+      .catch(() => {})
   }, [])
 
   if (loading) return <div className="p-6 text-slate-400 text-sm">טוען...</div>
@@ -162,7 +164,7 @@ export default function AnalyticsDashboard() {
       )}
 
       {/* Hotman permission panel */}
-      <PermissionPanel hotmanUserId={HOTMAN_USER_ID_PLACEHOLDER} />
+      {hotmanId && <PermissionPanel hotmanUserId={hotmanId} />}
     </div>
   )
 }
