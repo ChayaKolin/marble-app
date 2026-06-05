@@ -175,9 +175,6 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     try {
       const fd = new FormData()
       fd.append('file', file)
-      const r = await axios.post(`/api/v1/orders/${order.id}/photos`, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
       flash('תמונה הועלתה')
       // Reload from server to ensure consistent state
       axios.get(`/api/v1/orders/${order.id}/photos`).then(r => setPhotos(r.data)).catch(() => {})
