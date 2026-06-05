@@ -9,6 +9,7 @@ RUN npm run build
 # ── Stage 2: Build backend ────────────────────────────────────────────────────
 FROM maven:3.9.9-eclipse-temurin-21 AS backend-build
 WORKDIR /workspace
+RUN apt-get update -q && apt-get install -y -q maven
 
 COPY backend/pom.xml .
 COPY backend/src ./src
