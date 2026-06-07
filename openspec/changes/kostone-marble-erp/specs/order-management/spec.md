@@ -58,6 +58,13 @@ The system SHALL refuse to create a new order for a customer that already has an
 - **WHEN** the Consultant opens the "new order" form's customer selector
 - **THEN** the list only offers customers who do not currently have an open order, so the Consultant cannot even attempt to start a duplicate order from that form
 
+### Requirement: Submitting the "new order" form navigates straight to the created order's detail page
+When the Consultant submits the "new order" form (whether opened from the orders list's "הזמנה חדשה" / "צור הזמנה ראשונה" actions or from a customer row's "+ הזמנה" action) and the order is created successfully, the system SHALL close the form and take the Consultant directly to that order's detail view — not back to the orders list — so they can continue filling in details (amount, address overrides, marble specification, logistics, etc.) right away.
+
+#### Scenario: New order opens its own detail page after creation
+- **WHEN** the Consultant fills in the "new order" form and submits it successfully
+- **THEN** the form closes and the order detail view for the newly created order opens immediately, without an intermediate trip back to the orders list
+
 ### Requirement: The total order amount is optional until the on-site measurement determines it
 The system SHALL NOT require a `totalGrossAmount` when an order is created or edited, because the final amount is typically only known after the measurer's on-site visit (exact square meters, finishes, etc.). `total_gross_amount` SHALL be a nullable column, and `CreateOrderRequest` SHALL accept a `null`/absent amount. The Consultant SHALL be able to set or update the amount at any later point (e.g., after measurement) via the order's detail view, which calls the order update endpoint (`PUT /api/v1/orders/{id}`) supporting partial updates of `notes` and/or `totalGrossAmount`. Any feature that derives a figure from `totalGrossAmount` (e.g., the measurer's 20% fee) SHALL treat a missing amount as "not yet available" and prompt the Consultant to set it first rather than computing against zero or null.
 

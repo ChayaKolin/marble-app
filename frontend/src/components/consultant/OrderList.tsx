@@ -134,7 +134,12 @@ export default function OrderList() {
       {showAdd && (
         <AddOrderModal
           onClose={() => setShowAdd(false)}
-          onCreated={() => { setShowAdd(false); load() }}
+          onCreated={(order) => {
+            setShowAdd(false)
+            load()
+            // Land straight on the new order's detail page, instead of back on the list
+            setSelected(order)
+          }}
         />
       )}
     </div>
