@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import axios from 'axios'
 import { type CustomerResponse, fetchActiveCustomers } from '../../api/customers'
 import { type OrderResponse, fetchOrderById } from '../../api/orders'
 import AddCustomerModal from './AddCustomerModal'
@@ -101,7 +102,7 @@ export default function CustomerList() {
 
               {/* Details */}
               <div className="flex-1 min-w-0">
-                <p className="text-slate-100 font-medium text-sm">{c.fullName}</p>
+                <p className="text-slate-100 font-medium text-sm truncate">{c.fullName}</p>
                 <p className="text-slate-500 text-xs mt-0.5 truncate">
                   {c.phoneNumber} · {c.siteAddress}, {c.siteCity}
                   {c.siteFloor != null && ` · קומה ${c.siteFloor}`}
@@ -142,11 +143,21 @@ export default function CustomerList() {
       {showAdd && (
         <AddCustomerModal
           onClose={() => setShowAdd(false)}
-          onCreated={(customer) => {
+          onCreated={async (customer) => {
             setShowAdd(false)
             load()
-            // Go straight to creating the order for the customer just added, with their details pre-selected
-            setAddOrderForCustomer(customer.id)
+            // Skip the "new order" form entirely — auto-create a minimal order for the
+            // customer just added (everything else can be filled in later from the order's
+            // own page, same as the "amount known only after measurement" flow) and land
+            // straight on its detail view
+            try {
+              const { data } = await axios.post<OrderResponse>('/api/v1/orders', { customerId: customer.id })
+              setActiveOrder(data)
+            } catch {
+              // Fall back to the manual "new order" form so she can still create one
+              // for this customer if the automatic creation failed
+              setAddOrderForCustomer(customer.id)
+            }
           }}
         />
       )}

@@ -44,8 +44,8 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
             {ORDER_STATUS_HE[order.status]}
           </span>
         </div>
-        <div className="flex items-center justify-between">
-          <span className="text-slate-400 text-xs">כתובת</span>
+        <div className="flex items-start justify-between gap-2">
+          <span className="text-slate-400 text-xs shrink-0">כתובת</span>
           <span className="text-slate-200 text-sm">
             {order.effectiveAddress}, {order.effectiveCity}
             {order.effectiveFloor != null && ` · קומה ${order.effectiveFloor}`}

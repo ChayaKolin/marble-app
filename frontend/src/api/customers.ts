@@ -13,6 +13,7 @@ export interface CustomerResponse {
   architectPhone: string | null
   createdAt: string
   deletedAt: string | null
+  active: boolean
   activeOrderId: string | null
 }
 

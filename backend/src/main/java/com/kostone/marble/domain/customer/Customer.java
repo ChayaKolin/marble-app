@@ -52,6 +52,10 @@ public class Customer {
     @Column(name = "deleted_at")
     private OffsetDateTime deletedAt;
 
+    /** Active/inactive toggle — independent of soft-delete. Inactive customers are hidden from new-order selection. */
+    @Column(name = "is_active", nullable = false)
+    private boolean active = true;
+
     public boolean isDeleted() {
         return deletedAt != null;
     }

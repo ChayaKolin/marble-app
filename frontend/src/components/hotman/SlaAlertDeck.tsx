@@ -22,9 +22,9 @@ function SlaCard({ order }: { order: OrderResponse }) {
   return (
     <div className={`rounded-xl border-2 ${styles.border} bg-slate-900 p-4 space-y-3`}>
       <div className="flex items-start justify-between gap-2">
-        <div>
-          <p className="text-slate-100 font-medium text-sm">{order.customerFullName}</p>
-          <p className="text-slate-500 text-xs mt-0.5">
+        <div className="flex-1 min-w-0">
+          <p className="text-slate-100 font-medium text-sm truncate">{order.customerFullName}</p>
+          <p className="text-slate-500 text-xs mt-0.5 truncate">
             {order.effectiveAddress}, {order.effectiveCity}
           </p>
         </div>

@@ -26,7 +26,7 @@ export default function PreMeasurementDisclaimer({ orderId, onComplete }: Props)
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div className="bg-amber-900/30 border border-amber-700 rounded-xl p-5">
         <h2 className="text-amber-300 font-semibold text-base mb-2">הצהרה לפני מדידה</h2>
         <p className="text-amber-100 text-sm leading-relaxed">

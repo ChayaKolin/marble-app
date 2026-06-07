@@ -56,7 +56,7 @@ export default function PortalOrderList({ orders, onSelect }: Props) {
 
           {/* Payment milestones */}
           {order.paymentMilestones.length > 0 && (
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-x-4 gap-y-1">
               {order.paymentMilestones.map(m => (
                 <MilestonePip key={m.tier} cleared={m.cleared} label={m.labelHe} />
               ))}

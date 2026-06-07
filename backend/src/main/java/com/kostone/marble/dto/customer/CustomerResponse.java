@@ -18,6 +18,7 @@ public record CustomerResponse(
         String architectPhone,
         OffsetDateTime createdAt,
         OffsetDateTime deletedAt,
+        boolean active,
         UUID activeOrderId
 ) {
     public static CustomerResponse from(Customer c) {
@@ -29,7 +30,7 @@ public record CustomerResponse(
                 c.getId(), c.getFullName(), c.getPhoneNumber(), c.getEmailAddress(),
                 c.getSiteAddress(), c.getSiteCity(), c.getSiteFloor(), c.getSiteApt(),
                 c.getArchitectName(), c.getArchitectPhone(), c.getCreatedAt(), c.getDeletedAt(),
-                activeOrderId
+                c.isActive(), activeOrderId
         );
     }
 }

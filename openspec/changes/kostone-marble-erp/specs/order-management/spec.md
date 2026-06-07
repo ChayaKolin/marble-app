@@ -54,6 +54,10 @@ The system SHALL refuse to create a new order for a customer that already has an
 - **WHEN** the Consultant views the customer list and a customer has an open order
 - **THEN** an "active order" button appears on that customer's row instead of the "add order" button, and clicking it opens that order's detail view directly
 
+#### Scenario: Customer picker on the "new order" form excludes customers with an open order
+- **WHEN** the Consultant opens the "new order" form's customer selector
+- **THEN** the list only offers customers who do not currently have an open order, so the Consultant cannot even attempt to start a duplicate order from that form
+
 ### Requirement: The total order amount is optional until the on-site measurement determines it
 The system SHALL NOT require a `totalGrossAmount` when an order is created or edited, because the final amount is typically only known after the measurer's on-site visit (exact square meters, finishes, etc.). `total_gross_amount` SHALL be a nullable column, and `CreateOrderRequest` SHALL accept a `null`/absent amount. The Consultant SHALL be able to set or update the amount at any later point (e.g., after measurement) via the order's detail view, which calls the order update endpoint (`PUT /api/v1/orders/{id}`) supporting partial updates of `notes` and/or `totalGrossAmount`. Any feature that derives a figure from `totalGrossAmount` (e.g., the measurer's 20% fee) SHALL treat a missing amount as "not yet available" and prompt the Consultant to set it first rather than computing against zero or null.
 

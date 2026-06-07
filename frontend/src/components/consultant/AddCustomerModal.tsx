@@ -17,9 +17,25 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
+    if (fieldErrors[field]) setFieldErrors(fe => ({ ...fe, [field]: '' }))
+  }
+
+  /** Validates phone/email fields on blur so the customer sees the problem immediately, not only after clicking שמור. */
+  function handleBlur(field: 'phoneNumber' | 'emailAddress' | 'architectPhone') {
+    const value = form[field]
+    let message = ''
+    if (field === 'phoneNumber') {
+      message = /^\d{10}$/.test(value) ? '' : PHONE_TITLE_HE
+    } else if (field === 'emailAddress') {
+      message = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'כתובת דוא"ל לא תקינה'
+    } else if (field === 'architectPhone' && value) {
+      message = /^\d{10}$/.test(value) ? '' : PHONE_TITLE_HE
+    }
+    setFieldErrors(fe => ({ ...fe, [field]: message }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -55,8 +71,11 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
           <div className="grid grid-cols-1 gap-4">
             <Field label="שם מלא *" value={form.fullName} onChange={v => set('fullName', v)} required />
             <Field label="טלפון *" value={form.phoneNumber} onChange={v => set('phoneNumber', sanitizePhoneInput(v))}
+                   onBlur={() => handleBlur('phoneNumber')} error={fieldErrors.phoneNumber}
                    required dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
-            <Field label='דוא"ל *' value={form.emailAddress} onChange={v => set('emailAddress', v)} required dir="ltr" type="email" />
+            <Field label='דוא"ל *' value={form.emailAddress} onChange={v => set('emailAddress', v)}
+                   onBlur={() => handleBlur('emailAddress')} error={fieldErrors.emailAddress}
+                   required dir="ltr" type="email" />
           </div>
 
           <hr className="border-slate-700" />
@@ -77,6 +96,7 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
           <div className="grid grid-cols-2 gap-3">
             <Field label="שם אדריכל" value={form.architectName} onChange={v => set('architectName', v)} />
             <Field label="טלפון אדריכל" value={form.architectPhone} onChange={v => set('architectPhone', sanitizePhoneInput(v))}
+                   onBlur={() => handleBlur('architectPhone')} error={fieldErrors.architectPhone}
                    dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
           </div>
 
@@ -100,8 +120,8 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
   )
 }
 
-function Field({ label, value, onChange, required, dir, type = 'text', inputMode, maxLength, pattern, title }: {
-  label: string; value: string; onChange: (v: string) => void;
+function Field({ label, value, onChange, onBlur, error, required, dir, type = 'text', inputMode, maxLength, pattern, title }: {
+  label: string; value: string; onChange: (v: string) => void; onBlur?: () => void; error?: string;
   required?: boolean; dir?: string; type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; maxLength?: number; pattern?: string; title?: string;
 }) {
@@ -112,16 +132,20 @@ function Field({ label, value, onChange, required, dir, type = 'text', inputMode
         type={type}
         value={value}
         onChange={e => onChange(e.target.value)}
+        onBlur={onBlur}
         required={required}
         dir={dir}
         inputMode={inputMode}
         maxLength={maxLength}
         pattern={pattern}
         title={title}
-        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2
-                   text-slate-100 text-sm focus:outline-none focus:border-emerald-500
-                   placeholder:text-slate-600"
+        className={[
+          'w-full bg-slate-800 border rounded-lg px-3 py-2 text-slate-100 text-sm',
+          'focus:outline-none placeholder:text-slate-600',
+          error ? 'border-red-500 focus:border-red-500' : 'border-slate-600 focus:border-emerald-500',
+        ].join(' ')}
       />
+      {error && <p className="text-red-400 text-xs">{error}</p>}
     </div>
   )
 }

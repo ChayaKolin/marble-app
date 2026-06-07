@@ -27,7 +27,7 @@ export default function LayoutApprovalSignature({ orderId, layoutDocumentUrl, on
   }
 
   return (
-    <div className="max-w-lg mx-auto p-6 space-y-6">
+    <div className="space-y-6">
       <div>
         <h2 className="text-slate-100 font-semibold text-lg mb-1">אישור תוכנית פריסה</h2>
         <p className="text-slate-400 text-sm">

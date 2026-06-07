@@ -40,16 +40,16 @@ The system SHALL present every "city" field (`site_city` on the customer profile
 - **WHEN** the Consultant types text into the city field that does not match any predefined city and then moves focus away without selecting a suggestion
 - **THEN** the field reverts to its previously selected value (or remains empty), and no arbitrary free-text value is stored
 
-### Requirement: Creating a customer leads straight into creating and viewing their order
-Once the Consultant successfully saves a new customer profile, the system SHALL close the "add customer" form and immediately open the "new order" form with that customer pre-selected, so the Consultant can proceed straight to placing the order without having to locate the customer again in the list. Once that order is created, the system SHALL navigate the Consultant directly to that order's detail page (instead of back to the customer list), so they land on its details immediately and can continue working the deal (e.g. closing it and booking the measurement).
+### Requirement: Creating a customer leads straight into viewing their order — no extra form
+Once the Consultant successfully saves a new customer profile, the system SHALL close the "add customer" form, automatically create a minimal order for that customer (no "new order" form is shown), and navigate the Consultant directly to that order's detail page. All other order details (amount, address overrides, marble specification, logistics, etc.) remain optional and SHALL be filled in later from the order's own page — consistent with the amount being optional until the on-site measurement. If the automatic order creation fails, the system SHALL fall back to opening the "new order" form pre-selected with that customer so the Consultant can still create the order manually.
 
-#### Scenario: New order flow opens right after saving the customer
+#### Scenario: Order is auto-created and its detail page opens right after saving the customer
 - **WHEN** the Consultant submits the "add customer" form and the customer is created successfully
-- **THEN** the "add customer" form closes and the "new order" form opens with the new customer already selected and their site details shown
+- **THEN** the "add customer" form closes without showing any further form, a minimal order is created for that customer, and the Consultant lands directly on that new order's detail page
 
-#### Scenario: Order detail page opens right after creating the order
-- **WHEN** the Consultant submits the "new order" form and the order is created successfully
-- **THEN** the "new order" form closes and the Consultant lands directly on that order's detail page showing its details
+#### Scenario: Manual "new order" form is offered if automatic creation fails
+- **WHEN** the customer is created successfully but the automatic order creation request fails
+- **THEN** the system opens the "new order" form with the new customer already selected, so the Consultant can still create the order manually
 
 ### Requirement: Customers are soft-deleted, never hard-deleted
 The system SHALL set `deleted_at = NOW()` when the Consultant deletes a customer. The system SHALL NOT issue a SQL `DELETE` against the `customers` table. Soft-deleted customers SHALL be hidden from all standard UI views and API list responses.
@@ -65,6 +65,17 @@ The system SHALL set `deleted_at = NOW()` when the Consultant deletes a customer
 #### Scenario: Hard delete attempt blocked
 - **WHEN** the application layer attempts to issue a SQL DELETE on the customers table
 - **THEN** the database FK RESTRICT constraints prevent deletion if any orders reference that customer
+
+### Requirement: Customers marked inactive are excluded from the system everywhere, independent of soft-delete
+The system SHALL store an `is_active` flag (default `true`) on each customer, independent of `deleted_at`. `GET /api/v1/customers` (and therefore every list/selection built on it — the main customer list and the new-order customer-selection list alike) SHALL exclude any customer with `is_active = false`. This is distinct from soft-delete: an inactive customer's `deleted_at` remains `NULL`, they do not appear in the Trash view, and FK-RESTRICT/trash semantics are unaffected. There is currently no UI or API path to change `is_active` — the flag is set directly at the data layer.
+
+#### Scenario: Inactive customer is hidden everywhere
+- **WHEN** a customer's `is_active` is `false`
+- **THEN** the customer does not appear in the main customer list, nor in the "select customer" list of the new-order form, since both are built from the same `is_active`-filtered endpoint
+
+#### Scenario: Inactive is distinct from soft-deleted
+- **WHEN** a customer is marked inactive (as opposed to soft-deleted)
+- **THEN** `deleted_at` remains `NULL`, the customer does not appear in the Trash view, and existing orders/FK references to the customer are unaffected
 
 ### Requirement: Consultant can send and resend portal invites to customers
 The system SHALL allow the Consultant to trigger a magic-link portal invite for any customer at any time via `POST /api/v1/portal/auth/request`. Sending a new invite SHALL invalidate any previous unused token for that customer.

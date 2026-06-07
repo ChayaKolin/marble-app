@@ -28,10 +28,10 @@ function NisTooltip({ active, payload, label }: any) {
 
 function KpiCard({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="bg-slate-900 rounded-xl border border-slate-700 p-4">
-      <p className="text-slate-500 text-xs mb-1">{label}</p>
-      <p className="text-slate-100 text-2xl font-bold">{value}</p>
-      {sub && <p className="text-slate-500 text-xs mt-1">{sub}</p>}
+    <div className="bg-slate-900 rounded-xl border border-slate-700 p-3 sm:p-4 min-w-0">
+      <p className="text-slate-500 text-xs mb-1 truncate">{label}</p>
+      <p className="text-slate-100 text-lg sm:text-2xl font-bold truncate">{value}</p>
+      {sub && <p className="text-slate-500 text-xs mt-1 truncate">{sub}</p>}
     </div>
   )
 }
@@ -124,9 +124,9 @@ export default function AnalyticsDashboard() {
           <div className="space-y-2">
             {data.slaCompliance.map(entry => (
               <div key={entry.orderRef}
-                   className="flex items-center justify-between text-sm">
-                <span className="text-slate-300">{entry.customerName}</span>
-                <div className="flex items-center gap-2">
+                   className="flex items-center justify-between gap-2 text-sm">
+                <span className="text-slate-300 truncate min-w-0">{entry.customerName}</span>
+                <div className="flex items-center gap-2 shrink-0">
                   <span className="text-slate-500 text-xs">{entry.slaDealine}</span>
                   <span className={`text-xs px-2 py-0.5 rounded-full ${
                     entry.metSla
@@ -149,9 +149,9 @@ export default function AnalyticsDashboard() {
           <div className="space-y-2">
             {data.installerPerformance.map(inst => (
               <div key={inst.installerName}
-                   className="flex items-center justify-between text-sm">
-                <span className="text-slate-300">{inst.installerName}</span>
-                <div className="flex items-center gap-3 text-xs text-slate-400">
+                   className="flex items-center justify-between gap-2 text-sm">
+                <span className="text-slate-300 truncate min-w-0">{inst.installerName}</span>
+                <div className="flex items-center gap-3 text-xs text-slate-400 shrink-0">
                   <span>{inst.completedJobs} הושלמו</span>
                   {inst.jobsWithNotes > 0 && (
                     <span className="text-amber-400">{inst.jobsWithNotes} עם הערות</span>

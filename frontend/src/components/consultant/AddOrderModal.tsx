@@ -29,7 +29,12 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
   const [error, setError] = useState('')
 
   useEffect(() => {
-    fetchActiveCustomers().then(setCustomers)
+    // Only customers without an active order can have a new one created for them —
+    // a customer with an active order already has one in progress (see CustomerList's
+    // "הזמנה פעילה" button, which routes to that order instead of opening this modal).
+    // Inactive customers are excluded too — they remain visible in CustomerList but
+    // shouldn't be selectable for new orders.
+    fetchActiveCustomers().then(list => setCustomers(list.filter(c => !c.activeOrderId && c.active)))
   }, [])
 
   // When customer is selected, pre-fill address from their record

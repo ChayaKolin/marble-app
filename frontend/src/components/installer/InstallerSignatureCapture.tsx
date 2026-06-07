@@ -68,7 +68,7 @@ export default function InstallerSignatureCapture({ orderId, customerName, onCom
             onCancel={() => setShowCanvas(false)}
             disabled={submitting}
             confirmLabel={submitting ? 'שומר...' : 'אשר חתימה וסיים'}
-            cancelLabel="ביטול'}"
+            cancelLabel="ביטול"
           />
         </>
       )}

@@ -54,7 +54,7 @@ export default function TrashView() {
   const isEmpty = customers.length === 0 && orders.length === 0
 
   return (
-    <div className="space-y-8 p-6">
+    <div className="space-y-8 p-4 sm:p-6">
       <h2 className="text-xl font-semibold text-slate-100">פח האשפה</h2>
 
       {isEmpty && (
@@ -67,10 +67,10 @@ export default function TrashView() {
           <h3 className="text-slate-300 font-medium mb-3">לקוחות מחוקים</h3>
           <div className="rounded-xl border border-slate-700 divide-y divide-slate-800 overflow-hidden">
             {customers.map(c => (
-              <div key={c.id} className="flex items-center justify-between px-4 py-3 bg-slate-900">
-                <div>
-                  <p className="text-slate-200 text-sm font-medium">{c.fullName}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">
+              <div key={c.id} className="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 bg-slate-900">
+                <div className="min-w-0">
+                  <p className="text-slate-200 text-sm font-medium truncate">{c.fullName}</p>
+                  <p className="text-slate-500 text-xs mt-0.5 truncate">
                     {c.phoneNumber} · נמחק ב-{c.deletedAt ? formatDate(c.deletedAt) : '—'}
                   </p>
                 </div>
@@ -78,7 +78,7 @@ export default function TrashView() {
                   disabled={restoring === c.id}
                   onClick={() => handleRestoreCustomer(c.id)}
                   className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500
-                             text-white disabled:opacity-50 disabled:cursor-wait transition-colors"
+                             text-white disabled:opacity-50 disabled:cursor-wait transition-colors shrink-0"
                 >
                   שחזור
                 </button>
@@ -94,10 +94,10 @@ export default function TrashView() {
           <h3 className="text-slate-300 font-medium mb-3">הזמנות מחוקות</h3>
           <div className="rounded-xl border border-slate-700 divide-y divide-slate-800 overflow-hidden">
             {orders.map(o => (
-              <div key={o.id} className="flex items-center justify-between px-4 py-3 bg-slate-900">
-                <div>
-                  <p className="text-slate-200 text-sm font-medium">{o.customerFullName}</p>
-                  <p className="text-slate-500 text-xs mt-0.5">
+              <div key={o.id} className="flex items-center justify-between gap-2 px-3 sm:px-4 py-3 bg-slate-900">
+                <div className="min-w-0">
+                  <p className="text-slate-200 text-sm font-medium truncate">{o.customerFullName}</p>
+                  <p className="text-slate-500 text-xs mt-0.5 truncate">
                     {ORDER_STATUS_HE[o.status]} · {o.effectiveAddress}, {o.effectiveCity}
                     · נמחק ב-{o.deletedAt ? formatDate(o.deletedAt) : '—'}
                   </p>
@@ -106,7 +106,7 @@ export default function TrashView() {
                   disabled={restoring === o.id}
                   onClick={() => handleRestoreOrder(o.id)}
                   className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500
-                             text-white disabled:opacity-50 disabled:cursor-wait transition-colors"
+                             text-white disabled:opacity-50 disabled:cursor-wait transition-colors shrink-0"
                 >
                   שחזור
                 </button>

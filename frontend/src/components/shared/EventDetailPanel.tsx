@@ -12,7 +12,7 @@ interface Props {
 
 export default function EventDetailPanel({ event, isConsultant, onClose, onEdit, onDelete }: Props) {
   return (
-    <div className="fixed inset-y-0 start-0 w-80 bg-slate-900 border-e border-slate-700
+    <div className="fixed inset-y-0 start-0 w-80 max-w-full bg-slate-900 border-e border-slate-700
                     shadow-2xl z-50 flex flex-col">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-slate-700">

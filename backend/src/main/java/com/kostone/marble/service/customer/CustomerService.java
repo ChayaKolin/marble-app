@@ -48,6 +48,7 @@ public class CustomerService {
     public List<CustomerResponse> listActive() {
         return customerRepository.findAllByDeletedAtIsNull()
                 .stream()
+                .filter(Customer::isActive)
                 .map(c -> CustomerResponse.from(c, activeOrderIdFor(c.getId())))
                 .toList();
     }

@@ -17,20 +17,20 @@ export default function HotmanDashboard() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
       <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-40">
-        <div className="flex items-center gap-4 px-4 py-3">
-          <span className="font-bold text-emerald-400 text-sm">Kostone Marble — מפעל</span>
-          <nav className="flex gap-1 flex-1">
+        <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3">
+          <span className="font-bold text-emerald-400 text-xs sm:text-sm shrink-0 truncate">Kostone Marble — מפעל</span>
+          <nav className="flex gap-1 flex-1 min-w-0 overflow-x-auto">
             {([['sla','לוח SLA'],['calendar','לוח שנה']] as const).map(([id, label]) => (
               <button key={id} onClick={() => setTab(id)}
-                className={`px-3 py-1.5 rounded-lg text-sm transition-colors ${
+                className={`shrink-0 whitespace-nowrap px-2.5 sm:px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-colors ${
                   tab === id ? 'bg-slate-700 text-slate-100' : 'text-slate-400 hover:text-slate-200'
                 }`}>{label}</button>
             ))}
           </nav>
-          <div className="flex items-center gap-2">
-            <span className="text-slate-500 text-xs">{username}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-slate-500 text-xs hidden sm:inline">{username}</span>
             <button onClick={handleLogout}
-              className="text-slate-500 hover:text-slate-300 text-xs px-2 py-1 rounded border border-slate-700">
+              className="text-slate-500 hover:text-slate-300 text-xs px-2 py-1 rounded border border-slate-700 shrink-0">
               יציאה
             </button>
           </div>
