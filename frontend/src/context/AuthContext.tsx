@@ -14,12 +14,35 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+// Always inject token from localStorage on every request
+axios.interceptors.request.use(config => {
+  const token = localStorage.getItem('token')
+  if (token) {
+    config.headers.set('Authorization', `Bearer ${token}`)
+  }
+  return config
+})
+
+// On 401, clear session and redirect to login — but only when a session exists
+// and the failing request is not the login call itself (wrong-password returns 401 too).
+axios.interceptors.response.use(
+  res => res,
+  err => {
+    const url: string = err?.config?.url ?? ''
+    const hasSession = !!localStorage.getItem('token')
+    if (err?.response?.status === 401 && hasSession && !url.includes('/auth/login')) {
+      localStorage.clear()
+      window.location.href = '/login'
+    }
+    return Promise.reject(err)
+  }
+)
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [auth, setAuth] = useState<AuthState>(() => {
     const token = localStorage.getItem('token')
     const role  = localStorage.getItem('role')
     const username = localStorage.getItem('username')
-    if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
     return { token, role, username }
   })
 
@@ -28,13 +51,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('token', data.accessToken)
     localStorage.setItem('role', data.role)
     localStorage.setItem('username', username)
-    axios.defaults.headers.common['Authorization'] = `Bearer ${data.accessToken}`
     setAuth({ token: data.accessToken, role: data.role, username })
   }
 
   function logout() {
     localStorage.clear()
-    delete axios.defaults.headers.common['Authorization']
     setAuth({ token: null, role: null, username: null })
   }
 

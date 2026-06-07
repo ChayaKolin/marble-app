@@ -14,7 +14,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/admin/permissions")
-@PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")  // entire controller — Consultant only
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")  // entire controller — Consultant only
 @RequiredArgsConstructor
 public class PermissionController {
 

@@ -28,7 +28,7 @@ public class OrderPhotoController {
     private final FileStorageService fileStorageService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<List<Map<String, Object>>> list(@PathVariable UUID orderId) {
         return ResponseEntity.ok(
             photoRepository.findByOrderIdOrderByUploadedAtAsc(orderId).stream()
@@ -42,7 +42,7 @@ public class OrderPhotoController {
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Map<String, Object>> upload(
             @PathVariable UUID orderId,
             @RequestParam("file") MultipartFile file,
@@ -64,7 +64,7 @@ public class OrderPhotoController {
     }
 
     @DeleteMapping("/{photoId}")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Void> delete(@PathVariable UUID orderId, @PathVariable UUID photoId) {
         photoRepository.findById(photoId)
                 .filter(p -> p.getOrder().getId().equals(orderId))

@@ -25,7 +25,7 @@ public class DigitalSignatureController {
      * List signatures for an order — Consultant only (contains audit data).
      */
     @GetMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<List<SignatureResponse>> list(@PathVariable UUID orderId) {
         return ResponseEntity.ok(signatureService.listByOrder(orderId));
     }
@@ -36,7 +36,7 @@ public class DigitalSignatureController {
      * Category-to-role enforcement is handled inside DigitalSignatureService.
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','CUSTOMER','INSTALLER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_CUSTOMER','ROLE_INSTALLER')")
     public ResponseEntity<SignatureResponse> create(
             @PathVariable UUID orderId,
             @Valid @RequestBody CreateSignatureRequest req,

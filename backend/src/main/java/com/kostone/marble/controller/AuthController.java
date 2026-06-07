@@ -29,7 +29,7 @@ public class AuthController {
 
     /** List installers — used by the logistics assignment form. */
     @GetMapping("/users/installers")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<List<Map<String, Object>>> listInstallers() {
         return ResponseEntity.ok(
             userRepository.findByRole(UserRole.INSTALLER).stream()
@@ -41,7 +41,7 @@ public class AuthController {
 
     /** List factory managers — used by the permissions panel. */
     @GetMapping("/users/hotmen")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<List<Map<String, Object>>> listHotmen() {
         return ResponseEntity.ok(
             userRepository.findByRole(UserRole.FACTORY_MANAGER).stream()

@@ -28,35 +28,35 @@ public class OrderController {
 
     /** Create — Consultant only. */
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<OrderResponse> create(@Valid @RequestBody CreateOrderRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.create(req));
     }
 
     /** List active — Consultant and Hotman. */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<List<OrderResponse>> listActive() {
         return ResponseEntity.ok(orderService.listActive());
     }
 
     /** List soft-deleted (Trash) — Consultant only. */
     @GetMapping("/trash")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<List<OrderResponse>> listDeleted() {
         return ResponseEntity.ok(orderService.listDeleted());
     }
 
     /** Get single active order — Consultant and Hotman. */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<OrderResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.getById(id));
     }
 
     /** Update order notes — Consultant only. */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<OrderResponse> updateNotes(
             @PathVariable UUID id,
             @RequestBody java.util.Map<String, String> body) {
@@ -65,7 +65,7 @@ public class OrderController {
 
     /** Soft delete — Consultant only. */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Void> softDelete(@PathVariable UUID id) {
         orderService.softDelete(id);
         return ResponseEntity.noContent().build();
@@ -73,14 +73,14 @@ public class OrderController {
 
     /** Restore from trash — Consultant only. */
     @PatchMapping("/{id}/restore")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<OrderResponse> restore(@PathVariable UUID id) {
         return ResponseEntity.ok(orderService.restore(id));
     }
 
     /** Upload layout PDF — Hotman or Consultant. Notifies customer. */
     @PostMapping(value = "/{id}/layout", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<Map<String, String>> uploadLayout(
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) {
@@ -90,7 +90,7 @@ public class OrderController {
 
     /** Upload field measurements — Consultant. Advances order to REVIEWING_LAYOUT and notifies Hotman. */
     @PostMapping(value = "/{id}/measurements", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Map<String, String>> uploadMeasurements(
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) {
@@ -103,7 +103,7 @@ public class OrderController {
      * Enforces valid-transition table and business gates (deposit, signature).
      */
     @PutMapping("/{id}/status")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<OrderResponse> transition(
             @PathVariable UUID id,
             @Valid @RequestBody TransitionRequest req) {

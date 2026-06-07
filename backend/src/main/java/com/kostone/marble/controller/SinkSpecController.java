@@ -18,7 +18,7 @@ public class SinkSpecController {
     private final OrderRepository orderRepo;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<List<Map<String, Object>>> list(@PathVariable UUID orderId) {
         return ResponseEntity.ok(
             repo.findByOrderId(orderId).stream().map(s -> Map.<String,Object>of(
@@ -35,7 +35,7 @@ public class SinkSpecController {
     }
 
     @PostMapping
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Map<String, Object>> create(@PathVariable UUID orderId,
                                                        @RequestBody Map<String, Object> body) {
         Order order = orderRepo.findByIdAndDeletedAtIsNull(orderId)
@@ -56,7 +56,7 @@ public class SinkSpecController {
     }
 
     @DeleteMapping("/{sinkId}")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Void> delete(@PathVariable UUID orderId, @PathVariable UUID sinkId) {
         repo.findById(sinkId).filter(s -> s.getOrder().getId().equals(orderId))
                 .ifPresent(repo::delete);

@@ -27,7 +27,7 @@ public class CalendarController {
      * INSTALLER         → own assigned events only
      */
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER','INSTALLER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER','ROLE_INSTALLER')")
     public ResponseEntity<List<CalendarEventResponse>> getEvents() {
         return ResponseEntity.ok(calendarService.getEvents());
     }
@@ -37,14 +37,14 @@ public class CalendarController {
      * Permission enforcement is inside CalendarService.assertCanManageCalendar().
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<CalendarEventResponse> create(@Valid @RequestBody CreateCalendarEventRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(calendarService.createEvent(req));
     }
 
     /** Update event — same write permission guard. */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<CalendarEventResponse> update(
             @PathVariable UUID id,
             @Valid @RequestBody CreateCalendarEventRequest req) {
@@ -53,7 +53,7 @@ public class CalendarController {
 
     /** Delete event — same write permission guard. */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         calendarService.deleteEvent(id);
         return ResponseEntity.noContent().build();

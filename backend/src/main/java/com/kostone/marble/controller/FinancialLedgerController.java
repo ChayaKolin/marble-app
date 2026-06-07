@@ -15,7 +15,7 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/orders/{orderId}/payments")
-@PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+@PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
 @RequiredArgsConstructor
 public class FinancialLedgerController {
 

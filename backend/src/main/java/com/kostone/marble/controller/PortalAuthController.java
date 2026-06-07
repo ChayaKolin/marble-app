@@ -21,7 +21,7 @@ public class PortalAuthController {
     /** Consultant sends or resends a magic-link to a customer.
      *  Returns the portal URL so the consultant can also share it manually. */
     @PostMapping("/request")
-    @PreAuthorize("hasRole('SUPER_ADMIN_OWNER')")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<java.util.Map<String, String>> requestAccess(@Valid @RequestBody PortalAuthRequest request) {
         String portalUrl = portalAuthService.requestPortalAccess(request);
         return ResponseEntity.ok(java.util.Map.of("portalUrl", portalUrl));

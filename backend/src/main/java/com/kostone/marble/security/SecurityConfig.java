@@ -17,7 +17,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
 
 @Configuration
 @EnableWebSecurity
@@ -36,20 +36,14 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Static frontend resources — always public
                 .requestMatchers(
-                    AntPathRequestMatcher.antMatcher("/"),
-                    AntPathRequestMatcher.antMatcher("/index.html"),
-                    AntPathRequestMatcher.antMatcher("/assets/**"),
-                    AntPathRequestMatcher.antMatcher("/*.js"),
-                    AntPathRequestMatcher.antMatcher("/*.css"),
-                    AntPathRequestMatcher.antMatcher("/*.ico"),
-                    AntPathRequestMatcher.antMatcher("/*.svg"),
-                    AntPathRequestMatcher.antMatcher("/*.png")
+                    "/", "/index.html", "/assets/**",
+                    "/*.js", "/*.css", "/*.ico", "/*.svg", "/*.png"
                 ).permitAll()
                 // Public API endpoints
                 .requestMatchers(
-                    AntPathRequestMatcher.antMatcher("/api/v1/auth/login"),
-                    AntPathRequestMatcher.antMatcher("/api/v1/portal/auth/verify"),
-                    AntPathRequestMatcher.antMatcher("/files/**")
+                    "/api/v1/auth/login",
+                    "/api/v1/portal/auth/verify",
+                    "/files/**"
                 ).permitAll()
                 .anyRequest().authenticated()
             )

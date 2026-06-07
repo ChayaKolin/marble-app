@@ -21,14 +21,14 @@ public class LogisticsController {
     private final LogisticsService logisticsService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<List<LogisticsAssignmentResponse>> list(@PathVariable UUID orderId) {
         return ResponseEntity.ok(logisticsService.listByOrder(orderId));
     }
 
     /** Create dispatch assignment — auto-creates calendar event via Spring event. */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<LogisticsAssignmentResponse> create(
             @PathVariable UUID orderId,
             @Valid @RequestBody CreateLogisticsRequest req) {
@@ -38,7 +38,7 @@ public class LogisticsController {
 
     /** Mark assignment complete. */
     @PatchMapping("/{assignmentId}/complete")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN_OWNER','FACTORY_MANAGER','INSTALLER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER','ROLE_INSTALLER')")
     public ResponseEntity<LogisticsAssignmentResponse> complete(
             @PathVariable UUID orderId,
             @PathVariable UUID assignmentId) {
