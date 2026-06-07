@@ -26,6 +26,10 @@ public record CalendarEventResponse(
         // Assignee — always visible
         UUID assignedToUserId,
         String assignedToUserName,
+        // Measurer — always visible (booked from the roster, e.g. for MEASUREMENT events)
+        UUID measurerId,
+        String measurerName,
+        String measurerPhone,
         // Timing — always visible
         LocalDate eventDate,
         LocalTime startTime,
@@ -61,6 +65,9 @@ public record CalendarEventResponse(
                 order != null ? order.getStatus() : null,
                 e.getAssignedToUser() != null ? e.getAssignedToUser().getId() : null,
                 e.getAssignedToUser() != null ? e.getAssignedToUser().getFullName() : null,
+                e.getMeasurer() != null ? e.getMeasurer().getId() : null,
+                e.getMeasurer() != null ? e.getMeasurer().getFullName() : null,
+                e.getMeasurer() != null ? e.getMeasurer().getPhoneNumber() : null,
                 e.getEventDate(),
                 e.getStartTime(),
                 e.getEndTime(),

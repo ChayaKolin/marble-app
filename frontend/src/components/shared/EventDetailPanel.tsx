@@ -78,6 +78,17 @@ export default function EventDetailPanel({ event, isConsultant, onClose, onEdit,
           </div>
         )}
 
+        {/* Measurer — booked from the roster, e.g. for MEASUREMENT events */}
+        {event.measurerName && (
+          <div className="space-y-1">
+            <span className="text-xs text-slate-500">מודד</span>
+            <p className="text-slate-200 text-sm">
+              {event.measurerName}
+              {event.measurerPhone && <span className="text-slate-400 text-xs" dir="ltr"> · {event.measurerPhone}</span>}
+            </p>
+          </div>
+        )}
+
         {event.notes && (
           <div className="space-y-1">
             <span className="text-xs text-slate-500">הערות</span>

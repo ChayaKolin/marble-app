@@ -31,6 +31,9 @@ export interface CalendarEventResponse {
   orderStatus: OrderStatus | null
   assignedToUserId: string | null
   assignedToUserName: string | null
+  measurerId: string | null
+  measurerName: string | null
+  measurerPhone: string | null
   eventDate: string        // YYYY-MM-DD
   startTime: string | null // HH:mm:ss
   endTime: string | null
@@ -45,6 +48,7 @@ export interface CreateCalendarEventRequest {
   eventType: CalendarEventType
   relatedOrderId?: string
   assignedToUserId?: string
+  measurerId?: string
   eventDate: string
   startTime?: string
   endTime?: string

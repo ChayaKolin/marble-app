@@ -54,3 +54,18 @@ When the Consultant closes the deal and advances an order from `QUOTATION` to `C
 #### Scenario: Closing the deal is blocked without a chosen date and start time
 - **WHEN** the Consultant attempts to close the deal without selecting both a date and a start time for the measurer's arrival window
 - **THEN** the system does not advance the order status and prompts the Consultant to choose both
+
+### Requirement: Measurers are managed via a roster the Consultant selects from when booking an appointment
+The system SHALL maintain a roster of measurers, each with a first name, last name, and phone number (`measurers` table, soft-deletable). The Consultant SHALL be able to list the active roster (`GET /api/v1/measurers`) and add a new measurer to it (`POST /api/v1/measurers`), both restricted to the Consultant role. When booking the measurement appointment while closing the deal, the Consultant SHALL choose a measurer from this roster — selection is required before the appointment can be confirmed — with an inline option to add a new measurer to the roster and have it selected immediately without leaving the flow. The chosen measurer SHALL be linked to the resulting `MEASUREMENT` calendar event (`measurer_id`), and the event response SHALL expose the measurer's name and phone number to all authorized calendar viewers (Consultant and Factory Manager).
+
+#### Scenario: Consultant selects an existing measurer when booking the appointment
+- **WHEN** the Consultant closes the deal and picks a measurer from the roster dropdown along with a date and start time
+- **THEN** the `MEASUREMENT` calendar event is created with that measurer linked, and the calendar/side-panel display the measurer's name and phone number alongside the appointment
+
+#### Scenario: Consultant adds a new measurer inline while booking
+- **WHEN** the Consultant cannot find the desired measurer in the roster and uses the "add measurer" option to enter a first name, last name, and phone number
+- **THEN** a new measurer is created in the roster, immediately selected for the appointment being booked, and available for selection on future appointments without re-entry
+
+#### Scenario: Booking is blocked without a selected measurer
+- **WHEN** the Consultant attempts to close the deal and book the measurement appointment without selecting (or adding) a measurer
+- **THEN** the system does not create the calendar event or advance the order status, and prompts the Consultant to choose a measurer first

@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import axios from 'axios'
+import type { CustomerResponse } from '../../api/customers'
 
 interface Props {
   onClose: () => void
-  onCreated: () => void
+  onCreated: (customer: CustomerResponse) => void
 }
 
 export default function AddCustomerModal({ onClose, onCreated }: Props) {
@@ -24,14 +25,14 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
     setSaving(true)
     setError('')
     try {
-      await axios.post('/api/v1/customers', {
+      const { data } = await axios.post<CustomerResponse>('/api/v1/customers', {
         ...form,
         siteFloor: form.siteFloor ? parseInt(form.siteFloor) : null,
         siteApt: form.siteApt || null,
         architectName: form.architectName || null,
         architectPhone: form.architectPhone || null,
       })
-      onCreated()
+      onCreated(data)
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'שגיאה בשמירת הלקוח')
     } finally {

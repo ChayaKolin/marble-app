@@ -142,7 +142,12 @@ export default function CustomerList() {
       {showAdd && (
         <AddCustomerModal
           onClose={() => setShowAdd(false)}
-          onCreated={() => { setShowAdd(false); load() }}
+          onCreated={(customer) => {
+            setShowAdd(false)
+            load()
+            // Go straight to creating the order for the customer just added, with their details pre-selected
+            setAddOrderForCustomer(customer.id)
+          }}
         />
       )}
       {addOrderForCustomer && (

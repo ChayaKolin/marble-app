@@ -79,3 +79,18 @@ In addition to adding material specifications later from an order's "specs" tab,
 #### Scenario: Marble details left for later
 - **WHEN** the Consultant creates a new order without filling in the optional marble-details section
 - **THEN** the order is created with no material specification, and the Consultant can still add one later from the order's "specs" tab
+
+### Requirement: The customer may only be sent the proposal for approval once it is complete
+The system SHALL prevent the Consultant from sending the customer a request to review and digitally sign the detailed proposal (`POST /api/v1/portal/auth/request` from the order's "send to customer" step) until the proposal is complete: at least one marble/material specification exists on the order (`specs.length > 0`) AND the order has a known total amount (`totalGrossAmount` is not `null`). The send action (button and channel selector) SHALL be disabled while either condition is unmet, and the UI SHALL clearly list which of the two conditions is still missing so the Consultant knows exactly what to complete first.
+
+#### Scenario: Send blocked — no marble specification yet
+- **WHEN** the Consultant reaches the "send detailed proposal" step on an order that has no material specification yet
+- **THEN** the send button is disabled and the system shows a message indicating that marble/stone details must be added first
+
+#### Scenario: Send blocked — amount not yet set
+- **WHEN** the Consultant reaches the "send detailed proposal" step on an order whose `totalGrossAmount` is still `null`
+- **THEN** the send button is disabled and the system shows a message indicating that a clear total amount must be set first
+
+#### Scenario: Send allowed once the proposal is complete
+- **WHEN** the order has at least one material specification and a non-null `totalGrossAmount`
+- **THEN** the send button is enabled and the Consultant can request the customer's review and digital signature on the full, priced proposal

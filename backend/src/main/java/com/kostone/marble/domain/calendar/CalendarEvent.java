@@ -1,6 +1,7 @@
 package com.kostone.marble.domain.calendar;
 
 import com.kostone.marble.domain.logistics.LogisticsAssignment;
+import com.kostone.marble.domain.measurer.Measurer;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.user.User;
 import jakarta.persistence.*;
@@ -45,6 +46,10 @@ public class CalendarEvent {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_to_user_id")
     private User assignedToUser;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "measurer_id")
+    private Measurer measurer;
 
     @Column(name = "event_date", nullable = false)
     private LocalDate eventDate;

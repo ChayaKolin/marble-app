@@ -3,6 +3,7 @@ import axios from 'axios'
 import type { OrderResponse } from '../../api/orders'
 import { ORDER_STATUS_HE } from '../../api/orders'
 import { createCalendarEvent } from '../../api/calendar'
+import { type MeasurerResponse, fetchMeasurers, createMeasurer } from '../../api/measurers'
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
@@ -72,6 +73,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   /* measurement scheduling — picked when closing the deal so the measurer's visit lands on the calendar */
   const [measureSchedule, setMeasureSchedule] = useState({ date: '', time: '' })
 
+  /* measurer roster — selected (or newly added) when booking the measurement appointment */
+  const [measurers, setMeasurers] = useState<MeasurerResponse[]>([])
+  const [selectedMeasurerId, setSelectedMeasurerId] = useState('')
+  const [showNewMeasurer, setShowNewMeasurer] = useState(false)
+  const [newMeasurerForm, setNewMeasurerForm] = useState({ firstName: '', lastName: '', phoneNumber: '' })
+
   /* logistics */
   const [installers, setInstallers] = useState<any[]>([])
   const [logForm, setLogForm] = useState({ installerId: '', date: '', notes: '' })
@@ -94,6 +101,24 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
     axios.get(`/api/v1/orders/${order.id}/payments`).then(r => setLedger(r.data)).catch(() => {})
     axios.get('/api/v1/auth/users/installers').then(r => setInstallers(r.data)).catch(() => {})
+    fetchMeasurers().then(setMeasurers).catch(() => {})
+  }
+
+  /** Adds a new measurer to the roster and selects it immediately for the appointment being booked. */
+  async function addMeasurer() {
+    if (!newMeasurerForm.firstName || !newMeasurerForm.lastName || !newMeasurerForm.phoneNumber) {
+      flash('מלא שם פרטי, שם משפחה וטלפון', false); return
+    }
+    setBusy('measurer-add')
+    try {
+      const m = await createMeasurer(newMeasurerForm)
+      setMeasurers(ms => [...ms, m])
+      setSelectedMeasurerId(m.id)
+      setNewMeasurerForm({ firstName: '', lastName: '', phoneNumber: '' })
+      setShowNewMeasurer(false)
+      flash('המודד נוסף לרשימה ונבחר')
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בהוספת מודד', false) }
+    finally { setBusy('') }
   }
 
   // Reload when order changes (catches status changes after upload)
@@ -107,6 +132,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const layoutSigned = sigs.some(s => s.category === 'SLAB_LAYOUT_APPROVAL')
   const depositCleared = ledger.some(l => l.milestoneTier === 1 && l.cleared)
   const stepIndex = STATUS_STEPS.findIndex(s => s.status === order.status)
+
+  /** A clear, complete proposal — marble specs filled in AND a known total amount — is required before the customer can be asked to approve and sign. */
+  const quoteComplete = specs.length > 0 && order.totalGrossAmount != null
 
   /* ── Actions ──────────────────────────────────────────────────────── */
   const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
@@ -139,6 +167,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /** Closes the deal and books a 4-hour arrival window for the measurer's site visit on the shared calendar (visible to Hotman too). */
   async function closeDealAndScheduleMeasurement() {
+    if (!selectedMeasurerId) { flash('בחר מודד מהרשימה (או הוסף מודד חדש) לפני קביעת התור', false); return }
     if (!measureSchedule.date || !measureSchedule.time) { flash('בחר תאריך ושעת התחלה להגעת המודד', false); return }
     setBusy('advance')
     try {
@@ -148,6 +177,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
         title: `מדידה — ${order.customerFullName}`,
         eventType: 'MEASUREMENT',
         relatedOrderId: order.id,
+        measurerId: selectedMeasurerId,
         eventDate: measureSchedule.date,
         startTime: measureSchedule.time,
         endTime,
@@ -185,6 +215,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }
 
   async function sendToCustomer() {
+    if (!quoteComplete) {
+      flash('יש להשלים את פרטי השיש ולקבוע סכום כולל ברור להזמנה לפני שליחה ללקוח לאישור', false)
+      return
+    }
     setBusy('send')
     try {
       const res = await axios.post('/api/v1/portal/auth/request', { customerId: order.customerId, channel: sendChannel })
@@ -369,9 +403,51 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {order.status === 'QUOTATION' && (
             <StepCard title="שלב 1 — סגירת עסקה" color="blue">
               <p className="text-slate-400 text-xs mb-4">
-                הלקוח קיבל את הצעת המחיר הראשונית. לאחר שהגיעו להסכמה — סגרי את העסקה וקבעי תווך הגעה למודד באתר
-                (תווך קבוע של 4 שעות); התור יופיע ביומן גם אצל מנהל המפעל.
+                הלקוח קיבל את הצעת המחיר הראשונית. לאחר שהגיעו להסכמה — סגרי את העסקה, בחרי מודד מהרשימה וקבעי תווך הגעה
+                לאתר (תווך קבוע של 4 שעות); התור יופיע ביומן גם אצל מנהל המפעל.
               </p>
+
+              {/* Measurer selection — pick from the roster, or add a new one inline */}
+              <div className="space-y-2 mb-3">
+                <label className="text-slate-400 text-xs">מודד</label>
+                <div className="flex gap-2">
+                  <select value={selectedMeasurerId} dir="rtl"
+                    onChange={e => setSelectedMeasurerId(e.target.value)}
+                    className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="">בחר מודד מהרשימה...</option>
+                    {measurers.map(m => (
+                      <option key={m.id} value={m.id}>{m.firstName} {m.lastName} — {m.phoneNumber}</option>
+                    ))}
+                  </select>
+                  <button type="button" onClick={() => setShowNewMeasurer(s => !s)}
+                    className="shrink-0 text-xs px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">
+                    {showNewMeasurer ? 'ביטול' : '+ הוסף מודד'}
+                  </button>
+                </div>
+                {showNewMeasurer && (
+                  <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input type="text" value={newMeasurerForm.firstName}
+                        onChange={e => setNewMeasurerForm(f => ({ ...f, firstName: e.target.value }))}
+                        placeholder="שם פרטי"
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      <input type="text" value={newMeasurerForm.lastName}
+                        onChange={e => setNewMeasurerForm(f => ({ ...f, lastName: e.target.value }))}
+                        placeholder="שם משפחה"
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                    </div>
+                    <input type="tel" value={newMeasurerForm.phoneNumber} dir="ltr"
+                      onChange={e => setNewMeasurerForm(f => ({ ...f, phoneNumber: e.target.value }))}
+                      placeholder="טלפון"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                    <button onClick={addMeasurer} disabled={busy === 'measurer-add'}
+                      className="w-full py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium disabled:opacity-50 transition-colors">
+                      {busy === 'measurer-add' ? 'מוסיף...' : 'הוסף ובחר מודד'}
+                    </button>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-3 mb-1">
                 <div className="space-y-1">
                   <label className="text-slate-400 text-xs">תאריך הגעת המודד</label>
@@ -527,18 +603,31 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
               )}
 
+              {/* Completeness gate — the customer may only be asked to approve once the proposal is whole */}
+              {!quoteComplete && (
+                <div className="mb-3 bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2 space-y-1">
+                  <p className="text-amber-300 text-sm font-medium">יש להשלים את ההצעה לפני שליחה ללקוח לאישור:</p>
+                  {specs.length === 0 && (
+                    <p className="text-amber-400 text-xs">⬆ יש להוסיף פרטי שיש (סוג, מ"ר וכו') בלשונית "מפרט"</p>
+                  )}
+                  {order.totalGrossAmount == null && (
+                    <p className="text-amber-400 text-xs">⬆ יש לקבוע סכום כולל ברור להזמנה (ראו בראש העמוד)</p>
+                  )}
+                </div>
+              )}
+
               {/* Send channel selector */}
               <div className="flex gap-2 mb-3">
                 {(['WHATSAPP', 'EMAIL'] as const).map(ch => (
-                  <button key={ch} onClick={() => setSendChannel(ch)}
-                    className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                  <button key={ch} onClick={() => setSendChannel(ch)} disabled={!quoteComplete}
+                    className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
                     {ch === 'WHATSAPP' ? '📱 וואטסאפ' : '📧 אימייל'}
                   </button>
                 ))}
               </div>
 
-              <button onClick={sendToCustomer} disabled={busy === 'send'}
-                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors mb-3">
+              <button onClick={sendToCustomer} disabled={busy === 'send' || !quoteComplete}
+                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-3">
                 {busy === 'send' ? 'שולח...' : `📤 שלח הצעה מפורטת ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'} של הלקוח`}
               </button>
 

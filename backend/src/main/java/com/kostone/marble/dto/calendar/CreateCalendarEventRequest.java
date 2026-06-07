@@ -14,6 +14,7 @@ public record CreateCalendarEventRequest(
         @NotNull CalendarEventType eventType,
         UUID relatedOrderId,       // optional
         UUID assignedToUserId,     // optional
+        UUID measurerId,           // optional — set on MEASUREMENT events booked from the roster
         @NotNull LocalDate eventDate,
         LocalTime startTime,
         LocalTime endTime,

@@ -2,6 +2,7 @@ package com.kostone.marble.service.calendar;
 
 import com.kostone.marble.domain.calendar.CalendarEvent;
 import com.kostone.marble.domain.calendar.CalendarEventRepository;
+import com.kostone.marble.domain.measurer.MeasurerRepository;
 import com.kostone.marble.domain.order.OrderRepository;
 import com.kostone.marble.domain.user.FeatureKey;
 import com.kostone.marble.domain.user.User;
@@ -27,6 +28,7 @@ public class CalendarService {
     private final CalendarEventRepository calendarEventRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final MeasurerRepository measurerRepository;
 
     // -------------------------------------------------------------------------
     // Task 10.1 — GET: role-scoped event list
@@ -79,6 +81,10 @@ public class CalendarService {
             userRepository.findById(req.assignedToUserId())
                     .ifPresent(event::setAssignedToUser);
         }
+        if (req.measurerId() != null) {
+            measurerRepository.findByIdAndDeletedAtIsNull(req.measurerId())
+                    .ifPresent(event::setMeasurer);
+        }
 
         return CalendarEventResponse.fullFrom(calendarEventRepository.save(event));
     }
@@ -107,6 +113,10 @@ public class CalendarService {
         if (req.assignedToUserId() != null) {
             userRepository.findById(req.assignedToUserId())
                     .ifPresent(event::setAssignedToUser);
+        }
+        if (req.measurerId() != null) {
+            measurerRepository.findByIdAndDeletedAtIsNull(req.measurerId())
+                    .ifPresent(event::setMeasurer);
         }
 
         return CalendarEventResponse.fullFrom(calendarEventRepository.save(event));
