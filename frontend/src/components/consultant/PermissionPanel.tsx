@@ -115,8 +115,10 @@ export default function PermissionPanel({ hotmanUserId }: Props) {
                   className={[
                     'pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow',
                     'transform transition duration-200 ease-in-out',
-                    // RTL: move in opposite direction — use translate-x with rtl: prefix
-                    granted ? 'translate-x-0 rtl:translate-x-0' : '-translate-x-5 rtl:translate-x-5',
+                    // The thumb's rest position already sits at the track's main-start (right edge in RTL,
+                    // left edge in LTR) — translateX is a physical transform, so only the "granted" (moved)
+                    // state needs an offset, mirrored via rtl: for the opposite physical direction.
+                    granted ? 'translate-x-5 rtl:-translate-x-5' : 'translate-x-0',
                   ].join(' ')}
                 />
               </button>

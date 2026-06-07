@@ -20,7 +20,7 @@ const TABS: { id: Tab; label: string }[] = [
 export default function ConsultantDashboard() {
   const { username, logout } = useAuth()
   const navigate = useNavigate()
-  const [tab, setTab] = useState<Tab>('analytics')
+  const [tab, setTab] = useState<Tab>('customers')
 
   function handleLogout() { logout(); navigate('/login') }
 
