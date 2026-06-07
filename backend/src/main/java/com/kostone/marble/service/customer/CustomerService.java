@@ -2,6 +2,9 @@ package com.kostone.marble.service.customer;
 
 import com.kostone.marble.domain.customer.Customer;
 import com.kostone.marble.domain.customer.CustomerRepository;
+import com.kostone.marble.domain.order.Order;
+import com.kostone.marble.domain.order.OrderRepository;
+import com.kostone.marble.domain.order.OrderStatus;
 import com.kostone.marble.dto.customer.CreateCustomerRequest;
 import com.kostone.marble.dto.customer.CustomerResponse;
 import lombok.RequiredArgsConstructor;
@@ -11,14 +14,20 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.OffsetDateTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class CustomerService {
 
+    /** Statuses that mean an order is no longer "open" — a customer may have at most one order outside this set. */
+    private static final Set<OrderStatus> CLOSED_STATUSES = EnumSet.of(OrderStatus.COMPLETED, OrderStatus.ARCHIVED);
+
     private final CustomerRepository customerRepository;
+    private final OrderRepository orderRepository;
 
     @Transactional
     public CustomerResponse create(CreateCustomerRequest req) {
@@ -38,7 +47,9 @@ public class CustomerService {
     @Transactional(readOnly = true)
     public List<CustomerResponse> listActive() {
         return customerRepository.findAllByDeletedAtIsNull()
-                .stream().map(CustomerResponse::from).toList();
+                .stream()
+                .map(c -> CustomerResponse.from(c, activeOrderIdFor(c.getId())))
+                .toList();
     }
 
     @Transactional(readOnly = true)
@@ -51,9 +62,16 @@ public class CustomerService {
 
     @Transactional(readOnly = true)
     public CustomerResponse getById(UUID id) {
-        return customerRepository.findByIdAndDeletedAtIsNull(id)
-                .map(CustomerResponse::from)
+        Customer customer = customerRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        return CustomerResponse.from(customer, activeOrderIdFor(customer.getId()));
+    }
+
+    /** The customer's currently-open order id (status outside {@link #CLOSED_STATUSES}), if any. */
+    private UUID activeOrderIdFor(UUID customerId) {
+        return orderRepository.findFirstByCustomerIdAndDeletedAtIsNullAndStatusNotIn(customerId, CLOSED_STATUSES)
+                .map(Order::getId)
+                .orElse(null);
     }
 
     /** Soft delete — sets deleted_at; never issues SQL DELETE. */

@@ -49,6 +49,11 @@ export async function fetchActiveOrders(): Promise<OrderResponse[]> {
   return data
 }
 
+export async function fetchOrderById(id: string): Promise<OrderResponse> {
+  const { data } = await axios.get<OrderResponse>(`/api/v1/orders/${id}`)
+  return data
+}
+
 export async function fetchDeletedOrders(): Promise<OrderResponse[]> {
   const { data } = await axios.get<OrderResponse[]>('/api/v1/orders/trash')
   return data

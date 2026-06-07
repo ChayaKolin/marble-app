@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { type CustomerResponse, fetchActiveCustomers } from '../../api/customers'
+import { type OrderResponse, fetchOrderById } from '../../api/orders'
 import AddCustomerModal from './AddCustomerModal'
 import AddOrderModal from './AddOrderModal'
+import OrderDetailView from './OrderDetailView'
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState<CustomerResponse[]>([])
@@ -9,11 +11,22 @@ export default function CustomerList() {
   const [showAdd, setShowAdd] = useState(false)
   const [addOrderForCustomer, setAddOrderForCustomer] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [activeOrder, setActiveOrder] = useState<OrderResponse | null>(null)
 
   function load() {
     fetchActiveCustomers()
       .then(setCustomers)
       .finally(() => setLoading(false))
+  }
+
+  function openActiveOrder(orderId: string) {
+    fetchOrderById(orderId).then(setActiveOrder)
+  }
+
+  function handleOrderUpdated() {
+    if (!activeOrder) return
+    fetchOrderById(activeOrder.id).then(setActiveOrder)
+    load()
   }
 
   useEffect(() => { load() }, [])
@@ -23,6 +36,16 @@ export default function CustomerList() {
     c.phoneNumber.includes(search) ||
     c.siteCity.includes(search)
   )
+
+  if (activeOrder) {
+    return (
+      <OrderDetailView
+        order={activeOrder}
+        onBack={() => { setActiveOrder(null); load() }}
+        onUpdated={handleOrderUpdated}
+      />
+    )
+  }
 
   return (
     <div className="p-4 space-y-4" dir="rtl">
@@ -91,15 +114,26 @@ export default function CustomerList() {
                   אדריכל: {c.architectName}
                 </span>
               )}
-              {/* Quick order button */}
-              <button
-                onClick={e => { e.stopPropagation(); setAddOrderForCustomer(c.id) }}
-                className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-emerald-800/60
-                           hover:bg-emerald-700 text-emerald-300 border border-emerald-700/50
-                           transition-colors"
-              >
-                + הזמנה
-              </button>
+              {/* Quick order / active order button */}
+              {c.activeOrderId ? (
+                <button
+                  onClick={e => { e.stopPropagation(); openActiveOrder(c.activeOrderId!) }}
+                  className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-amber-800/60
+                             hover:bg-amber-700 text-amber-300 border border-amber-700/50
+                             transition-colors"
+                >
+                  הזמנה פעילה
+                </button>
+              ) : (
+                <button
+                  onClick={e => { e.stopPropagation(); setAddOrderForCustomer(c.id) }}
+                  className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-emerald-800/60
+                             hover:bg-emerald-700 text-emerald-300 border border-emerald-700/50
+                             transition-colors"
+                >
+                  + הזמנה
+                </button>
+              )}
             </div>
           ))}
         </div>
@@ -115,7 +149,7 @@ export default function CustomerList() {
         <AddOrderModal
           preselectedCustomerId={addOrderForCustomer}
           onClose={() => setAddOrderForCustomer(null)}
-          onCreated={() => { setAddOrderForCustomer(null) }}
+          onCreated={() => { setAddOrderForCustomer(null); load() }}
         />
       )}
     </div>

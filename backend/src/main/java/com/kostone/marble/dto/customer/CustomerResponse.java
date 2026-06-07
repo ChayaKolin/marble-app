@@ -17,13 +17,19 @@ public record CustomerResponse(
         String architectName,
         String architectPhone,
         OffsetDateTime createdAt,
-        OffsetDateTime deletedAt
+        OffsetDateTime deletedAt,
+        UUID activeOrderId
 ) {
     public static CustomerResponse from(Customer c) {
+        return from(c, null);
+    }
+
+    public static CustomerResponse from(Customer c, UUID activeOrderId) {
         return new CustomerResponse(
                 c.getId(), c.getFullName(), c.getPhoneNumber(), c.getEmailAddress(),
                 c.getSiteAddress(), c.getSiteCity(), c.getSiteFloor(), c.getSiteApt(),
-                c.getArchitectName(), c.getArchitectPhone(), c.getCreatedAt(), c.getDeletedAt()
+                c.getArchitectName(), c.getArchitectPhone(), c.getCreatedAt(), c.getDeletedAt(),
+                activeOrderId
         );
     }
 }

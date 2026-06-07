@@ -23,6 +23,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -37,6 +38,9 @@ public class OrderService {
     // -------------------------------------------------------------------------
     // Valid state machine transitions
     // -------------------------------------------------------------------------
+    /** Statuses that mean an order is no longer "open" — a customer may have at most one order outside this set. */
+    private static final Set<OrderStatus> CLOSED_STATUSES = EnumSet.of(COMPLETED, ARCHIVED);
+
     private static final Map<OrderStatus, Set<OrderStatus>> VALID_TRANSITIONS;
 
     static {
@@ -66,6 +70,11 @@ public class OrderService {
     public OrderResponse create(CreateOrderRequest req) {
         Customer customer = customerRepository.findByIdAndDeletedAtIsNull(req.customerId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+
+        if (orderRepository.findFirstByCustomerIdAndDeletedAtIsNullAndStatusNotIn(customer.getId(), CLOSED_STATUSES).isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ללקוח כבר יש הזמנה פתוחה — לא ניתן לפתוח שתי הזמנות פעילות לאותו לקוח");
+        }
 
         User createdBy = resolveCurrentUser();
 
