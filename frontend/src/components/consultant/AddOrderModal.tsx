@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { fetchActiveCustomers, type CustomerResponse } from '../../api/customers'
 import type { OrderResponse } from '../../api/orders'
+import CitySelect from '../shared/CitySelect'
 
 const FINISH_TYPES = ['מבריק', 'מלוטש', 'מט', 'חלק', 'מוברש']
 
@@ -51,10 +52,20 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.customerId) { setError('בחר לקוח'); return }
+
+    // Both fields are required for the spec to be saved — if she's started filling marble
+    // details but left one out, block here instead of silently dropping the spec later
+    const startedMarbleSpec = !!(form.marbleModelCode || form.squareMeters)
+    if (startedMarbleSpec && !(form.marbleModelCode && form.squareMeters)) {
+      setError('כדי לשמור את פרטי השיש יש למלא גם "סוג / קוד שיש" וגם "שטח (מ"ר)" — או להשאיר את שניהם ריקים ולמלא מאוחר יותר מתוך ההזמנה')
+      return
+    }
+
     setSaving(true)
     setError('')
+    let created: OrderResponse
     try {
-      const { data: created } = await axios.post<OrderResponse>('/api/v1/orders', {
+      const { data } = await axios.post<OrderResponse>('/api/v1/orders', {
         customerId: form.customerId,
         // Often unknown until after the on-site measurement — optional
         totalGrossAmount: form.totalGrossAmount || null,
@@ -68,9 +79,19 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
         elevatorHeightMeters: form.elevatorHeightMeters || null,
         craneRequired: form.craneRequired,
       })
+      created = data
+    } catch (err: any) {
+      setError(err?.response?.data?.detail || 'שגיאה ביצירת ההזמנה')
+      setSaving(false)
+      return
+    }
 
-      // Optional marble spec, filled in right at creation time instead of later via the order's "specs" tab
-      if (form.marbleModelCode && form.squareMeters) {
+    // Optional marble spec, filled in right at creation time instead of later via the order's "מפרט" tab.
+    // The order itself is already saved at this point — if attaching the spec fails, still proceed to
+    // the order's page (rather than showing a misleading "order creation failed" error) so she can add
+    // it from there instead of losing the new order altogether.
+    if (form.marbleModelCode && form.squareMeters) {
+      try {
         await axios.post(`/api/v1/orders/${created.id}/materials`, {
           marbleModelCode: form.marbleModelCode,
           finishType: form.finishType,
@@ -79,14 +100,15 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
           waterEdgeRequired: form.waterEdgeRequired,
           cooktopBaseFee: parseFloat(form.cooktopBaseFee || '200'),
         })
+      } catch {
+        setSaving(false)
+        onCreated(created)
+        return
       }
-
-      onCreated(created)
-    } catch (err: any) {
-      setError(err?.response?.data?.detail || 'שגיאה ביצירת ההזמנה')
-    } finally {
-      setSaving(false)
     }
+
+    setSaving(false)
+    onCreated(created)
   }
 
   const selectedCustomer = customers.find(c => c.id === form.customerId)
@@ -166,7 +188,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
             </summary>
             <div className="grid grid-cols-1 gap-3 pt-2">
               <FieldSmall label="כתובת" value={form.siteAddress} onChange={v => set('siteAddress', v)} />
-              <FieldSmall label="עיר"   value={form.siteCity}    onChange={v => set('siteCity', v)} />
+              <CitySelect label="עיר" value={form.siteCity} onChange={v => set('siteCity', v)} small />
               <div className="grid grid-cols-2 gap-3">
                 <FieldSmall label="קומה" value={form.siteFloor} onChange={v => set('siteFloor', v)} type="number" />
                 <FieldSmall label="דירה" value={form.siteApt}   onChange={v => set('siteApt', v)} />

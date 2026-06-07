@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import axios from 'axios'
 import type { CustomerResponse } from '../../api/customers'
+import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput } from '../../lib/constants'
+import CitySelect from '../shared/CitySelect'
 
 interface Props {
   onClose: () => void
@@ -52,7 +54,8 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
           {/* Required fields */}
           <div className="grid grid-cols-1 gap-4">
             <Field label="שם מלא *" value={form.fullName} onChange={v => set('fullName', v)} required />
-            <Field label="טלפון *" value={form.phoneNumber} onChange={v => set('phoneNumber', v)} required dir="ltr" />
+            <Field label="טלפון *" value={form.phoneNumber} onChange={v => set('phoneNumber', sanitizePhoneInput(v))}
+                   required dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
             <Field label='דוא"ל *' value={form.emailAddress} onChange={v => set('emailAddress', v)} required dir="ltr" type="email" />
           </div>
 
@@ -61,7 +64,7 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
 
           <div className="grid grid-cols-1 gap-3">
             <Field label="כתובת *" value={form.siteAddress} onChange={v => set('siteAddress', v)} required />
-            <Field label="עיר *" value={form.siteCity} onChange={v => set('siteCity', v)} required />
+            <CitySelect label="עיר *" value={form.siteCity} onChange={v => set('siteCity', v)} required />
             <div className="grid grid-cols-2 gap-3">
               <Field label="קומה" value={form.siteFloor} onChange={v => set('siteFloor', v)} type="number" />
               <Field label="דירה" value={form.siteApt} onChange={v => set('siteApt', v)} />
@@ -73,7 +76,8 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="שם אדריכל" value={form.architectName} onChange={v => set('architectName', v)} />
-            <Field label="טלפון אדריכל" value={form.architectPhone} onChange={v => set('architectPhone', v)} dir="ltr" />
+            <Field label="טלפון אדריכל" value={form.architectPhone} onChange={v => set('architectPhone', sanitizePhoneInput(v))}
+                   dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -96,9 +100,10 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
   )
 }
 
-function Field({ label, value, onChange, required, dir, type = 'text' }: {
+function Field({ label, value, onChange, required, dir, type = 'text', inputMode, maxLength, pattern, title }: {
   label: string; value: string; onChange: (v: string) => void;
   required?: boolean; dir?: string; type?: string;
+  inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; maxLength?: number; pattern?: string; title?: string;
 }) {
   return (
     <div className="space-y-1">
@@ -109,6 +114,10 @@ function Field({ label, value, onChange, required, dir, type = 'text' }: {
         onChange={e => onChange(e.target.value)}
         required={required}
         dir={dir}
+        inputMode={inputMode}
+        maxLength={maxLength}
+        pattern={pattern}
+        title={title}
         className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2
                    text-slate-100 text-sm focus:outline-none focus:border-emerald-500
                    placeholder:text-slate-600"

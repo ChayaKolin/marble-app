@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Order address inherits from customer and can be overridden
-When an order is created, the system SHALL pre-populate the order's address fields from the linked customer's `site_address`, `site_city`, `site_floor`, and `site_apt`. The Consultant MAY override any address field at the order level. A `NULL` order-level address field SHALL resolve to the customer's corresponding field. The effective address SHALL be computed as `COALESCE(orders.site_*, customers.site_*)`.
+When an order is created, the system SHALL pre-populate the order's address fields from the linked customer's `site_address`, `site_city`, `site_floor`, and `site_apt`. The Consultant MAY override any address field at the order level. A `NULL` order-level address field SHALL resolve to the customer's corresponding field. The effective address SHALL be computed as `COALESCE(orders.site_*, customers.site_*)`. As with the customer profile, the `site_city` override SHALL be chosen from the predefined list of Israeli cities via a searchable selection (typing filters the list of suggestions; arbitrary free text cannot be stored) — see the customer-management "City fields are restricted to a predefined list" requirement.
 
 #### Scenario: Order created — address inherited
 - **WHEN** the Consultant creates a new order for a customer
@@ -70,7 +70,7 @@ The system SHALL NOT require a `totalGrossAmount` when an order is created or ed
 - **THEN** the system shows a prompt to set the order's total amount first and does not allow recording a measurer payment computed against a missing amount
 
 ### Requirement: Marble (stone) specifications can be added at order-creation time
-In addition to adding material specifications later from an order's "specs" tab, the Consultant SHALL have the option to fill in marble/stone details (model code, finish type, square meters, counter-edge detailing, water-edge requirement, cooktop base fee) directly in the new-order form. When such details are provided, the system SHALL create the order first and then attach the material specification to the newly created order in the same flow.
+In addition to adding material specifications later from an order's "specs" tab, the Consultant SHALL have the option to fill in marble/stone details (model code, finish type, square meters, counter-edge detailing, water-edge requirement, cooktop base fee) directly in the new-order form. When such details are provided, the system SHALL create the order first and then attach the material specification to the newly created order in the same flow. The model/code and square-meters fields are both required for the specification to be saved — the system SHALL NOT silently discard a partially filled-in marble section, and SHALL NOT report the order itself as failed to create when only the attached specification could not be saved.
 
 #### Scenario: Marble details supplied while creating the order
 - **WHEN** the Consultant fills in the optional marble-details section (at minimum, model/code and square meters) while creating a new order and submits the form
@@ -79,6 +79,14 @@ In addition to adding material specifications later from an order's "specs" tab,
 #### Scenario: Marble details left for later
 - **WHEN** the Consultant creates a new order without filling in the optional marble-details section
 - **THEN** the order is created with no material specification, and the Consultant can still add one later from the order's "specs" tab
+
+#### Scenario: Partially filled marble section is rejected before submission
+- **WHEN** the Consultant fills in only the model/code or only the square-meters field of the optional marble-details section (but not both) and submits the new-order form
+- **THEN** the system blocks submission with a message explaining that both fields are required for the specification to be saved (or that both should be left empty to add it later), and does not create the order until this is resolved
+
+#### Scenario: Order is preserved even if attaching the specification fails
+- **WHEN** the order itself is created successfully but the subsequent request to attach the supplied material specification fails
+- **THEN** the system still takes the Consultant to the new order's detail page (instead of showing a misleading "order creation failed" error), so they can add the specification from the order's "specs" tab without losing the order they just created
 
 ### Requirement: The customer may only be sent the proposal for approval once it is complete
 The system SHALL prevent the Consultant from sending the customer a request to review and digitally sign the detailed proposal (`POST /api/v1/portal/auth/request` from the order's "send to customer" step) until the proposal is complete: at least one marble/material specification exists on the order (`specs.length > 0`) AND the order has a known total amount (`totalGrossAmount` is not `null`). The send action (button and channel selector) SHALL be disabled while either condition is unmet, and the UI SHALL clearly list which of the two conditions is still missing so the Consultant knows exactly what to complete first.

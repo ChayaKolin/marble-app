@@ -4,6 +4,7 @@ import type { OrderResponse } from '../../api/orders'
 import { ORDER_STATUS_HE } from '../../api/orders'
 import { createCalendarEvent } from '../../api/calendar'
 import { type MeasurerResponse, fetchMeasurers, createMeasurer } from '../../api/measurers'
+import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput } from '../../lib/constants'
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
@@ -275,7 +276,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
       setSpecs(s => [...s, { ...specForm, id: r.data.id, squareMeters: parseFloat(specForm.squareMeters), cooktopBaseFee: parseFloat(specForm.cooktopBaseFee || '200'), waterEdgeRequired: specForm.waterEdgeRequired }])
       setSpecForm({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200' })
       flash('מפרט נוסף')
-    } catch { flash('שגיאה', false) }
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשמירת המפרט', false) }
     finally { setBusy('') }
   }
 
@@ -427,18 +428,18 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 {showNewMeasurer && (
                   <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
                     <div className="grid grid-cols-2 gap-2">
-                      <input type="text" value={newMeasurerForm.firstName}
+                      <input type="text" value={newMeasurerForm.firstName} required
                         onChange={e => setNewMeasurerForm(f => ({ ...f, firstName: e.target.value }))}
-                        placeholder="שם פרטי"
+                        placeholder="שם פרטי *"
                         className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
-                      <input type="text" value={newMeasurerForm.lastName}
+                      <input type="text" value={newMeasurerForm.lastName} required
                         onChange={e => setNewMeasurerForm(f => ({ ...f, lastName: e.target.value }))}
-                        placeholder="שם משפחה"
+                        placeholder="שם משפחה *"
                         className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                     </div>
-                    <input type="tel" value={newMeasurerForm.phoneNumber} dir="ltr"
-                      onChange={e => setNewMeasurerForm(f => ({ ...f, phoneNumber: e.target.value }))}
-                      placeholder="טלפון"
+                    <input type="tel" value={newMeasurerForm.phoneNumber} dir="ltr" required
+                      onChange={e => setNewMeasurerForm(f => ({ ...f, phoneNumber: sanitizePhoneInput(e.target.value) }))}
+                      placeholder="טלפון *" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE}
                       className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                     <button onClick={addMeasurer} disabled={busy === 'measurer-add'}
                       className="w-full py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium disabled:opacity-50 transition-colors">
