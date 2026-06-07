@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { fetchActiveCustomers, type CustomerResponse } from '../../api/customers'
+import type { OrderResponse } from '../../api/orders'
 
 const FINISH_TYPES = ['מבריק', 'מלוטש', 'מט', 'חלק', 'מוברש']
 
 interface Props {
   onClose: () => void
-  onCreated: () => void
+  onCreated: (order: OrderResponse) => void
   preselectedCustomerId?: string
 }
 
@@ -53,7 +54,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
     setSaving(true)
     setError('')
     try {
-      const { data: created } = await axios.post('/api/v1/orders', {
+      const { data: created } = await axios.post<OrderResponse>('/api/v1/orders', {
         customerId: form.customerId,
         // Often unknown until after the on-site measurement — optional
         totalGrossAmount: form.totalGrossAmount || null,
@@ -80,7 +81,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
         })
       }
 
-      onCreated()
+      onCreated(created)
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'שגיאה ביצירת ההזמנה')
     } finally {

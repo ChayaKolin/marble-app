@@ -11,12 +11,16 @@ The system SHALL require `site_address`, `site_city` on every customer record. `
 - **WHEN** the Consultant submits a new customer profile with `site_address` empty
 - **THEN** the system returns HTTP 400 and the customer is not created
 
-### Requirement: Creating a customer leads straight into creating their order
-Once the Consultant successfully saves a new customer profile, the system SHALL close the "add customer" form and immediately open the "new order" form with that customer pre-selected, so the Consultant can proceed straight to placing the order without having to locate the customer again in the list.
+### Requirement: Creating a customer leads straight into creating and viewing their order
+Once the Consultant successfully saves a new customer profile, the system SHALL close the "add customer" form and immediately open the "new order" form with that customer pre-selected, so the Consultant can proceed straight to placing the order without having to locate the customer again in the list. Once that order is created, the system SHALL navigate the Consultant directly to that order's detail page (instead of back to the customer list), so they land on its details immediately and can continue working the deal (e.g. closing it and booking the measurement).
 
 #### Scenario: New order flow opens right after saving the customer
 - **WHEN** the Consultant submits the "add customer" form and the customer is created successfully
 - **THEN** the "add customer" form closes and the "new order" form opens with the new customer already selected and their site details shown
+
+#### Scenario: Order detail page opens right after creating the order
+- **WHEN** the Consultant submits the "new order" form and the order is created successfully
+- **THEN** the "new order" form closes and the Consultant lands directly on that order's detail page showing its details
 
 ### Requirement: Customers are soft-deleted, never hard-deleted
 The system SHALL set `deleted_at = NOW()` when the Consultant deletes a customer. The system SHALL NOT issue a SQL `DELETE` against the `customers` table. Soft-deleted customers SHALL be hidden from all standard UI views and API list responses.

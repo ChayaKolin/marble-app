@@ -154,7 +154,12 @@ export default function CustomerList() {
         <AddOrderModal
           preselectedCustomerId={addOrderForCustomer}
           onClose={() => setAddOrderForCustomer(null)}
-          onCreated={() => { setAddOrderForCustomer(null); load() }}
+          onCreated={(order) => {
+            setAddOrderForCustomer(null)
+            load()
+            // Land straight on the new order's detail page with its details, instead of back on the list
+            setActiveOrder(order)
+          }}
         />
       )}
     </div>
