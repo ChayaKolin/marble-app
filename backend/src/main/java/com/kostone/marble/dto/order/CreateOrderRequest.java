@@ -10,7 +10,8 @@ import java.util.UUID;
 
 public record CreateOrderRequest(
         @NotNull UUID customerId,
-        @NotNull @DecimalMin("0.01") BigDecimal totalGrossAmount,
+        // Optional — the final amount is often unknown until after the on-site measurement
+        @DecimalMin("0.01") BigDecimal totalGrossAmount,
         // Address override — NULL means inherit from customer
         @Size(max = 300) String siteAddress,
         @Size(max = 100) String siteCity,

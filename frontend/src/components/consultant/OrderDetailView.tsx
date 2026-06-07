@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import type { OrderResponse } from '../../api/orders'
 import { ORDER_STATUS_HE } from '../../api/orders'
+import { createCalendarEvent } from '../../api/calendar'
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
@@ -33,6 +34,13 @@ const STATUS_COLOR: Record<string, string> = {
 }
 const FINISH_TYPES = ['מבריק', 'מלוטש', 'מט', 'חלק', 'מוברש']
 
+/** Adds whole hours to an "HH:mm" string, wrapping past midnight. */
+function addHours(time: string, hours: number): string {
+  const [h, m] = time.split(':').map(Number)
+  const total = (h + hours) % 24
+  return `${String(total).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+}
+
 /* ── Props ──────────────────────────────────────────────────────────── */
 interface Props { order: OrderResponse; onBack: () => void; onUpdated: () => void }
 
@@ -44,6 +52,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [sigs, setSigs]       = useState<Sig[]>([])
   const [ledger, setLedger]   = useState<LedgerEntry[]>([])
   const [notes, setNotes]     = useState(order.notes ?? '')
+  const [amountDraft, setAmountDraft] = useState(order.totalGrossAmount != null ? String(order.totalGrossAmount) : '')
   const [msg, setMsg]         = useState<{ text: string; ok: boolean }>({ text: '', ok: true })
   const [busy, setBusy]       = useState('')
 
@@ -59,6 +68,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [sendChannel, setSendChannel] = useState<'EMAIL' | 'WHATSAPP'>('WHATSAPP')
   const [portalLink, setPortalLink]   = useState('')
   const [copied, setCopied]           = useState(false)
+
+  /* measurement scheduling — picked when closing the deal so the measurer's visit lands on the calendar */
+  const [measureSchedule, setMeasureSchedule] = useState({ date: '', time: '' })
 
   /* logistics */
   const [installers, setInstallers] = useState<any[]>([])
@@ -97,7 +109,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const stepIndex = STATUS_STEPS.findIndex(s => s.status === order.status)
 
   /* ── Actions ──────────────────────────────────────────────────────── */
-  const measurerFeeAmount = Number(order.totalGrossAmount) * 0.2
+  const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
 
   async function recordMeasurerPayment() {
     if (!measurerPaid) { flash('יש לסמן אישור תשלום למודד', false); return }
@@ -120,6 +132,27 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     try {
       await axios.put(`/api/v1/orders/${order.id}/status`, { targetStatus: target })
       flash('סטטוס עודכן')
+      onUpdated()
+    } catch (e: any) { flash(e?.response?.data?.detail || 'לא ניתן להתקדם — בדוק שהתנאים מולאו', false) }
+    finally { setBusy('') }
+  }
+
+  /** Closes the deal and books a 4-hour arrival window for the measurer's site visit on the shared calendar (visible to Hotman too). */
+  async function closeDealAndScheduleMeasurement() {
+    if (!measureSchedule.date || !measureSchedule.time) { flash('בחר תאריך ושעת התחלה להגעת המודד', false); return }
+    setBusy('advance')
+    try {
+      const endTime = addHours(measureSchedule.time, 4)
+      await axios.put(`/api/v1/orders/${order.id}/status`, { targetStatus: 'CLOSED_AWAITING_MEASUREMENT' })
+      await createCalendarEvent({
+        title: `מדידה — ${order.customerFullName}`,
+        eventType: 'MEASUREMENT',
+        relatedOrderId: order.id,
+        eventDate: measureSchedule.date,
+        startTime: measureSchedule.time,
+        endTime,
+      })
+      flash(`העסקה נסגרה ונקבע תור למודד ביומן — בין ${measureSchedule.time} ל-${endTime}`)
       onUpdated()
     } catch (e: any) { flash(e?.response?.data?.detail || 'לא ניתן להתקדם — בדוק שהתנאים מולאו', false) }
     finally { setBusy('') }
@@ -285,8 +318,35 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
         <div className="space-y-4">
 
           {/* Summary row */}
-          <div className="flex gap-4 text-sm bg-slate-900 rounded-xl border border-slate-700 p-3">
-            <div><p className="text-slate-500 text-xs">סכום כולל</p><p className="text-emerald-300 font-semibold">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</p></div>
+          <div className="flex flex-wrap items-end gap-4 text-sm bg-slate-900 rounded-xl border border-slate-700 p-3">
+            <div className="space-y-1">
+              <p className="text-slate-500 text-xs">סכום כולל</p>
+              {order.totalGrossAmount == null ? (
+                <p className="text-amber-400 text-xs">טרם נקבע — יוגדר לאחר המדידה</p>
+              ) : (
+                <p className="text-emerald-300 font-semibold">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</p>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <input type="number" min="0.01" step="0.01" value={amountDraft} dir="ltr"
+                onChange={e => setAmountDraft(e.target.value)}
+                placeholder="הזן/עדכן סכום..."
+                className="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+              <button
+                onClick={async () => {
+                  setBusy('amount')
+                  try {
+                    await axios.put(`/api/v1/orders/${order.id}`, { totalGrossAmount: amountDraft || null })
+                    flash('הסכום עודכן')
+                    onUpdated()
+                  } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בעדכון הסכום', false) }
+                  finally { setBusy('') }
+                }}
+                disabled={busy === 'amount'}
+                className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
+                {busy === 'amount' ? '...' : 'עדכן סכום'}
+              </button>
+            </div>
             <div><p className="text-slate-500 text-xs">פתיחה</p><p className="text-slate-300">{new Date(order.createdAt).toLocaleDateString('he-IL')}</p></div>
             {depositCleared && <div><p className="text-slate-500 text-xs">מקדמה</p><p className="text-emerald-400 text-xs">✓ שולמה</p></div>}
             {layoutSigned && <div><p className="text-slate-500 text-xs">תוכנית</p><p className="text-emerald-400 text-xs">✓ חתומה</p></div>}
@@ -309,11 +369,33 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {order.status === 'QUOTATION' && (
             <StepCard title="שלב 1 — סגירת עסקה" color="blue">
               <p className="text-slate-400 text-xs mb-4">
-                הלקוח קיבל את הצעת המחיר הראשונית. לאחר שהגיעו להסכמה — סגרי את העסקה ושלחי מודד לאתר.
+                הלקוח קיבל את הצעת המחיר הראשונית. לאחר שהגיעו להסכמה — סגרי את העסקה וקבעי תווך הגעה למודד באתר
+                (תווך קבוע של 4 שעות); התור יופיע ביומן גם אצל מנהל המפעל.
               </p>
-              <button onClick={() => advanceTo('CLOSED_AWAITING_MEASUREMENT')} disabled={busy === 'advance'}
+              <div className="grid grid-cols-2 gap-3 mb-1">
+                <div className="space-y-1">
+                  <label className="text-slate-400 text-xs">תאריך הגעת המודד</label>
+                  <input type="date" value={measureSchedule.date} dir="ltr"
+                    onChange={e => setMeasureSchedule(f => ({ ...f, date: e.target.value }))}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-400 text-xs">תחילת התווך (4 שעות)</label>
+                  <input type="time" value={measureSchedule.time} dir="ltr"
+                    onChange={e => setMeasureSchedule(f => ({ ...f, time: e.target.value }))}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
+                </div>
+              </div>
+              {measureSchedule.time && (
+                <p className="text-slate-500 text-xs mb-3">
+                  המודד יגיע בין השעה <span className="text-slate-300 font-medium" dir="ltr">{measureSchedule.time}</span> לבין
+                  {' '}<span className="text-slate-300 font-medium" dir="ltr">{addHours(measureSchedule.time, 4)}</span>
+                </p>
+              )}
+              {!measureSchedule.time && <div className="mb-3" />}
+              <button onClick={closeDealAndScheduleMeasurement} disabled={busy === 'advance'}
                 className="w-full py-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors">
-                {busy === 'advance' ? '...' : '✓ סגור עסקה — שלח מודד לאתר'}
+                {busy === 'advance' ? '...' : '✓ סגור עסקה — קבע תור למודד'}
               </button>
             </StepCard>
           )}
@@ -349,7 +431,11 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               <p className="text-slate-300 text-xs font-medium mb-3">ב. אישורים לפני המשך</p>
 
               {/* Checkbox 1: Measurer paid */}
-              {depositCleared ? (
+              {order.totalGrossAmount == null ? (
+                <div className="mb-3 bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2">
+                  <p className="text-amber-300 text-sm">יש להזין סכום כולל להזמנה (ראו בראש העמוד) לפני אישור תשלום למודד</p>
+                </div>
+              ) : depositCleared ? (
                 <div className="flex items-center gap-2 mb-3 bg-emerald-900/20 border border-emerald-800/40 rounded-lg px-3 py-2">
                   <span className="text-emerald-400 text-sm">✓</span>
                   <span className="text-emerald-300 text-sm">תשלום למודד אושר — ₪{measurerFeeAmount.toLocaleString('he-IL')}</span>

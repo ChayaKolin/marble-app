@@ -26,6 +26,11 @@ public class AnalyticsService {
     private final FinancialLedgerRepository ledgerRepository;
     private final LogisticsAssignmentRepository assignmentRepository;
 
+    /** The total amount may be unset until after the on-site measurement — treat it as zero in financial aggregates. */
+    private static BigDecimal grossOrZero(Order order) {
+        return order.getTotalGrossAmount() != null ? order.getTotalGrossAmount() : BigDecimal.ZERO;
+    }
+
     private static final List<String> MONTHS_HE = List.of(
             "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
             "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
@@ -39,10 +44,11 @@ public class AnalyticsService {
         int currentYear = now.getYear();
 
         // ── KPIs ──────────────────────────────────────────────────────────
+        // The total amount is often unset until after the on-site measurement — treat it as zero in aggregates.
         BigDecimal totalGrossThisMonth = allActive.stream()
                 .filter(o -> o.getCreatedAt().getYear() == currentYear
                         && o.getCreatedAt().getMonthValue() == currentMonth)
-                .map(Order::getTotalGrossAmount)
+                .map(AnalyticsService::grossOrZero)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         BigDecimal collected = ledgerRepository.findAll().stream()
@@ -56,7 +62,7 @@ public class AnalyticsService {
         BigDecimal pipeline = allActive.stream()
                 .filter(o -> o.getStatus() != OrderStatus.COMPLETED
                         && o.getStatus() != OrderStatus.ARCHIVED)
-                .map(Order::getTotalGrossAmount)
+                .map(AnalyticsService::grossOrZero)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         long backlog = allActive.stream()
@@ -68,7 +74,7 @@ public class AnalyticsService {
                 .filter(o -> o.getCreatedAt().getYear() == currentYear)
                 .collect(Collectors.groupingBy(
                         o -> o.getCreatedAt().getMonthValue(),
-                        Collectors.reducing(BigDecimal.ZERO, Order::getTotalGrossAmount, BigDecimal::add)));
+                        Collectors.reducing(BigDecimal.ZERO, AnalyticsService::grossOrZero, BigDecimal::add)));
 
         Map<Integer, BigDecimal> collectedByMonth = ledgerRepository.findAll().stream()
                 .filter(l -> l.isCleared() && l.getClearedAt() != null

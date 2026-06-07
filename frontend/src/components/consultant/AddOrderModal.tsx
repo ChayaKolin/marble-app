@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import axios from 'axios'
 import { fetchActiveCustomers, type CustomerResponse } from '../../api/customers'
 
+const FINISH_TYPES = ['מבריק', 'מלוטש', 'מט', 'חלק', 'מוברש']
+
 interface Props {
   onClose: () => void
   onCreated: () => void
@@ -17,6 +19,9 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
     siteAddress: '', siteCity: '', siteFloor: '', siteApt: '',
     elevatorWidthMeters: '', elevatorHeightMeters: '',
     craneRequired: false,
+    // Marble specification — optional at creation time; can also be added later from the order's "specs" tab
+    marbleModelCode: '', finishType: 'מבריק', squareMeters: '',
+    counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200',
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -45,13 +50,13 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.customerId) { setError('בחר לקוח'); return }
-    if (!form.totalGrossAmount) { setError('הזן סכום כולל'); return }
     setSaving(true)
     setError('')
     try {
-      await axios.post('/api/v1/orders', {
+      const { data: created } = await axios.post('/api/v1/orders', {
         customerId: form.customerId,
-        totalGrossAmount: form.totalGrossAmount,
+        // Often unknown until after the on-site measurement — optional
+        totalGrossAmount: form.totalGrossAmount || null,
         notes: form.notes || null,
         // Send address overrides only if they differ from customer defaults
         siteAddress: form.siteAddress || null,
@@ -62,6 +67,19 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
         elevatorHeightMeters: form.elevatorHeightMeters || null,
         craneRequired: form.craneRequired,
       })
+
+      // Optional marble spec, filled in right at creation time instead of later via the order's "specs" tab
+      if (form.marbleModelCode && form.squareMeters) {
+        await axios.post(`/api/v1/orders/${created.id}/materials`, {
+          marbleModelCode: form.marbleModelCode,
+          finishType: form.finishType,
+          squareMeters: parseFloat(form.squareMeters),
+          counterEdgeDetailing: form.counterEdgeDetailing || null,
+          waterEdgeRequired: form.waterEdgeRequired,
+          cooktopBaseFee: parseFloat(form.cooktopBaseFee || '200'),
+        })
+      }
+
       onCreated()
     } catch (err: any) {
       setError(err?.response?.data?.detail || 'שגיאה ביצירת ההזמנה')
@@ -109,15 +127,16 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
 
           {/* Total amount */}
           <div className="space-y-1">
-            <label className="text-slate-400 text-xs">סכום כולל (₪) *</label>
+            <label className="text-slate-400 text-xs">
+              סכום כולל (₪) <span className="text-slate-600">— אופציונלי, ניתן להשלים לאחר המדידה</span>
+            </label>
             <input
               type="number"
               min="0.01"
               step="0.01"
               value={form.totalGrossAmount}
               onChange={e => set('totalGrossAmount', e.target.value)}
-              placeholder="למשל: 25000"
-              required
+              placeholder="למשל: 25000 (ניתן להשאיר ריק כרגע)"
               dir="ltr"
               className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2
                          text-slate-100 text-sm focus:outline-none focus:border-emerald-500
@@ -172,6 +191,42 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
               <span className="text-slate-300 text-sm">נדרש מנוף</span>
               <span className="text-slate-500 text-xs">(על חשבון הלקוח)</span>
             </label>
+          </details>
+
+          {/* Marble specification — optional; can also be added later from the order's "מפרט" tab */}
+          <details className="space-y-3">
+            <summary className="text-slate-400 text-xs cursor-pointer hover:text-slate-300">
+              פרטי שיש (אופציונלי — אפשר למלא כבר עכשיו או מאוחר יותר מתוך ההזמנה)
+            </summary>
+            <div className="grid grid-cols-1 gap-3 pt-2">
+              <FieldSmall label="סוג / קוד שיש" value={form.marbleModelCode}
+                          onChange={v => set('marbleModelCode', v)} />
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-slate-500 text-xs">סוג גימור</label>
+                  <select value={form.finishType} onChange={e => set('finishType', e.target.value)}
+                    className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5
+                               text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                    {FINISH_TYPES.map(ft => <option key={ft} value={ft}>{ft}</option>)}
+                  </select>
+                </div>
+                <FieldSmall label='שטח (מ"ר)' value={form.squareMeters} type="number"
+                            onChange={v => set('squareMeters', v)} dir="ltr" />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <FieldSmall label="קאנט (עיבוי קאנט)" value={form.counterEdgeDetailing}
+                            onChange={v => set('counterEdgeDetailing', v)} />
+                <FieldSmall label="עלות כיריים (₪)" value={form.cooktopBaseFee} type="number"
+                            onChange={v => set('cooktopBaseFee', v)} dir="ltr" />
+              </div>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.waterEdgeRequired}
+                       onChange={e => set('waterEdgeRequired', e.target.checked)}
+                       className="rounded border-slate-600 bg-slate-800 text-emerald-500" />
+                <span className="text-slate-300 text-sm">נדרש קאנט מים</span>
+              </label>
+              <p className="text-slate-600 text-xs">* יש למלא סוג שיש ושטח כדי שהמפרט יישמר עם ההזמנה</p>
+            </div>
           </details>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}

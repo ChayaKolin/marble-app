@@ -2,7 +2,6 @@ package com.kostone.marble.service.order;
 
 import com.kostone.marble.domain.customer.Customer;
 import com.kostone.marble.domain.customer.CustomerRepository;
-import com.kostone.marble.domain.financial.FinancialLedgerRepository;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.order.OrderRepository;
 import com.kostone.marble.domain.order.OrderStatus;
@@ -58,7 +57,6 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
-    private final FinancialLedgerRepository ledgerRepository;
     private final DigitalSignatureRepository signatureRepository;
 
     /**
@@ -171,17 +169,6 @@ public class OrderService {
         return OrderResponse.from(orderRepository.save(order));
     }
 
-    private void assertDepositPaid(Order order) {
-        BigDecimal deposited = ledgerRepository.sumClearedAmountByOrderAndTier(order.getId(), 1);
-        BigDecimal required = order.getTotalGrossAmount()
-                .multiply(new BigDecimal("0.20"))
-                .setScale(2, java.math.RoundingMode.HALF_UP);
-        if (deposited.compareTo(required) < 0) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,
-                    "נדרש תשלום מקדמה של 20% לפני המשך");
-        }
-    }
-
     private void assertLayoutSigned(Order order) {
         boolean signed = signatureRepository.existsByOrderIdAndCategory(
                 order.getId(), SignatureCategory.SLAB_LAYOUT_APPROVAL);
@@ -191,11 +178,27 @@ public class OrderService {
         }
     }
 
+    /** Partial update — currently supports notes and the total amount, which is often only known after the on-site measurement. */
     @Transactional
-    public OrderResponse updateNotes(UUID id, String notes) {
+    public OrderResponse updateDetails(UUID id, java.util.Map<String, Object> fields) {
         Order order = orderRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
-        order.setNotes(notes);
+        if (fields.containsKey("notes")) {
+            Object notes = fields.get("notes");
+            order.setNotes(notes == null ? null : notes.toString());
+        }
+        if (fields.containsKey("totalGrossAmount")) {
+            Object amount = fields.get("totalGrossAmount");
+            if (amount == null || amount.toString().isBlank()) {
+                order.setTotalGrossAmount(null);
+            } else {
+                BigDecimal parsed = new BigDecimal(amount.toString());
+                if (parsed.compareTo(new BigDecimal("0.01")) < 0) {
+                    throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "הסכום חייב להיות גדול מאפס");
+                }
+                order.setTotalGrossAmount(parsed);
+            }
+        }
         return OrderResponse.from(orderRepository.save(order));
     }
 

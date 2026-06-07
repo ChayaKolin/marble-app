@@ -54,13 +54,13 @@ public class OrderController {
         return ResponseEntity.ok(orderService.getById(id));
     }
 
-    /** Update order notes — Consultant only. */
+    /** Partial update — notes and/or total amount (often only known after the on-site measurement) — Consultant only. */
     @PutMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
-    public ResponseEntity<OrderResponse> updateNotes(
+    public ResponseEntity<OrderResponse> update(
             @PathVariable UUID id,
-            @RequestBody java.util.Map<String, String> body) {
-        return ResponseEntity.ok(orderService.updateNotes(id, body.get("notes")));
+            @RequestBody java.util.Map<String, Object> body) {
+        return ResponseEntity.ok(orderService.updateDetails(id, body));
     }
 
     /** Soft delete — Consultant only. */

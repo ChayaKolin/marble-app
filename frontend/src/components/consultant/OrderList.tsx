@@ -112,7 +112,7 @@ export default function OrderList() {
               </div>
 
               <div className="flex items-center gap-4 text-xs text-slate-500">
-                <span>₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
+                <span>{order.totalGrossAmount != null ? `₪${Number(order.totalGrossAmount).toLocaleString('he-IL')}` : 'סכום טרם נקבע'}</span>
                 <span>·</span>
                 <span>{new Date(order.createdAt).toLocaleDateString('he-IL')}</span>
                 {order.craneRequired && (

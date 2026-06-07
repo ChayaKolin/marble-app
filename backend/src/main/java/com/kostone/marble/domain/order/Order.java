@@ -57,7 +57,7 @@ public class Order {
     private boolean craneRequired = false;
 
     // Financial — BigDecimal enforced; ArchUnit rejects float/double in this package
-    @Column(name = "total_gross_amount", nullable = false, precision = 12, scale = 2)
+    @Column(name = "total_gross_amount", precision = 12, scale = 2)
     private BigDecimal totalGrossAmount;
 
     @Column(name = "factory_sla_deadline")

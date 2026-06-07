@@ -34,7 +34,7 @@ export interface OrderResponse {
   effectiveApt: string | null
   overrideAddress: string | null
   overrideCity: string | null
-  totalGrossAmount: number
+  totalGrossAmount: number | null
   craneRequired: boolean
   factorySlaDeadline: string | null
   notes: string | null

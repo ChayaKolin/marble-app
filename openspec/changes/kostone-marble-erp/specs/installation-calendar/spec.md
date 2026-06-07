@@ -39,3 +39,18 @@ The system SHALL show customer name, effective delivery address, floor/apt, inst
 #### Scenario: Hotman opens event detail
 - **WHEN** the Factory Manager clicks an installation event
 - **THEN** the side panel shows operational details but no payment balance or financial figures
+
+### Requirement: Closing the deal requires booking a 4-hour measurer arrival window on the calendar
+When the Consultant closes the deal and advances an order from `QUOTATION` to `CLOSED_AWAITING_MEASUREMENT`, the system SHALL require choosing a date and a start time for the measurer's visit, and SHALL automatically compute the end of a fixed 4-hour arrival window (`endTime = startTime + 4h`). The system SHALL create a `MEASUREMENT` calendar event linked to that order (`relatedOrderId`) with the chosen `eventDate`, `startTime`, and the computed `endTime`, so both the Consultant and the Factory Manager can see on the shared calendar during which 4-hour window the measurer will visit which customer.
+
+#### Scenario: Measurement appointment booked as a 4-hour window when closing the deal
+- **WHEN** the Consultant closes the deal on a `QUOTATION` order, picks a date and a start time (e.g. 09:00) for the measurer, and confirms
+- **THEN** the order advances to `CLOSED_AWAITING_MEASUREMENT`, a `MEASUREMENT` calendar event for that order appears on the calendar spanning the chosen date from the start time through start time + 4 hours (e.g. 09:00–13:00), and the Consultant sees the computed arrival window displayed before confirming
+
+#### Scenario: Hotman sees the measurement appointment window
+- **WHEN** the Factory Manager opens the calendar after a measurement appointment has been booked
+- **THEN** the `MEASUREMENT` event is visible with the customer name, address, and the scheduled 4-hour arrival window (start and end time, without financial figures)
+
+#### Scenario: Closing the deal is blocked without a chosen date and start time
+- **WHEN** the Consultant attempts to close the deal without selecting both a date and a start time for the measurer's arrival window
+- **THEN** the system does not advance the order status and prompts the Consultant to choose both
