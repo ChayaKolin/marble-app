@@ -248,9 +248,11 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     try {
       const fd = new FormData()
       fd.append('file', file)
+      await axios.post(`/api/v1/orders/${order.id}/photos`, fd)
       flash('תמונה הועלתה')
       // Reload from server to ensure consistent state
-      axios.get(`/api/v1/orders/${order.id}/photos`).then(r => setPhotos(r.data)).catch(() => {})
+      const r = await axios.get(`/api/v1/orders/${order.id}/photos`)
+      setPhotos(r.data)
     } catch (e: any) {
       flash(e?.response?.data?.detail || `שגיאה: ${e?.response?.status ?? 'לא ידוע'}`, false)
     } finally { setBusy('') }
@@ -931,7 +933,11 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               {busy === 'photo' ? 'מעלה...' : '+ הוסף תמונה'}
             </button>
             <input ref={photoRef} type="file" accept="image/*" className="hidden"
-              onChange={e => e.target.files?.[0] && uploadPhoto(e.target.files[0])} />
+              onChange={e => {
+                const file = e.target.files?.[0]
+                e.target.value = ''
+                if (file) uploadPhoto(file)
+              }} />
           </div>
           {photos.length === 0 ? (
             <div className="rounded-xl border-2 border-dashed border-slate-700 p-10 text-center cursor-pointer hover:border-slate-500 transition-colors"

@@ -1,0 +1,71 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v3.3.5)
+
+2026-06-10T21:51:33.861+03:00  INFO 13580 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Starting MarbleApplication using Java 21.0.11 with PID 13580 (C:\Users\USER\Desktop\marble-app\backend\target\classes started by USER in C:\Users\USER\Desktop\marble-app\backend)
+2026-06-10T21:51:33.861+03:00  INFO 13580 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-06-10T21:51:34.658+03:00  INFO 13580 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-10T21:51:34.765+03:00  INFO 13580 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 91 ms. Found 14 JPA repository interfaces.
+2026-06-10T21:51:35.478+03:00  INFO 13580 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-06-10T21:51:35.494+03:00  INFO 13580 --- [kostone-marble] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-10T21:51:35.494+03:00  INFO 13580 --- [kostone-marble] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.31]
+2026-06-10T21:51:35.561+03:00  INFO 13580 --- [kostone-marble] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-06-10T21:51:35.563+03:00  INFO 13580 --- [kostone-marble] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 1641 ms
+2026-06-10T21:51:36.207+03:00  INFO 13580 --- [kostone-marble] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/kostonemarble_db (PostgreSQL 18.4)
+2026-06-10T21:51:36.207+03:00  WARN 13580 --- [kostone-marble] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: PostgreSQL 18.4 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 16.
+2026-06-10T21:51:36.253+03:00  INFO 13580 --- [kostone-marble] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 8 migrations (execution time 00:00.027s)
+2026-06-10T21:51:36.301+03:00  INFO 13580 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 7
+2026-06-10T21:51:36.324+03:00  INFO 13580 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "8 - activity log"
+2026-06-10T21:51:36.460+03:00  INFO 13580 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "public", now at version v8 (execution time 00:00.126s)
+2026-06-10T21:51:36.538+03:00  INFO 13580 --- [kostone-marble] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-06-10T21:51:36.587+03:00  INFO 13580 --- [kostone-marble] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-06-10T21:51:36.620+03:00  INFO 13580 --- [kostone-marble] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-06-10T21:51:36.896+03:00  INFO 13580 --- [kostone-marble] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-10T21:51:36.912+03:00  INFO 13580 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-10T21:51:37.106+03:00  INFO 13580 --- [kostone-marble] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@38848217
+2026-06-10T21:51:37.111+03:00  INFO 13580 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-10T21:51:37.137+03:00  WARN 13580 --- [kostone-marble] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-06-10T21:51:38.203+03:00  INFO 13580 --- [kostone-marble] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-10T21:51:38.257+03:00  INFO 13580 --- [kostone-marble] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-10T21:51:38.257+03:00  WARN 13580 --- [kostone-marble] [           main] com.kostone.marble.config.TwilioConfig   : Twilio credentials not set — WhatsApp notifications will use stub
+2026-06-10T21:51:38.589+03:00  INFO 13580 --- [kostone-marble] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-10T21:51:39.199+03:00  INFO 13580 --- [kostone-marble] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-06-10T21:51:39.199+03:00  WARN 13580 --- [kostone-marble] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
+2026-06-10T21:51:39.527+03:00  WARN 13580 --- [kostone-marble] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-06-10T21:51:40.109+03:00  INFO 13580 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-06-10T21:51:40.127+03:00  INFO 13580 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Started MarbleApplication in 6.721 seconds (process running for 7.163)
+2026-06-10T21:52:09.432+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-10T21:52:09.432+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-10T21:52:09.432+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+2026-06-10T21:56:18.432+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\3aecde36-7cdd-4dbf-91b4-dc6e66421e19\ff87c63c-e961-4bf2-bbb6-19f8545ea7de___________.jpg
+2026-06-10T21:56:23.037+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-3] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T21:56:27.836+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-5] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T21:58:06.589+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-5] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\3aecde36-7cdd-4dbf-91b4-dc6e66421e19\824408a5-4d31-4d91-bf6c-120429c4ee36_a.jpg
+2026-06-10T21:58:06.644+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\3aecde36-7cdd-4dbf-91b4-dc6e66421e19\c45b7633-f740-459d-ba18-cbf5ef319869_b.jpg
+2026-06-10T22:02:53.768+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\3aecde36-7cdd-4dbf-91b4-dc6e66421e19\0c145983-cc83-4bab-b9c4-d4dd0d0db9e6___________.jpg
+2026-06-10T22:02:56.652+03:00  WARN 13580 --- [kostone-marble] [io-8080-exec-10] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:03:02.693+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-4] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:03:25.700+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-4] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\0a1a47d8-8bbc-4ce6-a0a4-1e273e4383b9\34a1e8a6-3811-4ae9-87b3-98d6f7e9025d___________.jpg
+2026-06-10T22:03:28.830+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-5] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\0a1a47d8-8bbc-4ce6-a0a4-1e273e4383b9\78624149-b21b-41ef-900c-eb474c85a6a9_______________.jpg
+2026-06-10T22:03:32.844+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-6] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:03:39.443+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-9] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:06:07.668+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-4] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:06:11.792+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-7] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\0a1a47d8-8bbc-4ce6-a0a4-1e273e4383b9\55ba2e35-71ea-47cc-a0c2-524ba53715e1_______________.jpg
+2026-06-10T22:06:14.356+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-8] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:06:57.356+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-8] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\0a1a47d8-8bbc-4ce6-a0a4-1e273e4383b9\a02e845a-f5f5-4a8e-b736-7951b304b010_______________.jpg
+2026-06-10T22:07:00.002+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-6] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:07:02.906+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\0a1a47d8-8bbc-4ce6-a0a4-1e273e4383b9\840addd4-33de-4ee6-99a2-3dbb60f3d814___________.jpg
+2026-06-10T22:07:08.986+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-9] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:07:19.820+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-7] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:07:23.887+03:00  WARN 13580 --- [kostone-marble] [nio-8080-exec-3] .w.s.m.s.DefaultHandlerExceptionResolver : Resolved [org.springframework.web.multipart.MaxUploadSizeExceededException: Maximum upload size exceeded]
+2026-06-10T22:07:58.057+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-5] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a47698c3-eb92-424e-9e90-82c3f90a33e0\bbbcc420-5d3b-433a-b41e-ae8b169ec98f___________2026-06-01_225113.png
+2026-06-10T22:08:00.615+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-1] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a47698c3-eb92-424e-9e90-82c3f90a33e0\6bd60729-2292-4064-a104-e65865d21d86___________2026-06-01_224749.png
+2026-06-10T22:08:02.741+03:00  INFO 13580 --- [kostone-marble] [io-8080-exec-10] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a47698c3-eb92-424e-9e90-82c3f90a33e0\1742dab6-6ff7-4917-b44d-ecb9d6e0d34d___________2026-06-05_005157.png
+2026-06-10T22:08:06.402+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-9] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a47698c3-eb92-424e-9e90-82c3f90a33e0\2873f706-0420-4420-9ea3-e06306686ae4___________2026-06-05_141303.png
+2026-06-10T22:08:10.643+03:00  INFO 13580 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a47698c3-eb92-424e-9e90-82c3f90a33e0\aed91a3b-b090-435f-9856-d44a22153869___________2026-06-05_042621.png
