@@ -22,6 +22,21 @@ The system SHALL render a role-specific UI shell based on the JWT `role` claim. 
 - **WHEN** a Factory Manager logs in
 - **THEN** the frontend renders the Hotman shell: SLA Alert Deck, Blueprints Panel, and Calendar Preview Strip — not the Analytics Dashboard
 
+### Requirement: The "Kostone Marble" logo in the dashboard header returns to the default tab
+In each role's dashboard shell (Consultant, Factory Manager), the "Kostone Marble" logo in the top-right corner of the header SHALL act as a "go home" button: it switches the active tab back to that role's default tab (Consultant: "לקוחות" / customers; Factory Manager: "לוח SLA" / sla) and discards any in-progress nested view (e.g. an open order detail), restoring that tab to the same state it has immediately after login — regardless of which tab is currently active or what is open within it.
+
+#### Scenario: Logo click returns Consultant to the default tab
+- **WHEN** the Consultant is viewing any tab (e.g. "לוח שנה", "פח אשפה") and clicks the "Kostone Marble" logo in the header
+- **THEN** the dashboard switches to the "לקוחות" (customers) tab showing the full customer list
+
+#### Scenario: Logo click closes an open order and returns to the customer list
+- **WHEN** the Consultant has an order detail view open (reached by clicking into a customer's order from the "לקוחות" tab) and clicks the "Kostone Marble" logo
+- **THEN** the order detail view closes without prompting, and the Consultant sees the full customer list — the same as right after login
+
+#### Scenario: Logo click returns Factory Manager to the default tab
+- **WHEN** the Factory Manager is viewing the calendar tab and clicks the "Kostone Marble — מפעל" logo in the header
+- **THEN** the dashboard switches to the "לוח SLA" tab
+
 ### Requirement: Customer authenticates via magic-link only
 The system SHALL never create or store a password for Customer-role users. Authentication SHALL use a one-time token delivered via email or WhatsApp. On successful verification the system SHALL issue a 7-day JWT with `role: CUSTOMER` and `sub: customer_id`.
 

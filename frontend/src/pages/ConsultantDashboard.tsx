@@ -23,15 +23,24 @@ export default function ConsultantDashboard() {
   const { username, logout } = useAuth()
   const navigate = useNavigate()
   const [tab, setTab] = useState<Tab>('customers')
+  const [customersResetKey, setCustomersResetKey] = useState(0)
 
   function handleLogout() { logout(); navigate('/login') }
+
+  function goHome() {
+    setTab('customers')
+    setCustomersResetKey(k => k + 1)
+  }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
       {/* Top nav */}
       <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-40">
         <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3">
-          <span className="font-bold text-emerald-400 text-xs sm:text-sm shrink-0">Kostone Marble</span>
+          <button onClick={goHome}
+            className="font-bold text-emerald-400 text-xs sm:text-sm shrink-0 hover:text-emerald-300 transition-colors">
+            Kostone Marble
+          </button>
           <nav className="flex gap-1 flex-1 min-w-0 overflow-x-auto">
             {TABS.map(t => (
               <button
@@ -63,7 +72,7 @@ export default function ConsultantDashboard() {
       {/* Content */}
       <main>
         {tab === 'analytics' && <AnalyticsDashboard />}
-        {tab === 'customers' && <CustomerList />}
+        {tab === 'customers' && <CustomerList key={customersResetKey} />}
         {tab === 'orders'    && <OrderList />}
         {tab === 'calendar'  && <ConsultantCalendar />}
         {tab === 'trash'     && <TrashView />}
