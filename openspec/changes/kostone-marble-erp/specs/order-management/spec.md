@@ -117,3 +117,18 @@ The system SHALL prevent the Consultant from sending the customer a request to r
 #### Scenario: Send allowed once the proposal is complete
 - **WHEN** the order has at least one material specification and a non-null `totalGrossAmount`
 - **THEN** the send button is enabled and the Consultant can request the customer's review and digital signature on the full, priced proposal
+
+### Requirement: Sink specifications support a quantity and free-text notes
+Each sink specification entry SHALL have a `quantity INT NOT NULL DEFAULT 1` and an optional `notes TEXT` field. This allows the Consultant to record a single entry for multiple identical sinks (e.g. a matching pair — one for dairy use, one for meat use — entered as quantity 2) instead of duplicating the entry, and to capture free-text remarks (e.g. installation preferences) per sink entry. The "+ הוסף כיור" form in the order's "specs" / sinks sub-tab SHALL include a quantity number input (default 1) and a notes text input. Existing sink entries SHALL display their quantity (when greater than 1) and notes (when present).
+
+#### Scenario: Sink added with quantity greater than one
+- **WHEN** the Consultant adds a sink specification and sets quantity to 2
+- **THEN** the sink entry is saved with `quantity = 2` and the order's sinks list displays "× 2" alongside that entry
+
+#### Scenario: Sink added with a note
+- **WHEN** the Consultant fills in the notes field while adding a sink specification
+- **THEN** the note is persisted and displayed on that sink entry's card
+
+#### Scenario: Sink added without specifying quantity
+- **WHEN** the Consultant adds a sink specification without changing the quantity field
+- **THEN** the sink entry is saved with `quantity = 1` and no "× N" indicator is shown

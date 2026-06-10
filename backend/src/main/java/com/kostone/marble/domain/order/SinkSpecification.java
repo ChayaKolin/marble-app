@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.util.UUID;
 
@@ -37,6 +39,14 @@ public class SinkSpecification {
     @Column(name = "color", nullable = false, length = 50)
     private String color;
 
-    @Column(name = "mounting_style", nullable = false, length = 20)
-    private String mountingStyle = "UNDERMOUNT";
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "mounting_style", nullable = false)
+    private SinkMountStyle mountingStyle = SinkMountStyle.UNDERMOUNT;
+
+    @Column(name = "quantity", nullable = false)
+    private int quantity = 1;
+
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
 }

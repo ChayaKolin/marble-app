@@ -363,7 +363,9 @@ CREATE TABLE sink_specifications (
     height_mm INT NOT NULL,
     depth_mm INT NOT NULL,
     color VARCHAR(50) NOT NULL,
-    mounting_style sink_mount_style NOT NULL DEFAULT 'UNDERMOUNT'
+    mounting_style sink_mount_style NOT NULL DEFAULT 'UNDERMOUNT',
+    quantity INT NOT NULL DEFAULT 1,  -- e.g. 2 identical sinks (one dairy, one meat)
+    notes TEXT                         -- free-text remarks for this sink entry
 );
 
 -- Multiple rows per order are valid (return visits).

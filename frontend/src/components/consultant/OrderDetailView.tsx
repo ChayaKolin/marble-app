@@ -9,7 +9,7 @@ import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput } from '../../lib/con
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
 interface MatSpec    { id: string; marbleModelCode: string; finishType: string; squareMeters: number; counterEdgeDetailing: string; waterEdgeRequired: boolean; cooktopBaseFee: number }
-interface SinkSpec   { id: string; brand: string; modelName: string; widthMm: number; heightMm: number; depthMm: number; color: string; mountingStyle: string }
+interface SinkSpec   { id: string; brand: string; modelName: string; widthMm: number; heightMm: number; depthMm: number; color: string; mountingStyle: string; quantity: number; notes?: string }
 interface Sig        { category: string; signedAt: string }
 interface LedgerEntry{ id: string; amountAllocated: number; milestoneTier: number; cleared: boolean }
 
@@ -88,7 +88,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* specs form */
   const [specForm, setSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200' })
-  const [sinkForm, setSinkForm] = useState({ brand: '', modelName: '', widthMm: '', heightMm: '', depthMm: '', color: '', mountingStyle: 'UNDERMOUNT' })
+  const [sinkForm, setSinkForm] = useState({ brand: '', modelName: '', widthMm: '', heightMm: '', depthMm: '', color: '', mountingStyle: 'UNDERMOUNT', quantity: '1', notes: '' })
   const [specsTab, setSpecsTab] = useState<'marble' | 'sinks'>('marble')
 
   const photoRef   = useRef<HTMLInputElement>(null)
@@ -270,9 +270,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
         widthMm:  parseInt(sinkForm.widthMm)  || 0,
         heightMm: parseInt(sinkForm.heightMm) || 0,
         depthMm:  parseInt(sinkForm.depthMm)  || 0,
+        quantity: parseInt(sinkForm.quantity) || 1,
       })
-      setSinks(s => [...s, { ...sinkForm, id: r.data.id, widthMm: parseInt(sinkForm.widthMm)||0, heightMm: parseInt(sinkForm.heightMm)||0, depthMm: parseInt(sinkForm.depthMm)||0 }])
-      setSinkForm({ brand:'', modelName:'', widthMm:'', heightMm:'', depthMm:'', color:'', mountingStyle:'UNDERMOUNT' })
+      setSinks(s => [...s, { ...sinkForm, id: r.data.id, widthMm: parseInt(sinkForm.widthMm)||0, heightMm: parseInt(sinkForm.heightMm)||0, depthMm: parseInt(sinkForm.depthMm)||0, quantity: parseInt(sinkForm.quantity)||1 }])
+      setSinkForm({ brand:'', modelName:'', widthMm:'', heightMm:'', depthMm:'', color:'', mountingStyle:'UNDERMOUNT', quantity:'1', notes:'' })
       flash('כיור נוסף')
     } catch { flash('שגיאה', false) }
     finally { setBusy('') }
@@ -858,9 +859,13 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               {sinks.map(s => (
                 <div key={s.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex items-start justify-between">
                   <div className="space-y-1">
-                    <p className="text-slate-100 font-medium">{s.brand} <span className="text-slate-400">· {s.modelName}</span></p>
+                    <p className="text-slate-100 font-medium">
+                      {s.brand} <span className="text-slate-400">· {s.modelName}</span>
+                      {s.quantity > 1 && <span className="text-emerald-400"> × {s.quantity}</span>}
+                    </p>
                     <p className="text-slate-400 text-sm">{s.widthMm}×{s.heightMm}×{s.depthMm} מ"מ · {s.color}</p>
                     <p className="text-slate-500 text-xs">{s.mountingStyle === 'UNDERMOUNT' ? 'הטמנה מתחת' : 'הטמנה שטוחה'}</p>
+                    {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
                   </div>
                   <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/sinks/${s.id}`); setSinks(p => p.filter(x => x.id !== s.id)) }}
                     className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50 shrink-0">מחק</button>
@@ -883,6 +888,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       <option value="FLUSH_MOUNT">הטמנה שטוחה</option>
                     </select>
                   </div>
+                  <SF label="כמות" value={sinkForm.quantity} type="number" onChange={v => setSinkForm(f => ({ ...f, quantity: v }))} dir="ltr" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-slate-400 text-xs">הערה</label>
+                  <textarea value={sinkForm.notes} onChange={e => setSinkForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
                 </div>
                 <button onClick={addSink} disabled={busy === 'sink'}
                   className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm disabled:opacity-50">

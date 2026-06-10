@@ -29,7 +29,9 @@ public class SinkSpecController {
                 "heightMm", s.getHeightMm(),
                 "depthMm", s.getDepthMm(),
                 "color", s.getColor(),
-                "mountingStyle", s.getMountingStyle()
+                "mountingStyle", s.getMountingStyle(),
+                "quantity", s.getQuantity(),
+                "notes", s.getNotes() != null ? s.getNotes() : ""
             )).toList()
         );
     }
@@ -49,7 +51,9 @@ public class SinkSpecController {
         sink.setHeightMm(intVal(body, "heightMm", 0));
         sink.setDepthMm(intVal(body, "depthMm", 0));
         sink.setColor(str(body, "color", ""));
-        sink.setMountingStyle(str(body, "mountingStyle", "UNDERMOUNT"));
+        sink.setMountingStyle(mountingStyle(body));
+        sink.setQuantity(Math.max(1, intVal(body, "quantity", 1)));
+        sink.setNotes(str(body, "notes", null));
 
         repo.save(sink);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", sink.getId()));
@@ -68,5 +72,9 @@ public class SinkSpecController {
     }
     private int intVal(Map<String, Object> m, String k, int def) {
         Object v = m.get(k); try { return v != null ? Integer.parseInt(v.toString()) : def; } catch (Exception e) { return def; }
+    }
+    private SinkMountStyle mountingStyle(Map<String, Object> m) {
+        try { return SinkMountStyle.valueOf(str(m, "mountingStyle", "UNDERMOUNT")); }
+        catch (Exception e) { return SinkMountStyle.UNDERMOUNT; }
     }
 }
