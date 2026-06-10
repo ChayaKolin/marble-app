@@ -1,6 +1,7 @@
 package com.kostone.marble.controller;
 
 import com.kostone.marble.dto.order.CreateOrderRequest;
+import com.kostone.marble.dto.order.DeleteOrderRequest;
 import com.kostone.marble.dto.order.OrderResponse;
 import com.kostone.marble.dto.order.TransitionRequest;
 import com.kostone.marble.service.factory.LayoutUploadService;
@@ -63,11 +64,11 @@ public class OrderController {
         return ResponseEntity.ok(orderService.updateDetails(id, body));
     }
 
-    /** Soft delete — Consultant only. */
+    /** Soft delete — Consultant only. Optional reason recorded in the activity log. */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
-    public ResponseEntity<Void> softDelete(@PathVariable UUID id) {
-        orderService.softDelete(id);
+    public ResponseEntity<Void> softDelete(@PathVariable UUID id, @RequestBody(required = false) DeleteOrderRequest req) {
+        orderService.softDelete(id, req != null ? req.reason() : null);
         return ResponseEntity.noContent().build();
     }
 

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import axios from 'axios'
 import type { OrderResponse } from '../../api/orders'
-import { ORDER_STATUS_HE } from '../../api/orders'
+import { ORDER_STATUS_HE, deleteOrder } from '../../api/orders'
 import { createCalendarEvent } from '../../api/calendar'
 import { type MeasurerResponse, fetchMeasurers, createMeasurer } from '../../api/measurers'
 import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput } from '../../lib/constants'
@@ -57,6 +57,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [amountDraft, setAmountDraft] = useState(order.totalGrossAmount != null ? String(order.totalGrossAmount) : '')
   const [msg, setMsg]         = useState<{ text: string; ok: boolean }>({ text: '', ok: true })
   const [busy, setBusy]       = useState('')
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteReason, setDeleteReason] = useState('')
 
   /* step-2 checkboxes */
   const [measurerPaid, setMeasurerPaid]     = useState(false)
@@ -217,7 +219,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   async function sendToCustomer() {
     if (!quoteComplete) {
-      flash('יש להשלים את פרטי השיש ולקבוע סכום כולל ברור להזמנה לפני שליחה ללקוח לאישור', false)
+      const missing: string[] = []
+      if (specs.length === 0) missing.push('מפרט שיש/אבן (להבדיל מכיור) — "סוג / קוד שיש" ו"שטח (מ"ר)" בתת-הלשונית "שיש ואבן"')
+      if (order.totalGrossAmount == null) missing.push('סכום כולל ברור להזמנה')
+      flash(`יש להשלים לפני שליחה ללקוח לאישור — חסר: ${missing.join(' וגם ')}`, false)
       return
     }
     setBusy('send')
@@ -252,7 +257,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }
 
   async function addSink() {
-    if (!sinkForm.brand || !sinkForm.modelName) { flash('מלא מותג ודגם', false); return }
+    const missing: string[] = []
+    if (!sinkForm.brand)     missing.push('מותג')
+    if (!sinkForm.modelName) missing.push('דגם')
+    if (missing.length > 0) { flash(`יש למלא ${missing.join(' ו')} לפני הוספת הכיור`, false); return }
     setBusy('sink')
     try {
       const r = await axios.post(`/api/v1/orders/${order.id}/sinks`, {
@@ -269,7 +277,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }
 
   async function addSpec() {
-    if (!specForm.marbleModelCode || !specForm.squareMeters) { flash('מלא סוג שיש ומ"ר', false); return }
+    const missing: string[] = []
+    if (!specForm.marbleModelCode) missing.push('סוג / קוד שיש')
+    if (!specForm.squareMeters)    missing.push('שטח (מ"ר)')
+    if (missing.length > 0) { flash(`יש למלא ${missing.join(' ו')} לפני הוספת המפרט`, false); return }
     setBusy('spec')
     try {
       const r = await axios.post(`/api/v1/orders/${order.id}/materials`, { ...specForm, squareMeters: parseFloat(specForm.squareMeters), cooktopBaseFee: parseFloat(specForm.cooktopBaseFee || '200') })
@@ -280,8 +291,21 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     finally { setBusy('') }
   }
 
+  /** Soft-deletes the order — available until the customer digitally approves the slab layout. */
+  async function handleDeleteOrder() {
+    setBusy('delete')
+    try {
+      await deleteOrder(order.id, deleteReason)
+      onBack()
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה במחיקת ההזמנה', false); setShowDeleteConfirm(false) }
+    finally { setBusy('') }
+  }
+
   async function assignInstaller() {
-    if (!logForm.installerId || !logForm.date) { flash('בחר מתקין ותאריך', false); return }
+    const missing: string[] = []
+    if (!logForm.installerId) missing.push('מתקין')
+    if (!logForm.date)        missing.push('תאריך התקנה')
+    if (missing.length > 0) { flash(`יש לבחור ${missing.join(' ו')} לפני שיבוץ המתקין`, false); return }
     setBusy('logistics')
     try {
       await axios.post(`/api/v1/orders/${order.id}/logistics`, { installerUserId: logForm.installerId, deliveryScheduledDate: new Date(logForm.date).toISOString(), primary: true, installerNotes: logForm.notes || null })
@@ -609,7 +633,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 <div className="mb-3 bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2 space-y-1">
                   <p className="text-amber-300 text-sm font-medium">יש להשלים את ההצעה לפני שליחה ללקוח לאישור:</p>
                   {specs.length === 0 && (
-                    <p className="text-amber-400 text-xs">⬆ יש להוסיף פרטי שיש (סוג, מ"ר וכו') בלשונית "מפרט"</p>
+                    <p className="text-amber-400 text-xs">⬆ חסר מפרט שיש/אבן (להבדיל מכיור!) — יש להוסיף פריט עם "סוג / קוד שיש" ו"שטח (מ"ר)" בתת-הלשונית "שיש ואבן" שבתוך לשונית "מפרט"</p>
                   )}
                   {order.totalGrossAmount == null && (
                     <p className="text-amber-400 text-xs">⬆ יש לקבוע סכום כולל ברור להזמנה (ראו בראש העמוד)</p>
@@ -737,6 +761,16 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               )}
             </div>
           )}
+
+          {/* Cancel order — available until the customer digitally approves the slab layout */}
+          {!layoutSigned && (
+            <div className="pt-2 text-center">
+              <button onClick={() => setShowDeleteConfirm(true)}
+                className="text-red-400 hover:text-red-300 text-xs underline-offset-2 hover:underline transition-colors">
+                הלקוח התחרט — מחק הזמנה
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -855,6 +889,35 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               </div>
             </div>
           )}
+        </div>
+      )}
+
+      {/* ── Delete confirmation modal ── */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" dir="rtl">
+          <div className="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-sm p-5 space-y-4">
+            <h3 className="text-slate-100 font-semibold text-base">מחיקת הזמנה</h3>
+            <p className="text-slate-400 text-sm">
+              האם את בטוחה שברצונך למחוק את ההזמנה של <span className="text-slate-200 font-medium">{order.customerFullName}</span>?
+              ניתן יהיה לשחזר אותה מהפח (סל המחזור).
+            </p>
+            <div className="space-y-1">
+              <label className="text-slate-400 text-xs">סיבת המחיקה (אופציונלי)</label>
+              <textarea value={deleteReason} onChange={e => setDeleteReason(e.target.value)} rows={2}
+                placeholder="למשל: הלקוח התחרט..."
+                className="w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-red-500 placeholder:text-slate-600 resize-none" />
+            </div>
+            <div className="flex gap-2">
+              <button onClick={() => { setShowDeleteConfirm(false); setDeleteReason('') }} disabled={busy === 'delete'}
+                className="flex-1 py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm disabled:opacity-50 transition-colors">
+                ביטול
+              </button>
+              <button onClick={handleDeleteOrder} disabled={busy === 'delete'}
+                className="flex-1 py-2.5 rounded-lg bg-red-700 hover:bg-red-600 text-white text-sm font-semibold disabled:opacity-50 transition-colors">
+                {busy === 'delete' ? '...' : 'מחק הזמנה'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

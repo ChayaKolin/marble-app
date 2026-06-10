@@ -1,5 +1,7 @@
 package com.kostone.marble.service.order;
 
+import com.kostone.marble.domain.activity.ActivityAction;
+import com.kostone.marble.domain.activity.ActivityEntityType;
 import com.kostone.marble.domain.customer.Customer;
 import com.kostone.marble.domain.customer.CustomerRepository;
 import com.kostone.marble.domain.order.Order;
@@ -12,6 +14,7 @@ import com.kostone.marble.domain.user.UserRepository;
 import com.kostone.marble.dto.order.CreateOrderRequest;
 import com.kostone.marble.dto.order.OrderResponse;
 import com.kostone.marble.security.MarbleUserDetails;
+import com.kostone.marble.service.activity.ActivityLogService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -58,6 +61,7 @@ public class OrderService {
     private final CustomerRepository customerRepository;
     private final UserRepository userRepository;
     private final DigitalSignatureRepository signatureRepository;
+    private final ActivityLogService activityLogService;
 
     /**
      * Creates a new order. Address fields pre-inherited from customer:
@@ -95,7 +99,10 @@ public class OrderService {
         order.setNotes(req.notes());
         order.setCreatedByUser(createdBy);
 
-        return OrderResponse.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        activityLogService.record(ActivityEntityType.ORDER, saved.getId(), ActivityAction.ORDER_CREATED,
+                customer.getFullName(), "הזמנה חדשה נוצרה", null);
+        return OrderResponse.from(saved);
     }
 
     @Transactional(readOnly = true)
@@ -115,13 +122,27 @@ public class OrderService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
     }
 
-    /** Soft delete — stamps deleted_at; never issues SQL DELETE. */
+    /**
+     * Soft delete — stamps deleted_at; never issues SQL DELETE.
+     * Allowed any time before the customer has digitally approved the slab layout
+     * (SLAB_LAYOUT_APPROVAL signature) — once that signature exists, the order is in
+     * production or beyond and can no longer be deleted. {@code reason} is an optional
+     * free-text note from the Consultant, recorded in the activity log.
+     */
     @Transactional
-    public void softDelete(UUID id) {
+    public void softDelete(UUID id, String reason) {
         Order order = orderRepository.findByIdAndDeletedAtIsNull(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Order not found"));
+        boolean layoutApproved = signatureRepository.existsByOrderIdAndCategory(id, SignatureCategory.SLAB_LAYOUT_APPROVAL);
+        if (layoutApproved) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "ניתן למחוק הזמנה רק כל עוד הלקוח לא אישר את תוכנית הפריסה");
+        }
         order.setDeletedAt(OffsetDateTime.now());
         orderRepository.save(order);
+        activityLogService.record(ActivityEntityType.ORDER, order.getId(), ActivityAction.ORDER_DELETED,
+                order.getCustomer().getFullName(),
+                "ההזמנה נמחקה (סטטוס בעת המחיקה: " + order.getStatus().name() + ")", reason);
     }
 
     /** Restore — clears deleted_at. */
@@ -131,7 +152,10 @@ public class OrderService {
                 .filter(Order::isDeleted)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Deleted order not found"));
         order.setDeletedAt(null);
-        return OrderResponse.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        activityLogService.record(ActivityEntityType.ORDER, saved.getId(), ActivityAction.ORDER_RESTORED,
+                saved.getCustomer().getFullName(), "ההזמנה שוחזרה מהפח", null);
+        return OrderResponse.from(saved);
     }
 
     // -------------------------------------------------------------------------
@@ -166,7 +190,11 @@ public class OrderService {
         }
 
         order.setStatus(targetStatus);
-        return OrderResponse.from(orderRepository.save(order));
+        Order saved = orderRepository.save(order);
+        activityLogService.record(ActivityEntityType.ORDER, saved.getId(), ActivityAction.ORDER_STATUS_CHANGED,
+                saved.getCustomer().getFullName(),
+                "סטטוס שונה מ-" + current.name() + " ל-" + targetStatus.name(), null);
+        return OrderResponse.from(saved);
     }
 
     private void assertLayoutSigned(Order order) {

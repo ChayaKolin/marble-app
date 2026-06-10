@@ -63,3 +63,8 @@ export async function restoreOrder(id: string): Promise<OrderResponse> {
   const { data } = await axios.patch<OrderResponse>(`/api/v1/orders/${id}/restore`)
   return data
 }
+
+/** Soft-delete an order. Allowed until the customer digitally approves the slab layout. Reason is optional. */
+export async function deleteOrder(id: string, reason?: string): Promise<void> {
+  await axios.delete(`/api/v1/orders/${id}`, { data: { reason: reason?.trim() || null } })
+}

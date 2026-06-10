@@ -43,3 +43,22 @@ The Consultant dashboard SHALL include a dedicated Trash section listing all sof
 #### Scenario: Trash view inaccessible to other roles
 - **WHEN** a Factory Manager or Installer attempts to access the Trash view
 - **THEN** the system returns HTTP 403
+
+### Requirement: Activity log records significant order lifecycle events
+The system SHALL maintain an `activity_log` table recording, for each order: creation, status transitions, soft-deletion (with an optional free-text reason), and restoration. Each entry SHALL capture the entity affected, the action, the customer's name, a human-readable description, who performed it, and a timestamp. The Consultant dashboard SHALL include a "History" view listing the most recent entries (newest first), so the Consultant can see what happened to an order — including which customer's order was deleted, by whom, and why.
+
+#### Scenario: Order deletion recorded with reason
+- **WHEN** the Consultant deletes an order and provides a deletion reason in the confirmation dialog
+- **THEN** an `ORDER_DELETED` entry is added to the activity log with that reason, the customer's name, and the consultant's name
+
+#### Scenario: Order deletion recorded without reason
+- **WHEN** the Consultant deletes an order without filling in a reason
+- **THEN** an `ORDER_DELETED` entry is still added to the activity log with a `null` reason
+
+#### Scenario: History view accessible to Consultant only
+- **WHEN** the Consultant opens the History view
+- **THEN** the most recent activity log entries are listed with their action, customer, description, optional reason, performer, and timestamp
+
+#### Scenario: History view inaccessible to other roles
+- **WHEN** a Factory Manager or Installer attempts to access the activity log endpoint
+- **THEN** the system returns HTTP 403

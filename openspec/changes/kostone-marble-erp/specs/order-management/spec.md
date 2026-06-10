@@ -23,15 +23,19 @@ Every order SHALL have a `notes TEXT` field for general internal notes. The Cons
 - **THEN** the note is persisted and displayed in the order detail and calendar side panel
 
 ### Requirement: Orders are soft-deleted, never hard-deleted
-The system SHALL set `deleted_at = NOW()` when the Consultant deletes an order. Soft-deleted orders SHALL be hidden from all standard order list views. The Consultant SHALL be able to restore a soft-deleted order from the Trash view.
+The system SHALL set `deleted_at = NOW()` when the Consultant deletes an order. Soft-deleted orders SHALL be hidden from all standard order list views. The Consultant SHALL be able to restore a soft-deleted order from the Trash view. Deletion is permitted at any point up until the customer has digitally approved the slab layout (the `SLAB_LAYOUT_APPROVAL` signature in `digital_signatures`) — once that signature exists (the order is in or past `PRODUCTION`), the order can no longer be deleted. The order detail view SHALL offer a "delete order" action with a confirmation dialog whenever deletion is permitted, regardless of which status (`QUOTATION`, `CLOSED_AWAITING_MEASUREMENT`, or `REVIEWING_LAYOUT` before signature) the order is currently in. The confirmation dialog SHALL include an optional free-text "reason for deletion" field; if filled in, the reason SHALL be recorded in the activity log alongside the deletion event (see the data-safety "Activity log" requirement).
 
 #### Scenario: Order soft-deleted
-- **WHEN** the Consultant deletes an order
-- **THEN** `deleted_at` is stamped and the order is removed from the active order list
+- **WHEN** the Consultant deletes an order that has not yet had its slab layout approved by the customer, after confirming in the dialog (optionally entering a reason)
+- **THEN** `deleted_at` is stamped, the order is removed from the active order list, and an `ORDER_DELETED` activity log entry is recorded with the optional reason
 
 #### Scenario: Order restored from Trash
 - **WHEN** the Consultant restores a soft-deleted order
 - **THEN** `deleted_at` is set to `NULL` and the order reappears in the active order list with its previous status intact
+
+#### Scenario: Deletion blocked once the customer has approved the layout
+- **WHEN** the Consultant attempts to delete an order for which a `SLAB_LAYOUT_APPROVAL` signature already exists
+- **THEN** the system rejects the request with `409 Conflict` and the order is not deleted
 
 ### Requirement: Order stores logistics access constraints
 The order SHALL store `elevator_width_meters`, `elevator_height_meters`, and `crane_required` flag. These fields SHALL be displayed on the calendar event side panel for the Installer. A crane disclaimer SHALL appear on all customer-facing documents: "שירותי מנוף אינם כלולים במחיר הפרויקט ומאורגנים ומומנים על חשבון הלקוח בלעדית."
@@ -100,11 +104,11 @@ In addition to adding material specifications later from an order's "specs" tab,
 - **THEN** the system still takes the Consultant to the new order's detail page (instead of showing a misleading "order creation failed" error), so they can add the specification from the order's "specs" tab without losing the order they just created
 
 ### Requirement: The customer may only be sent the proposal for approval once it is complete
-The system SHALL prevent the Consultant from sending the customer a request to review and digitally sign the detailed proposal (`POST /api/v1/portal/auth/request` from the order's "send to customer" step) until the proposal is complete: at least one marble/material specification exists on the order (`specs.length > 0`) AND the order has a known total amount (`totalGrossAmount` is not `null`). The send action (button and channel selector) SHALL be disabled while either condition is unmet, and the UI SHALL clearly list which of the two conditions is still missing so the Consultant knows exactly what to complete first.
+The system SHALL prevent the Consultant from sending the customer a request to review and digitally sign the detailed proposal (`POST /api/v1/portal/auth/request` from the order's "send to customer" step) until the proposal is complete: at least one marble/material specification exists on the order (`specs.length > 0`) AND the order has a known total amount (`totalGrossAmount` is not `null`). The send action (button and channel selector) SHALL be disabled while either condition is unmet, and the UI SHALL clearly list which of the two conditions is still missing so the Consultant knows exactly what to complete first. Because the order's "specs" tab holds two distinct kinds of items — marble/stone material specifications and sink specifications — under one combined count, any message about a missing specification SHALL explicitly name "marble/stone specification" (and the required sub-fields, model/code and square meters) and explicitly note that it is distinct from a sink entry, so the Consultant cannot mistake "I added a sink" for "the proposal is complete."
 
 #### Scenario: Send blocked — no marble specification yet
-- **WHEN** the Consultant reaches the "send detailed proposal" step on an order that has no material specification yet
-- **THEN** the send button is disabled and the system shows a message indicating that marble/stone details must be added first
+- **WHEN** the Consultant reaches the "send detailed proposal" step on an order that has no material specification yet (even if one or more sinks have been added)
+- **THEN** the send button is disabled and the system shows a message naming the missing item as a marble/stone specification (model/code and square meters, in the "marble and stone" sub-tab) — distinct from a sink — so the Consultant is not confused about which kind of item is still missing
 
 #### Scenario: Send blocked — amount not yet set
 - **WHEN** the Consultant reaches the "send detailed proposal" step on an order whose `totalGrossAmount` is still `null`

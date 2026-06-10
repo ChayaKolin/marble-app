@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom'
 import AnalyticsDashboard from '../components/consultant/AnalyticsDashboard'
 import ConsultantCalendar from '../components/consultant/ConsultantCalendar'
 import TrashView from '../components/consultant/TrashView'
+import ActivityLogView from '../components/consultant/ActivityLogView'
 import CustomerList from '../components/consultant/CustomerList'
 import OrderList from '../components/consultant/OrderList'
 
-type Tab = 'analytics' | 'customers' | 'orders' | 'calendar' | 'trash'
+type Tab = 'analytics' | 'customers' | 'orders' | 'calendar' | 'trash' | 'history'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'analytics', label: 'לוח בקרה' },
@@ -15,6 +16,7 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'orders',    label: 'הזמנות' },
   { id: 'calendar',  label: 'לוח שנה' },
   { id: 'trash',     label: 'פח אשפה' },
+  { id: 'history',   label: 'היסטוריה' },
 ]
 
 export default function ConsultantDashboard() {
@@ -65,6 +67,7 @@ export default function ConsultantDashboard() {
         {tab === 'orders'    && <OrderList />}
         {tab === 'calendar'  && <ConsultantCalendar />}
         {tab === 'trash'     && <TrashView />}
+        {tab === 'history'   && <ActivityLogView />}
       </main>
     </div>
   )
