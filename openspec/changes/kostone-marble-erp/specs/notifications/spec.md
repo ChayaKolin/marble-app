@@ -20,7 +20,11 @@ The system SHALL send automatic notifications on the following events:
 
 #### Scenario: Customer notified when layout is ready
 - **WHEN** Hotman uploads the layout plan for an order in REVIEWING_LAYOUT status
-- **THEN** the customer receives a Hebrew email and WhatsApp message with a link to their portal to review and sign
+- **THEN** the customer receives a Hebrew email and WhatsApp message containing a fresh one-time portal magic-link (the same mechanism as `POST /api/v1/portal/auth/request`); clicking it signs the customer in directly and shows the layout-approval signature action
+
+#### Scenario: Consultant can share the layout-ready link manually
+- **WHEN** Hotman or the Consultant uploads the layout plan via `POST /api/v1/orders/{id}/layout`
+- **THEN** the response includes the same portal magic-link sent to the customer, so it can be copied and shared manually (e.g. when running with the stub notification adapter in local development)
 
 #### Scenario: Hotman notified on measurement upload
 - **WHEN** field measurements are uploaded for an order
@@ -32,6 +36,17 @@ The system SHALL deliver WhatsApp messages via the Twilio WhatsApp API using the
 #### Scenario: WhatsApp delivery fails — email fallback
 - **WHEN** a Twilio WhatsApp delivery returns a non-success status
 - **THEN** the system attempts email delivery and logs the WhatsApp failure
+
+### Requirement: Email delivery is independent of Twilio configuration
+The real notification adapter SHALL activate whenever **either** Twilio (`twilio.account-sid`) **or** Gmail SMTP (`spring.mail.password`) is configured — not only when both are present. When Twilio is not configured but Gmail SMTP is, email-based notifications (magic links, layout-ready, job-complete, etc.) SHALL be delivered via real Gmail SMTP, while WhatsApp-bound messages SHALL skip the Twilio attempt and fall back to email (or, where no recipient email is available, log a warning so the Consultant can share the portal link manually) instead of failing the request.
+
+#### Scenario: Gmail configured without Twilio
+- **WHEN** `KOSTONE_EMAIL_PASSWORD` (Gmail SMTP) is set but `TWILIO_ACCOUNT_SID` is empty
+- **THEN** email notifications (e.g. the customer portal magic-link, layout-ready notice) are sent via real Gmail SMTP, and WhatsApp-channel requests fall back to email or a manual-share link without raising an error
+
+#### Scenario: Neither Twilio nor Gmail configured (local dev default)
+- **WHEN** neither `TWILIO_ACCOUNT_SID` nor `KOSTONE_EMAIL_PASSWORD` is set
+- **THEN** the stub adapter logs all notification content and the Consultant shares portal links manually, as before
 
 ### Requirement: Notifications use pre-approved Hebrew templates for WhatsApp Business
 All outbound WhatsApp messages SHALL use Twilio-approved Hebrew message templates to comply with WhatsApp Business API requirements.

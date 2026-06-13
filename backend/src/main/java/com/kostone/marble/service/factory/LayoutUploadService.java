@@ -3,10 +3,11 @@ package com.kostone.marble.service.factory;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.order.OrderRepository;
 import com.kostone.marble.domain.order.OrderStatus;
+import com.kostone.marble.dto.order.LayoutUploadResponse;
+import com.kostone.marble.service.auth.PortalAuthService;
 import com.kostone.marble.service.notification.NotificationPort;
 import com.kostone.marble.service.storage.FileStorageService;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,19 +23,14 @@ public class LayoutUploadService {
     private final OrderRepository orderRepository;
     private final FileStorageService fileStorageService;
     private final NotificationPort notificationPort;
-
-    @Value("${app.base-url:http://localhost:5173}")
-    private String baseUrl;
-
-    @Value("${kostone.system.email:kostonemarble@gmail.com}")
-    private String systemEmail;
+    private final PortalAuthService portalAuthService;
 
     /**
      * Stores the layout PDF, links it to the order, and notifies the customer.
      * Order must be in REVIEWING_LAYOUT status.
      */
     @Transactional
-    public String uploadLayout(UUID orderId, MultipartFile file) {
+    public LayoutUploadResponse uploadLayout(UUID orderId, MultipartFile file) {
         Order order = requireOrderInStatus(orderId, OrderStatus.REVIEWING_LAYOUT,
                 "תוכנית הפריסה ניתנת להעלאה רק בשלב בדיקת התוכנית");
 
@@ -42,8 +38,10 @@ public class LayoutUploadService {
         order.setLayoutDocumentUrl(fileUrl);
         orderRepository.save(order);
 
-        // Notify customer that their layout is ready for review and signature
-        String portalUrl = baseUrl + "/portal/orders/" + orderId + "/layout";
+        // Notify customer that their layout is ready for review and signature —
+        // the link carries a fresh one-time login token so the customer lands
+        // signed-in directly in their portal.
+        String portalUrl = portalAuthService.issueMagicLink(order.getCustomer(), "EMAIL");
         notificationPort.notifyLayoutReady(
                 order.getCustomer().getEmailAddress(),
                 order.getCustomer().getPhoneNumber(),
@@ -51,7 +49,7 @@ public class LayoutUploadService {
                 portalUrl
         );
 
-        return fileUrl;
+        return new LayoutUploadResponse(fileUrl, portalUrl);
     }
 
     /**

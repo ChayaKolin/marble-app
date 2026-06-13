@@ -11,18 +11,21 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * Real notification adapter — active when twilio.account-sid is configured.
- * Sends WhatsApp messages via Twilio; falls back to email on WhatsApp failure (13.5).
- * All message content is in Hebrew.
+ * Real notification adapter — active when either Twilio or Gmail SMTP is configured.
+ * Sends WhatsApp messages via Twilio when available; falls back to email on WhatsApp
+ * failure or when Twilio isn't configured (13.5). All message content is in Hebrew.
  */
 @Component("realNotificationAdapter")
 @Primary
-@ConditionalOnExpression("'${twilio.account-sid:}'.length() > 0")
+@ConditionalOnExpression("'${twilio.account-sid:}'.length() > 0 or '${spring.mail.password:}'.length() > 0")
 @RequiredArgsConstructor
 @Slf4j
 public class RealNotificationAdapter implements NotificationPort {
 
     private final EmailNotificationAdapter emailAdapter;
+
+    @Value("${twilio.account-sid:}")
+    private String twilioAccountSid;
 
     @Value("${twilio.whatsapp-from:whatsapp:+14155238886}")
     private String whatsappFrom;
@@ -54,7 +57,11 @@ public class RealNotificationAdapter implements NotificationPort {
         String msg = String.format(
                 "שלום %s,\n\nהנה הקישור שלך לפורטל Kostone Marble:\n%s\n\nתקף ל-2 שעות.",
                 customerName, magicLinkUrl);
-        sendWhatsApp(toPhoneNumber, msg, () -> sendMagicLinkEmail(null, customerName, magicLinkUrl));
+        // No email address available in this method's signature — if WhatsApp can't be
+        // delivered, the Consultant still has the link to share manually (returned by
+        // the calling endpoint).
+        sendWhatsApp(toPhoneNumber, msg, () ->
+                log.warn("WhatsApp magic-link delivery unavailable for {} — share the portal link manually", customerName));
     }
 
     @Override
@@ -102,6 +109,11 @@ public class RealNotificationAdapter implements NotificationPort {
     private void sendWhatsApp(String toPhone, String body, Runnable fallback) {
         if (toPhone == null || toPhone.isBlank()) {
             log.warn("WhatsApp delivery skipped — no phone number");
+            fallback.run();
+            return;
+        }
+        if (twilioAccountSid.isBlank()) {
+            log.info("WhatsApp delivery skipped — Twilio not configured, using email fallback");
             fallback.run();
             return;
         }

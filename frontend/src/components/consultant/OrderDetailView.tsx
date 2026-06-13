@@ -256,8 +256,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     setBusy('layout')
     try {
       const fd = new FormData(); fd.append('file', file)
-      await axios.post(`/api/v1/orders/${order.id}/layout`, fd)
-      flash('תוכנית הפריסה הועלתה')
+      const res = await axios.post<{ layoutDocumentUrl: string; portalUrl: string }>(`/api/v1/orders/${order.id}/layout`, fd)
+      setPortalLink(res.data?.portalUrl ?? '')
+      flash('תוכנית הפריסה הועלתה — הלקוח קיבל הודעה עם קישור לחתימה (ניתן גם להעתיק ולשלוח ידנית)')
       onUpdated()
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בהעלאה', false) }
     finally { setBusy('') }

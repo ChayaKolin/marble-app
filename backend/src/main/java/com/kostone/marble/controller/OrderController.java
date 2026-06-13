@@ -2,6 +2,7 @@ package com.kostone.marble.controller;
 
 import com.kostone.marble.dto.order.CreateOrderRequest;
 import com.kostone.marble.dto.order.DeleteOrderRequest;
+import com.kostone.marble.dto.order.LayoutUploadResponse;
 import com.kostone.marble.dto.order.OrderResponse;
 import com.kostone.marble.dto.order.TransitionRequest;
 import com.kostone.marble.service.factory.LayoutUploadService;
@@ -82,11 +83,10 @@ public class OrderController {
     /** Upload layout PDF — Hotman or Consultant. Notifies customer. */
     @PostMapping(value = "/{id}/layout", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
-    public ResponseEntity<Map<String, String>> uploadLayout(
+    public ResponseEntity<LayoutUploadResponse> uploadLayout(
             @PathVariable UUID id,
             @RequestParam("file") MultipartFile file) {
-        String url = layoutUploadService.uploadLayout(id, file);
-        return ResponseEntity.ok(Map.of("layoutDocumentUrl", url));
+        return ResponseEntity.ok(layoutUploadService.uploadLayout(id, file));
     }
 
     /** Upload field measurements — Consultant. Advances order to REVIEWING_LAYOUT and notifies Hotman. */

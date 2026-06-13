@@ -50,6 +50,24 @@ public class PortalAuthService {
         Customer customer = customerRepository.findByIdAndDeletedAtIsNull(request.customerId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
+        String magicLink = issueMagicLink(customer, request.channel());
+
+        if ("WHATSAPP".equals(request.channel())) {
+            notificationPort.sendMagicLinkWhatsApp(customer.getPhoneNumber(), customer.getFullName(), magicLink);
+        } else {
+            notificationPort.sendMagicLinkEmail(customer.getEmailAddress(), customer.getFullName(), magicLink);
+        }
+        return magicLink;
+    }
+
+    /**
+     * Issues a fresh one-time magic-link token for the given customer (invalidating
+     * any previous unused tokens) and returns the portal URL — without sending any
+     * notification. Used by other services (e.g. layout-ready notifications) that
+     * need to give the customer an authenticated link into the portal.
+     */
+    @Transactional
+    public String issueMagicLink(Customer customer, String channel) {
         // Invalidate all previous unused tokens for this customer.
         tokenRepository.invalidateAllUnusedForCustomer(customer.getId(), OffsetDateTime.now());
 
@@ -60,24 +78,17 @@ public class PortalAuthService {
         String tokenHash = sha256Hex(plainToken);
 
         // Determine expiry based on delivery channel.
-        long ttlHours = "WHATSAPP".equals(request.channel()) ? WHATSAPP_TTL_HOURS : EMAIL_TTL_HOURS;
+        long ttlHours = "WHATSAPP".equals(channel) ? WHATSAPP_TTL_HOURS : EMAIL_TTL_HOURS;
         OffsetDateTime expiresAt = OffsetDateTime.now().plusHours(ttlHours);
 
         CustomerPortalToken token = new CustomerPortalToken();
         token.setCustomer(customer);
         token.setTokenHash(tokenHash);
-        token.setDeliveryChannel(request.channel());
+        token.setDeliveryChannel(channel);
         token.setExpiresAt(expiresAt);
         tokenRepository.save(token);
 
-        String magicLink = baseUrl + "/portal/auth?token=" + plainToken;
-
-        if ("WHATSAPP".equals(request.channel())) {
-            notificationPort.sendMagicLinkWhatsApp(customer.getPhoneNumber(), customer.getFullName(), magicLink);
-        } else {
-            notificationPort.sendMagicLinkEmail(customer.getEmailAddress(), customer.getFullName(), magicLink);
-        }
-        return magicLink;
+        return baseUrl + "/portal/auth?token=" + plainToken;
     }
 
     /**
