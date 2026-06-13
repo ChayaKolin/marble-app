@@ -13,10 +13,9 @@ export default function PortalMagicLinkVerify() {
 
     axios.get<{ accessToken: string }>(`/api/v1/portal/auth/verify?token=${token}`)
       .then(res => {
-        // Store JWT and redirect to portal
+        // Store JWT and redirect to portal — the axios request interceptor attaches
+        // it from localStorage for every /portal/* request
         localStorage.setItem('portal_token', res.data.accessToken)
-        // Configure axios default auth header for subsequent portal requests
-        axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.accessToken}`
         navigate('/portal', { replace: true })
       })
       .catch(() => setStatus('error'))

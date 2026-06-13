@@ -14,23 +14,41 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-// Always inject token from localStorage on every request
+// The customer portal (/portal/*) authenticates with its own JWT (`portal_token`),
+// completely separate from the internal user's `token`. A Consultant who opens a
+// portal magic link in the same browser still has `token` in localStorage, so the
+// active route decides which credential to attach — otherwise the internal JWT
+// would override the customer's and every portal API call would come back 403.
+function isPortalContext() {
+  return window.location.pathname.startsWith('/portal')
+}
+
+// Always inject the appropriate token from localStorage on every request
 axios.interceptors.request.use(config => {
-  const token = localStorage.getItem('token')
+  const token = localStorage.getItem(isPortalContext() ? 'portal_token' : 'token')
   if (token) {
     config.headers.set('Authorization', `Bearer ${token}`)
+  } else {
+    config.headers.delete('Authorization')
   }
   return config
 })
 
-// On 401, clear session and redirect to login — but only when a session exists
-// and the failing request is not the login call itself (wrong-password returns 401 too).
+// On 401, clear the relevant session and redirect — but only when that session
+// exists and the failing request is not an auth call itself (wrong-credentials
+// also return 401).
 axios.interceptors.response.use(
   res => res,
   err => {
     const url: string = err?.config?.url ?? ''
-    const hasSession = !!localStorage.getItem('token')
-    if (err?.response?.status === 401 && hasSession && !url.includes('/auth/login')) {
+    if (err?.response?.status !== 401) return Promise.reject(err)
+
+    if (isPortalContext()) {
+      if (localStorage.getItem('portal_token') && !url.includes('/portal/auth/verify')) {
+        localStorage.removeItem('portal_token')
+        window.location.href = '/portal/auth'
+      }
+    } else if (localStorage.getItem('token') && !url.includes('/auth/login')) {
       localStorage.clear()
       window.location.href = '/login'
     }

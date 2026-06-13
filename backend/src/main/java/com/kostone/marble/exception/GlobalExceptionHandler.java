@@ -36,4 +36,14 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, detail);
     }
+
+    /**
+     * Catches anything else so an unexpected error returns a real 500 with a message
+     * instead of falling through to Spring's /error dispatch, which resets the
+     * security context and turns the response into a misleading 401 (auto-logout).
+     */
+    @ExceptionHandler(Exception.class)
+    public ProblemDetail handleUnexpected(Exception ex) {
+        return ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, "אירעה שגיאה בלתי צפויה בשרת: " + ex.getMessage());
+    }
 }

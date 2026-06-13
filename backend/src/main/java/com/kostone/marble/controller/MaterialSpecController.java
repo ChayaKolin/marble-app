@@ -44,15 +44,21 @@ public class MaterialSpecController {
         Order order = orderRepo.findByIdAndDeletedAtIsNull(orderId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        String marbleModelCode = (String) body.get("marbleModelCode");
+        if (marbleModelCode == null || marbleModelCode.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "יש להזין סוג / קוד שיש");
+
+        BigDecimal squareMeters = parseDecimal(body.get("squareMeters"), "שטח (מ\"ר)", true);
+
         MaterialSpecification spec = new MaterialSpecification();
         spec.setOrder(order);
-        spec.setMarbleModelCode((String) body.get("marbleModelCode"));
+        spec.setMarbleModelCode(marbleModelCode);
         spec.setFinishType((String) body.get("finishType"));
-        spec.setSquareMeters(new BigDecimal(body.get("squareMeters").toString()));
+        spec.setSquareMeters(squareMeters);
         spec.setCounterEdgeDetailing((String) body.getOrDefault("counterEdgeDetailing", null));
         spec.setWaterEdgeRequired(Boolean.TRUE.equals(body.get("waterEdgeRequired")));
         if (body.get("cooktopBaseFee") != null)
-            spec.setCooktopBaseFee(new BigDecimal(body.get("cooktopBaseFee").toString()));
+            spec.setCooktopBaseFee(parseDecimal(body.get("cooktopBaseFee"), "עלות כיריים", false));
 
         repo.save(spec);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", spec.getId()));
@@ -64,5 +70,21 @@ public class MaterialSpecController {
         repo.findById(specId).filter(s -> s.getOrder().getId().equals(orderId))
                 .ifPresent(repo::delete);
         return ResponseEntity.noContent().build();
+    }
+
+    /** @param mustBePositive if true, zero/negative values are rejected; otherwise zero is allowed (e.g. "no cooktop fee"). */
+    private BigDecimal parseDecimal(Object value, String fieldLabel, boolean mustBePositive) {
+        if (value == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "יש להזין " + fieldLabel);
+        BigDecimal parsed;
+        try {
+            parsed = new BigDecimal(value.toString().trim());
+        } catch (NumberFormatException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, fieldLabel + " חייב להיות מספר תקין");
+        }
+        if (mustBePositive ? parsed.signum() <= 0 : parsed.signum() < 0)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    fieldLabel + (mustBePositive ? " חייב להיות גדול מ-0" : " לא יכול להיות שלילי"));
+        return parsed;
     }
 }

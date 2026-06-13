@@ -4,7 +4,8 @@ import type { OrderResponse } from '../../api/orders'
 import { ORDER_STATUS_HE, deleteOrder } from '../../api/orders'
 import { createCalendarEvent } from '../../api/calendar'
 import { type MeasurerResponse, fetchMeasurers, createMeasurer } from '../../api/measurers'
-import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput } from '../../lib/constants'
+import { type InstallerResponse, fetchInstallers, createInstaller } from '../../api/installers'
+import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput, CRANE_DISCLAIMER_HE } from '../../lib/constants'
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
@@ -72,6 +73,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [sendChannel, setSendChannel] = useState<'EMAIL' | 'WHATSAPP'>('WHATSAPP')
   const [portalLink, setPortalLink]   = useState('')
   const [copied, setCopied]           = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   /* measurement scheduling — picked when closing the deal so the measurer's visit lands on the calendar */
   const [measureSchedule, setMeasureSchedule] = useState({ date: '', time: '' })
@@ -83,8 +85,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [newMeasurerForm, setNewMeasurerForm] = useState({ firstName: '', lastName: '', phoneNumber: '' })
 
   /* logistics */
-  const [installers, setInstallers] = useState<any[]>([])
+  const [installers, setInstallers] = useState<InstallerResponse[]>([])
   const [logForm, setLogForm] = useState({ installerId: '', date: '', notes: '' })
+  const [showNewInstaller, setShowNewInstaller] = useState(false)
+  const [newInstallerForm, setNewInstallerForm] = useState({ firstName: '', lastName: '', phoneNumber: '' })
 
   /* specs form */
   const [specForm, setSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200' })
@@ -103,7 +107,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     axios.get(`/api/v1/orders/${order.id}/sinks`).then(r => setSinks(r.data)).catch(() => {})
     axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
     axios.get(`/api/v1/orders/${order.id}/payments`).then(r => setLedger(r.data)).catch(() => {})
-    axios.get('/api/v1/auth/users/installers').then(r => setInstallers(r.data)).catch(() => {})
+    fetchInstallers().then(setInstallers).catch(() => {})
     fetchMeasurers().then(setMeasurers).catch(() => {})
   }
 
@@ -124,6 +128,23 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     finally { setBusy('') }
   }
 
+  /** Adds a new installer to the roster and selects it immediately for this assignment. */
+  async function addInstaller() {
+    if (!newInstallerForm.firstName || !newInstallerForm.phoneNumber) {
+      flash('מלא שם פרטי וטלפון', false); return
+    }
+    setBusy('installer-add')
+    try {
+      const i = await createInstaller(newInstallerForm)
+      setInstallers(is => [...is, i])
+      setLogForm(f => ({ ...f, installerId: i.id }))
+      setNewInstallerForm({ firstName: '', lastName: '', phoneNumber: '' })
+      setShowNewInstaller(false)
+      flash('המתקין נוסף לרשימה ונבחר')
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בהוספת מתקין', false) }
+    finally { setBusy('') }
+  }
+
   // Reload when order changes (catches status changes after upload)
   useEffect(() => { reloadOrderData() }, [order.id, order.status])
 
@@ -133,6 +154,17 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }, [order.measurementsDocumentUrl])
 
   const layoutSigned = sigs.some(s => s.category === 'SLAB_LAYOUT_APPROVAL')
+
+  // Poll for the customer's digital signature while awaiting it, so the
+  // Consultant sees "✓ חתום — מאושר לייצור" appear on its own once the
+  // customer approves on the portal — no manual refresh needed.
+  useEffect(() => {
+    if (order.status !== 'REVIEWING_LAYOUT' || layoutSigned) return
+    const interval = setInterval(() => {
+      axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [order.id, order.status, layoutSigned])
   const depositCleared = ledger.some(l => l.milestoneTier === 1 && l.cleared)
   const stepIndex = STATUS_STEPS.findIndex(s => s.status === order.status)
 
@@ -141,6 +173,20 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* ── Actions ──────────────────────────────────────────────────────── */
   const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
+
+  /** Saves the total amount automatically once the consultant moves away from the field — no extra click needed. */
+  async function saveAmount() {
+    const current = order.totalGrossAmount != null ? String(order.totalGrossAmount) : ''
+    if (amountDraft === current) return
+    if (amountDraft && !(parseFloat(amountDraft) > 0)) { flash('סכום כולל חייב להיות גדול מ-0', false); return }
+    setBusy('amount')
+    try {
+      await axios.put(`/api/v1/orders/${order.id}`, { totalGrossAmount: amountDraft || null })
+      flash('הסכום עודכן')
+      onUpdated()
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בעדכון הסכום', false) }
+    finally { setBusy('') }
+  }
 
   async function recordMeasurerPayment() {
     if (!measurerPaid) { flash('יש לסמן אישור תשלום למודד', false); return }
@@ -281,8 +327,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   async function addSpec() {
     const missing: string[] = []
-    if (!specForm.marbleModelCode) missing.push('סוג / קוד שיש')
-    if (!specForm.squareMeters)    missing.push('שטח (מ"ר)')
+    if (!specForm.marbleModelCode.trim()) missing.push('סוג / קוד שיש')
+    if (!(parseFloat(specForm.squareMeters) > 0)) missing.push('שטח (מ"ר) — מספר גדול מ-0')
     if (missing.length > 0) { flash(`יש למלא ${missing.join(' ו')} לפני הוספת המפרט`, false); return }
     setBusy('spec')
     try {
@@ -382,7 +428,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {/* Summary row */}
           <div className="flex flex-wrap items-end gap-4 text-sm bg-slate-900 rounded-xl border border-slate-700 p-3">
             <div className="space-y-1">
-              <p className="text-slate-500 text-xs">סכום כולל</p>
+              <p className="text-slate-500 text-xs">סכום כולל *</p>
               {order.totalGrossAmount == null ? (
                 <p className="text-amber-400 text-xs">טרם נקבע — יוגדר לאחר המדידה</p>
               ) : (
@@ -392,19 +438,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
             <div className="flex items-center gap-2">
               <input type="number" min="0.01" step="0.01" value={amountDraft} dir="ltr"
                 onChange={e => setAmountDraft(e.target.value)}
-                placeholder="הזן/עדכן סכום..."
+                onBlur={saveAmount}
+                placeholder="הזן/עדכן סכום... *"
                 className="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
-              <button
-                onClick={async () => {
-                  setBusy('amount')
-                  try {
-                    await axios.put(`/api/v1/orders/${order.id}`, { totalGrossAmount: amountDraft || null })
-                    flash('הסכום עודכן')
-                    onUpdated()
-                  } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בעדכון הסכום', false) }
-                  finally { setBusy('') }
-                }}
-                disabled={busy === 'amount'}
+              <button onClick={saveAmount} disabled={busy === 'amount'}
                 className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
                 {busy === 'amount' ? '...' : 'עדכן סכום'}
               </button>
@@ -437,7 +474,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
               {/* Measurer selection — pick from the roster, or add a new one inline */}
               <div className="space-y-2 mb-3">
-                <label className="text-slate-400 text-xs">מודד</label>
+                <label className="text-slate-400 text-xs">מודד *</label>
                 <div className="flex gap-2">
                   <select value={selectedMeasurerId} dir="rtl"
                     onChange={e => setSelectedMeasurerId(e.target.value)}
@@ -478,13 +515,13 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
               <div className="grid grid-cols-2 gap-3 mb-1">
                 <div className="space-y-1">
-                  <label className="text-slate-400 text-xs">תאריך הגעת המודד</label>
+                  <label className="text-slate-400 text-xs">תאריך הגעת המודד *</label>
                   <input type="date" value={measureSchedule.date} dir="ltr"
                     onChange={e => setMeasureSchedule(f => ({ ...f, date: e.target.value }))}
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-slate-400 text-xs">תחילת התווך (4 שעות)</label>
+                  <label className="text-slate-400 text-xs">תחילת התווך (4 שעות) *</label>
                   <input type="time" value={measureSchedule.time} dir="ltr"
                     onChange={e => setMeasureSchedule(f => ({ ...f, time: e.target.value }))}
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
@@ -636,10 +673,121 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 <div className="mb-3 bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2 space-y-1">
                   <p className="text-amber-300 text-sm font-medium">יש להשלים את ההצעה לפני שליחה ללקוח לאישור:</p>
                   {specs.length === 0 && (
-                    <p className="text-amber-400 text-xs">⬆ חסר מפרט שיש/אבן (להבדיל מכיור!) — יש להוסיף פריט עם "סוג / קוד שיש" ו"שטח (מ"ר)" בתת-הלשונית "שיש ואבן" שבתוך לשונית "מפרט"</p>
+                    <p className="text-amber-400 text-xs">
+                      ⬆ חסר מפרט שיש/אבן (להבדיל מכיור!) — יש להוסיף פריט עם "סוג / קוד שיש" ו"שטח (מ"ר)" בתת-הלשונית "שיש ואבן" שבתוך לשונית "מפרט"
+                      {specForm.marbleModelCode.trim() && parseFloat(specForm.squareMeters) > 0 &&
+                        ' — מילאת את השדות, אך עדיין יש ללחוץ על "+ הוסף שיש" כדי לשמור אותם'}
+                    </p>
                   )}
                   {order.totalGrossAmount == null && (
-                    <p className="text-amber-400 text-xs">⬆ יש לקבוע סכום כולל ברור להזמנה (ראו בראש העמוד)</p>
+                    <p className="text-amber-400 text-xs">
+                      ⬆ יש לקבוע סכום כולל ברור להזמנה (ראו בראש העמוד)
+                      {amountDraft && ' — הסכום שהוזן יישמר אוטומטית כשתעברי לשדה אחר'}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Preview toggle — let the Consultant review exactly what the customer will see before sending */}
+              <button onClick={() => setShowPreview(s => !s)}
+                className="w-full py-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-sm mb-3 transition-colors">
+                {showPreview ? '▲ הסתר תצוגה מקדימה' : '👁 תצוגה מקדימה של ההצעה — בדקי לפני שליחה'}
+              </button>
+
+              {showPreview && (
+                <div className="mb-4 bg-slate-950 border border-slate-700 rounded-xl p-4 space-y-4">
+                  <p className="text-slate-400 text-xs font-medium border-b border-slate-700 pb-2">
+                    כך הלקוח יראה את ההצעה — בדקי שהכל נכון ומלא לפני השליחה
+                  </p>
+
+                  {/* Address */}
+                  <div>
+                    <p className="text-slate-500 text-xs mb-1">כתובת האתר</p>
+                    <p className="text-slate-200 text-sm">
+                      {order.effectiveAddress}, {order.effectiveCity}
+                      {order.effectiveFloor != null && ` · קומה ${order.effectiveFloor}`}
+                      {order.effectiveApt && ` · דירה ${order.effectiveApt}`}
+                    </p>
+                  </div>
+
+                  {/* Marble/stone specs */}
+                  <div>
+                    <p className="text-slate-500 text-xs mb-1">מפרט שיש ואבן</p>
+                    {specs.length === 0 ? (
+                      <p className="text-amber-400 text-xs">⬆ לא הוזן מפרט שיש/אבן</p>
+                    ) : (
+                      <div className="space-y-1.5">
+                        {specs.map(s => (
+                          <div key={s.id} className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm">
+                            <p className="text-slate-100">{s.marbleModelCode} <span className="text-slate-400">· {s.finishType}</span></p>
+                            <p className="text-slate-400 text-xs">
+                              {Number(s.squareMeters)} מ"ר
+                              {s.counterEdgeDetailing && ` · קאנט: ${s.counterEdgeDetailing}`}
+                              {s.waterEdgeRequired && ' · מגבה למים'}
+                              {Number(s.cooktopBaseFee) > 0 && ` · עלות כיריים: ₪${Number(s.cooktopBaseFee).toLocaleString('he-IL')}`}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sinks */}
+                  {sinks.length > 0 && (
+                    <div>
+                      <p className="text-slate-500 text-xs mb-1">כיורים</p>
+                      <div className="space-y-1.5">
+                        {sinks.map(s => (
+                          <div key={s.id} className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm">
+                            <p className="text-slate-100">
+                              {s.brand} <span className="text-slate-400">· {s.modelName}</span>
+                              {s.quantity > 1 && <span className="text-emerald-400"> × {s.quantity}</span>}
+                            </p>
+                            <p className="text-slate-400 text-xs">
+                              {s.widthMm}×{s.heightMm}×{s.depthMm} מ"מ · {s.color} · {s.mountingStyle === 'UNDERMOUNT' ? 'הטמנה מתחת' : 'הטמנה שטוחה'}
+                            </p>
+                            {s.notes && <p className="text-slate-500 text-xs">הערה: {s.notes}</p>}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Total + payment breakdown */}
+                  <div>
+                    <p className="text-slate-500 text-xs mb-1">סכום ותשלומים</p>
+                    {order.totalGrossAmount == null ? (
+                      <p className="text-amber-400 text-xs">⬆ סכום כולל לא נקבע</p>
+                    ) : (
+                      <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-300">סכום כולל</span>
+                          <span className="text-emerald-300 font-semibold">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">מקדמה (20%)</span>
+                          <span className="text-slate-300">₪{(Number(order.totalGrossAmount) * 0.2).toLocaleString('he-IL')}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">יתרה (80%)</span>
+                          <span className="text-slate-300">₪{(Number(order.totalGrossAmount) * 0.8).toLocaleString('he-IL')}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Crane disclaimer */}
+                  {order.craneRequired && (
+                    <div className="bg-amber-950/30 border border-amber-800/50 rounded-lg px-3 py-2">
+                      <p className="text-amber-300 text-xs">{CRANE_DISCLAIMER_HE}</p>
+                    </div>
+                  )}
+
+                  {/* Layout document */}
+                  {order.layoutDocumentUrl ? (
+                    <p className="text-slate-400 text-xs">✓ תוכנית פריסה מצורפת</p>
+                  ) : (
+                    <p className="text-amber-400 text-xs">⬆ לא הועלתה תוכנית פריסה</p>
                   )}
                 </div>
               )}
@@ -718,18 +866,46 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {(order.status === 'AWAITING_INSTALLATION' || order.status === 'PENDING_REPAIR') && (
             <StepCard title={order.status === 'PENDING_REPAIR' ? 'תיקון — שיבוץ מחדש' : 'שלב 5 — שיבוץ מתקין'} color="cyan">
               <div className="space-y-3">
-                <div className="space-y-1">
-                  <label className="text-slate-400 text-xs">מתקין</label>
-                  <select value={logForm.installerId} onChange={e => setLogForm(f => ({ ...f, installerId: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
-                    <option value="">בחר מתקין...</option>
-                    {installers.map((i: any) => <option key={i.id} value={i.id}>{i.fullName} — {i.phoneNumber}</option>)}
-                  </select>
+                <div className="space-y-2">
+                  <label className="text-slate-400 text-xs">מתקין *</label>
+                  <div className="flex gap-2">
+                    <select value={logForm.installerId} onChange={e => setLogForm(f => ({ ...f, installerId: e.target.value }))}
+                      className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                      <option value="">בחר מתקין...</option>
+                      {installers.map(i => <option key={i.id} value={i.id}>{i.fullName} — {i.phoneNumber}</option>)}
+                    </select>
+                    <button type="button" onClick={() => setShowNewInstaller(s => !s)}
+                      className="shrink-0 text-xs px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors">
+                      {showNewInstaller ? 'ביטול' : '+ הוסף מתקין'}
+                    </button>
+                  </div>
                   {installers.length === 0 && <p className="text-slate-600 text-xs">אין מתקינים רשומים עדיין</p>}
+                  {showNewInstaller && (
+                    <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input type="text" value={newInstallerForm.firstName} required
+                          onChange={e => setNewInstallerForm(f => ({ ...f, firstName: e.target.value }))}
+                          placeholder="שם פרטי *"
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                        <input type="text" value={newInstallerForm.lastName}
+                          onChange={e => setNewInstallerForm(f => ({ ...f, lastName: e.target.value }))}
+                          placeholder="שם משפחה"
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      </div>
+                      <input type="tel" value={newInstallerForm.phoneNumber} dir="ltr" required
+                        onChange={e => setNewInstallerForm(f => ({ ...f, phoneNumber: sanitizePhoneInput(e.target.value) }))}
+                        placeholder="טלפון *" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      <button onClick={addInstaller} disabled={busy === 'installer-add'}
+                        className="w-full py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium disabled:opacity-50 transition-colors">
+                        {busy === 'installer-add' ? 'מוסיף...' : 'הוסף ובחר מתקין'}
+                      </button>
+                    </div>
+                  )}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-slate-400 text-xs">תאריך התקנה</label>
+                    <label className="text-slate-400 text-xs">תאריך התקנה *</label>
                     <input type="datetime-local" value={logForm.date} dir="ltr"
                       onChange={e => setLogForm(f => ({ ...f, date: e.target.value }))}
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />

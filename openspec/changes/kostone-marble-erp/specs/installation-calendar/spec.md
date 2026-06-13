@@ -69,3 +69,14 @@ The system SHALL maintain a roster of measurers, each with a first name, last na
 #### Scenario: Booking is blocked without a selected measurer
 - **WHEN** the Consultant attempts to close the deal and book the measurement appointment without selecting (or adding) a measurer
 - **THEN** the system does not create the calendar event or advance the order status, and prompts the Consultant to choose a measurer first
+
+### Requirement: New installers can be added inline when assigning a logistics job
+When assigning an installer on the order detail "workflow" tab (step 5 — שיבוץ מתקין), the Consultant SHALL be able to pick from the existing installer list (`GET /api/v1/auth/users/installers`) or add a new installer inline (`POST /api/v1/auth/users/installers`) without leaving the flow. The "add installer" form SHALL collect first name, last name, and phone number, of which first name and phone number are required (`@NotBlank`, phone number a 10-digit Israeli number) — last name is optional. On success the new installer SHALL be added to the list and immediately selected for the assignment being made. The endpoint SHALL be restricted to the Consultant role (`ROLE_SUPER_ADMIN_OWNER`) and SHALL create the installer as an internal user with `role = INSTALLER` (with a system-generated unique username and password hash, since installer login provisioning is a separate concern).
+
+#### Scenario: Consultant adds a new installer inline while assigning logistics
+- **WHEN** the Consultant cannot find the desired installer in the list on step 5 and uses the "+ הוסף מתקין" option to enter a first name and phone number (last name optional)
+- **THEN** a new installer is created with `role = INSTALLER`, immediately selected for the logistics assignment being made, and available for selection on future assignments without re-entry
+
+#### Scenario: Adding an installer without a first name or phone number is rejected
+- **WHEN** the Consultant submits the "add installer" form without a first name or without a valid 10-digit phone number
+- **THEN** the system rejects the submission with a message indicating first name and phone number are required, and no installer is created

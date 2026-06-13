@@ -132,3 +132,40 @@ Each sink specification entry SHALL have a `quantity INT NOT NULL DEFAULT 1` and
 #### Scenario: Sink added without specifying quantity
 - **WHEN** the Consultant adds a sink specification without changing the quantity field
 - **THEN** the sink entry is saved with `quantity = 1` and no "× N" indicator is shown
+
+### Requirement: Marble/material specification submissions are validated with precise error messages
+When the Consultant submits the "+ הוסף שיש" form in the "specs" tab's "marble and stone" sub-tab, both the frontend and the backend SHALL validate "סוג / קוד שיש" (model/code, non-blank) and "שטח (מ\"ר)" (square meters, a number greater than 0) before saving. If "עלות כיריים" (cooktop base fee) is supplied it SHALL be a non-negative number (zero is allowed, meaning no cooktop cutout). On failure the system SHALL return a specific message naming the invalid field and the reason (e.g. "שטח (מ\"ר) חייב להיות גדול מ-0"), rather than a generic save-failure message. Any other unexpected server-side error SHALL be returned as a real `500` with a message, rather than allowed to fall through to the default error-dispatch path that resets the security context and surfaces as a misleading `401` (auto-logout).
+
+#### Scenario: Square meters left blank or non-numeric
+- **WHEN** the Consultant submits the marble-spec form with an empty or non-numeric "שטח (מ\"ר)" value
+- **THEN** the system rejects the submission with a message stating that "שטח (מ\"ר)" must be a valid number, and no specification row is created
+
+#### Scenario: Square meters is zero or negative
+- **WHEN** the Consultant submits the marble-spec form with "שטח (מ\"ר)" equal to 0 or a negative number
+- **THEN** the system rejects the submission with a message stating that "שטח (מ\"ר)" must be greater than 0
+
+#### Scenario: Marble model/code left blank
+- **WHEN** the Consultant submits the marble-spec form without a "סוג / קוד שיש" value
+- **THEN** the system rejects the submission with a message stating that "סוג / קוד שיש" is required
+
+#### Scenario: Unexpected server error does not log the Consultant out
+- **WHEN** an unhandled exception occurs while processing a request from an authenticated user
+- **THEN** the system returns a `500` response with an error message, and the Consultant's session remains valid for subsequent requests (no forced logout)
+
+### Requirement: Required fields are marked and the total amount saves automatically
+On the order detail "workflow" tab, the "סכום כולל" (total gross amount) field and all other fields required to advance the order or send the quote to the customer SHALL be marked with a trailing `*` in their label or placeholder. The total amount input SHALL be saved automatically when the Consultant moves focus away from the field (`onBlur`), without requiring a separate "עדכן סכום" click; the explicit button remains available for the same action. If the "send to customer" completeness gate is blocking on a missing marble/stone specification or total amount, and the Consultant has already filled in the corresponding form fields without saving them, the gate SHALL show an additional hint pointing at the specific action still needed (clicking "+ הוסף שיש", or that the amount will save automatically on blur).
+
+#### Scenario: Total amount saves on blur
+- **WHEN** the Consultant types a valid amount into the "סכום כולל" field on the workflow tab and clicks elsewhere on the page
+- **THEN** the amount is saved via `PUT /api/v1/orders/{id}` without the Consultant needing to click "עדכן סכום"
+
+#### Scenario: Completeness gate hints at unsaved marble-spec form data
+- **WHEN** the "send to customer" gate is shown because no marble/stone specification exists yet, and the Consultant has filled in valid "סוג / קוד שיש" and "שטח (מ\"ר)" values in the marble-spec form without clicking "+ הוסף שיש"
+- **THEN** the gate message additionally indicates that the filled-in fields still need to be saved by clicking "+ הוסף שיש"
+
+### Requirement: Consultant can preview the proposal before sending it to the customer
+On the "REVIEWING_LAYOUT" step of the order detail "workflow" tab, a "תצוגה מקדימה של ההצעה" (proposal preview) toggle SHALL be available above the send-channel selector and "שלח הצעה" button. When expanded, it SHALL show a read-only summary of everything the customer's portal/proposal will reflect: the site address, the full list of marble/stone specifications (model/code, finish, square meters, edge detailing, water-edge flag, cooktop fee), the full list of sink specifications (brand, model, dimensions, color, mounting style, quantity, notes), the total amount with its 20%/80% payment breakdown (or a warning if not yet set), the crane disclaimer (`CRANE_DISCLAIMER_HE`, verbatim) if `craneRequired` is true, and whether a layout document has been uploaded. The preview SHALL reflect current in-memory state and require no additional API calls. Sending to the customer remains a separate, explicit action and is not triggered by opening the preview.
+
+#### Scenario: Consultant reviews the proposal before sending
+- **WHEN** the Consultant expands "תצוגה מקדימה של ההצעה" on the REVIEWING_LAYOUT step
+- **THEN** the panel shows the site address, all marble/stone specs, all sinks, the total amount with its 20%/80% breakdown (or a warning that no amount is set), the crane disclaimer if the order requires a crane, and the layout-document upload status — without sending anything to the customer
