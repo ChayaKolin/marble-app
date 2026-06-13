@@ -5,6 +5,8 @@ import com.kostone.marble.domain.logistics.LogisticsAssignment;
 import com.kostone.marble.domain.logistics.LogisticsAssignmentRepository;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.order.OrderRepository;
+import com.kostone.marble.domain.signature.DigitalSignatureRepository;
+import com.kostone.marble.domain.signature.SignatureCategory;
 import com.kostone.marble.domain.user.User;
 import com.kostone.marble.domain.user.UserRepository;
 import com.kostone.marble.domain.user.UserRole;
@@ -27,6 +29,7 @@ public class LogisticsService {
     private final LogisticsAssignmentRepository assignmentRepository;
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
+    private final DigitalSignatureRepository signatureRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Transactional(readOnly = true)
@@ -63,12 +66,23 @@ public class LogisticsService {
         return LogisticsAssignmentResponse.from(assignment);
     }
 
-    /** Mark assignment complete (called from installer sign-off flow). */
+    /**
+     * Mark assignment complete (called from installer sign-off flow).
+     * Requires a FINAL_POST_INSTALLATION signature on the order first — the
+     * customer must confirm the installation is complete before the installer
+     * can proceed to collect the remaining balance.
+     */
     @Transactional
     public LogisticsAssignmentResponse markComplete(UUID orderId, UUID assignmentId) {
         LogisticsAssignment assignment = assignmentRepository.findById(assignmentId)
                 .filter(a -> a.getOrder().getId().equals(orderId))
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignment not found"));
+
+        if (!signatureRepository.existsByOrderIdAndCategory(orderId, SignatureCategory.FINAL_POST_INSTALLATION)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "יש לקבל את חתימת הלקוח המאשרת סיום ההתקנה לפני סיום העבודה");
+        }
+
         assignment.setCompleted(true);
         return LogisticsAssignmentResponse.from(assignmentRepository.save(assignment));
     }

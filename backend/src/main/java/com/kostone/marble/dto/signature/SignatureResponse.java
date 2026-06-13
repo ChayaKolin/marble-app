@@ -11,6 +11,7 @@ public record SignatureResponse(
         UUID orderId,
         SignatureCategory category,
         String ipAddress,
+        String notes,
         OffsetDateTime signedAt
 ) {
     public static SignatureResponse from(DigitalSignature s) {
@@ -19,6 +20,7 @@ public record SignatureResponse(
                 s.getOrder().getId(),
                 s.getCategory(),
                 s.getIpAddress(),
+                s.getNotes(),
                 s.getSignedAt()
         );
     }

@@ -25,20 +25,24 @@ The system SHALL present a mandatory acknowledgement dialog to the customer in t
 - **WHEN** a customer in the portal accepts the disclaimer: "המחיר הסופי, המידות והפרטים הספציפיים נקבעים אך ורק לאחר מדידה מקצועית"
 - **THEN** a `PRE_MEASUREMENT_DISCLAIMER` signature record is written for the order
 
-### Requirement: FINAL_POST_INSTALLATION signature is optional
-The system SHALL allow but not require the Installer to capture a `FINAL_POST_INSTALLATION` signature from the customer on the mobile device after job completion. The absence of this signature SHALL NOT block order completion or payment confirmation.
+### Requirement: FINAL_POST_INSTALLATION signature is mandatory before the installer can finish the job
+The system SHALL require the Installer to capture a `FINAL_POST_INSTALLATION` signature from the customer, confirming the installation is fully complete, before the logistics assignment can be marked complete. The signing form SHALL include an optional free-text notes field (`notes` on `digital_signatures`), captured alongside the signature. `PATCH /api/v1/orders/{orderId}/logistics/{assignmentId}/complete` SHALL return HTTP 409 if no `FINAL_POST_INSTALLATION` signature exists yet for the order. Once the assignment is marked complete, the Installer is shown that they may proceed to collect the remaining balance from the customer.
 
-#### Scenario: Optional signature captured
-- **WHEN** the customer signs on the Installer's device after installation
-- **THEN** a `FINAL_POST_INSTALLATION` record is written to `digital_signatures` as a record only
+#### Scenario: Mandatory signature captured with notes
+- **WHEN** the customer signs on the Installer's device after installation, optionally with completion notes entered by the Installer
+- **THEN** a `FINAL_POST_INSTALLATION` record (including the `notes`, if provided) is written to `digital_signatures`, and the logistics assignment is marked `is_completed = TRUE`
 
-#### Scenario: Job complete without signature
-- **WHEN** the Installer marks the job complete without capturing a signature
-- **THEN** the logistics assignment is marked `is_completed = TRUE` with no signature record, and the Consultant can still advance the order
+#### Scenario: Job completion blocked without the customer's signature
+- **WHEN** the Installer attempts to mark the job complete (`PATCH .../logistics/{assignmentId}/complete`) before a `FINAL_POST_INSTALLATION` signature exists for the order
+- **THEN** the system returns HTTP 409 with a Hebrew message indicating the customer's signature confirming completion is required first
+
+#### Scenario: Installer is shown they may collect the remaining balance
+- **WHEN** the assignment is successfully marked complete after the signature is captured
+- **THEN** the Installer's daily job list shows a confirmation that the job is done and the remaining balance may now be collected from the customer
 
 ### Requirement: Signature data stored as SHA-256-hashed canvas payload
 Signature vector data SHALL be stored as a compressed base64 payload or canvas coordinate encoding in `signature_vector_data TEXT`. IP address of the signing session SHALL be captured in `ip_address`.
 
 #### Scenario: Signature record created
 - **WHEN** a signature is submitted
-- **THEN** the system persists `signature_vector_data`, `ip_address`, `order_id`, `category`, and `signed_at` in `digital_signatures`
+- **THEN** the system persists `signature_vector_data`, `ip_address`, `notes`, `order_id`, `category`, and `signed_at` in `digital_signatures`

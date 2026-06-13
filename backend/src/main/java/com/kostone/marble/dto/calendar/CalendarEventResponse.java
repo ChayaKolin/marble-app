@@ -30,6 +30,9 @@ public record CalendarEventResponse(
         UUID measurerId,
         String measurerName,
         String measurerPhone,
+        // Logistics assignment — present for INSTALLATION/SITE_VISIT events
+        UUID logisticsAssignmentId,
+        boolean logisticsCompleted,
         // Timing — always visible
         LocalDate eventDate,
         LocalTime startTime,
@@ -68,6 +71,8 @@ public record CalendarEventResponse(
                 e.getMeasurer() != null ? e.getMeasurer().getId() : null,
                 e.getMeasurer() != null ? e.getMeasurer().getFullName() : null,
                 e.getMeasurer() != null ? e.getMeasurer().getPhoneNumber() : null,
+                e.getRelatedLogistics() != null ? e.getRelatedLogistics().getId() : null,
+                e.getRelatedLogistics() != null && e.getRelatedLogistics().isCompleted(),
                 e.getEventDate(),
                 e.getStartTime(),
                 e.getEndTime(),

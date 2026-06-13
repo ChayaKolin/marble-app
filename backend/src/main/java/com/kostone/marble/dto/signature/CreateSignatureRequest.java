@@ -6,5 +6,6 @@ import jakarta.validation.constraints.NotNull;
 
 public record CreateSignatureRequest(
         @NotNull SignatureCategory category,
-        @NotBlank String signatureData  // base64 canvas payload or vector coordinates
+        @NotBlank String signatureData,  // base64 canvas payload or vector coordinates
+        String notes                     // optional free-text notes (e.g. installer's completion remarks)
 ) {}

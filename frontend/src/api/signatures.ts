@@ -10,6 +10,7 @@ export interface SignatureResponse {
   orderId: string
   category: SignatureCategory
   ipAddress: string | null
+  notes: string | null
   signedAt: string
 }
 
@@ -17,10 +18,11 @@ export async function submitSignature(
   orderId: string,
   category: SignatureCategory,
   signatureData: string,
+  notes?: string,
 ): Promise<SignatureResponse> {
   const { data } = await axios.post<SignatureResponse>(
     `/api/v1/orders/${orderId}/signatures`,
-    { category, signatureData },
+    { category, signatureData, notes },
   )
   return data
 }

@@ -33,6 +33,17 @@ The system SHALL automatically create a `calendar_events` row of type `INSTALLAT
 - **WHEN** Hotman saves a new logistics assignment
 - **THEN** a calendar event of the appropriate type appears on the calendar immediately
 
+### Requirement: Installer's daily job list exposes the job-completion action
+For `INSTALLATION` and `SITE_VISIT` calendar events, `GET /api/v1/calendar/events` SHALL expose `logisticsAssignmentId` (the linked `logistics_assignments.id`) and `logisticsCompleted` (its `is_completed` flag) to the Installer. The Installer's daily job list SHALL use these fields to offer a "סיום עבודה — חתימת לקוח" (finish job — customer signature) action on jobs not yet completed, which opens the mandatory `FINAL_POST_INSTALLATION` signature capture (see digital-signatures spec). Once a job is marked complete, the daily list SHALL show it as done instead of the action button.
+
+#### Scenario: Installer sees the finish-job action on an incomplete job
+- **WHEN** the Installer views today's job list and a job's logistics assignment is not yet completed
+- **THEN** a "סיום עבודה — חתימת לקוח" button is shown for that job
+
+#### Scenario: Completed job shows confirmation instead of the action
+- **WHEN** the Installer successfully completes the signature flow for a job
+- **THEN** the job list shows a confirmation that the job is done and the remaining balance may be collected, and the action button is no longer shown
+
 ### Requirement: Calendar event detail panel is filtered by role
 The system SHALL show customer name, effective delivery address, floor/apt, installer assigned, order status, elevator/access notes to all authorized viewers. Financial data (outstanding payment balance, order notes) SHALL be visible to the Consultant only.
 

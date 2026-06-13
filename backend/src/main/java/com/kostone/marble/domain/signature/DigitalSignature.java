@@ -37,6 +37,9 @@ public class DigitalSignature {
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
 
+    @Column(name = "notes", columnDefinition = "TEXT")
+    private String notes;
+
     @Column(name = "signed_at", nullable = false, updatable = false)
     private OffsetDateTime signedAt = OffsetDateTime.now();
 }

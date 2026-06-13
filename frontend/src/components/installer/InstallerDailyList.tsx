@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { type CalendarEventResponse, fetchCalendarEvents } from '../../api/calendar'
+import InstallerSignatureCapture from './InstallerSignatureCapture'
 
 function todayKey() {
   const t = new Date()
@@ -14,6 +15,7 @@ function formatTime(time: string | null) {
 export default function InstallerDailyList() {
   const [todayJobs, setTodayJobs] = useState<CalendarEventResponse[]>([])
   const [loading, setLoading] = useState(true)
+  const [signingJobId, setSigningJobId] = useState<string | null>(null)
   const today = todayKey()
 
   useEffect(() => {
@@ -95,6 +97,47 @@ export default function InstallerDailyList() {
                   <p className="text-slate-400 text-xs">הערות</p>
                   <p className="text-slate-300 text-sm">{job.notes}</p>
                 </div>
+              )}
+
+              {/* Completion / signature flow */}
+              {job.logisticsAssignmentId && job.relatedOrderId && (
+                job.logisticsCompleted ? (
+                  <div className="bg-emerald-900/20 border border-emerald-800/50 rounded-lg p-2">
+                    <p className="text-emerald-300 text-sm font-medium">
+                      ✓ הושלם — ניתן לקבל את יתרת התשלום מהלקוח
+                    </p>
+                  </div>
+                ) : signingJobId === job.id ? (
+                  <div className="border border-slate-700 rounded-xl">
+                    <div className="flex justify-end px-3 pt-2">
+                      <button
+                        onClick={() => setSigningJobId(null)}
+                        className="text-slate-500 text-xs hover:text-slate-300"
+                      >
+                        ביטול
+                      </button>
+                    </div>
+                    <InstallerSignatureCapture
+                      orderId={job.relatedOrderId}
+                      assignmentId={job.logisticsAssignmentId}
+                      customerName={job.customerName ?? 'הלקוח'}
+                      onComplete={() => {
+                        setTodayJobs(jobs => jobs.map(j =>
+                          j.id === job.id ? { ...j, logisticsCompleted: true } : j
+                        ))
+                        setSigningJobId(null)
+                      }}
+                    />
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setSigningJobId(job.id)}
+                    className="w-full py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600
+                               text-white text-sm font-medium transition-colors"
+                  >
+                    סיום עבודה — חתימת לקוח
+                  </button>
+                )
               )}
             </div>
           ))}

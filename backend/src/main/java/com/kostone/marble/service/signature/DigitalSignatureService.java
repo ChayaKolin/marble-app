@@ -55,6 +55,7 @@ public class DigitalSignatureService {
         sig.setCategory(req.category());
         sig.setSignatureVectorData(req.signatureData());
         sig.setIpAddress(ipAddress);
+        sig.setNotes(req.notes());
 
         return SignatureResponse.from(signatureRepository.save(sig));
     }
@@ -74,8 +75,9 @@ public class DigitalSignatureService {
                 }
             }
             case INSTALLER -> {
-                // Installers submit the optional post-installation signature only
-                // Full assignment verification added in Group 9 (logistics)
+                // Installers submit the mandatory post-installation signature only —
+                // required by LogisticsService.markComplete() before the job can be
+                // marked done and the remaining balance collected from the customer.
                 if (category != SignatureCategory.FINAL_POST_INSTALLATION) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN,
                             "מתקינים יכולים להגיש חתימת סיום בלבד");

@@ -34,6 +34,8 @@ export interface CalendarEventResponse {
   measurerId: string | null
   measurerName: string | null
   measurerPhone: string | null
+  logisticsAssignmentId: string | null
+  logisticsCompleted: boolean
   eventDate: string        // YYYY-MM-DD
   startTime: string | null // HH:mm:ss
   endTime: string | null
