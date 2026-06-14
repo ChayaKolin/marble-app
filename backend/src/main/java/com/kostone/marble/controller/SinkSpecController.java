@@ -59,6 +59,28 @@ public class SinkSpecController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", sink.getId()));
     }
 
+    @PutMapping("/{sinkId}")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
+    public ResponseEntity<Map<String, Object>> update(@PathVariable UUID orderId, @PathVariable UUID sinkId,
+                                                       @RequestBody Map<String, Object> body) {
+        SinkSpecification sink = repo.findById(sinkId)
+                .filter(s -> s.getOrder().getId().equals(orderId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        sink.setBrand(str(body, "brand", "לא ידוע"));
+        sink.setModelName(str(body, "modelName", "לא ידוע"));
+        sink.setWidthMm(intVal(body, "widthMm", 0));
+        sink.setHeightMm(intVal(body, "heightMm", 0));
+        sink.setDepthMm(intVal(body, "depthMm", 0));
+        sink.setColor(str(body, "color", ""));
+        sink.setMountingStyle(mountingStyle(body));
+        sink.setQuantity(Math.max(1, intVal(body, "quantity", 1)));
+        sink.setNotes(str(body, "notes", null));
+
+        repo.save(sink);
+        return ResponseEntity.ok(Map.of("id", sink.getId()));
+    }
+
     @DeleteMapping("/{sinkId}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Void> delete(@PathVariable UUID orderId, @PathVariable UUID sinkId) {

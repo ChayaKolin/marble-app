@@ -190,3 +190,29 @@ On the "REVIEWING_LAYOUT" step of the order detail "workflow" tab, a "תצוגה
 #### Scenario: Consultant reviews the proposal before sending
 - **WHEN** the Consultant expands "תצוגה מקדימה של ההצעה" on the REVIEWING_LAYOUT step
 - **THEN** the panel shows the site address, all marble/stone specs, all sinks, the total amount with its 20%/80% breakdown (or a warning that no amount is set), the crane disclaimer if the order requires a crane, and the layout-document upload status — without sending anything to the customer
+
+### Requirement: Existing marble/stone and sink specification entries can be edited
+On the "specs" tab, every existing marble/stone specification and sink specification entry SHALL have an "ערוך" (edit) button alongside its "מחק" (delete) button, available regardless of the order's status. Clicking "ערוך" SHALL replace that entry's card with an inline edit form pre-filled with its current values (mirroring the fields of the corresponding "add" form), with "שמור שינויים" (save) and "ביטול" (cancel) actions. Saving SHALL submit the updated fields via `PUT /api/v1/orders/{orderId}/materials/{specId}` (marble/stone) or `PUT /api/v1/orders/{orderId}/sinks/{sinkId}` (sinks), applying the same field validation as the corresponding "add" endpoint, update the entry in place in the specs list, and close the edit form. Cancelling SHALL discard any changes and close the edit form without calling the API. Both endpoints are restricted to the Consultant role (`ROLE_SUPER_ADMIN_OWNER`).
+
+#### Scenario: Consultant edits a marble/stone specification
+- **WHEN** the Consultant clicks "ערוך" on an existing marble/stone specification entry, changes a field (e.g. "שטח (מ\"ר)"), and clicks "שמור שינויים"
+- **THEN** the entry is updated via `PUT /api/v1/orders/{orderId}/materials/{specId}`, the specs list reflects the new value, and the edit form closes
+
+#### Scenario: Consultant edits a sink specification
+- **WHEN** the Consultant clicks "ערוך" on an existing sink specification entry, changes a field (e.g. "צבע"), and clicks "שמור שינויים"
+- **THEN** the entry is updated via `PUT /api/v1/orders/{orderId}/sinks/{sinkId}`, the sinks list reflects the new value, and the edit form closes
+
+#### Scenario: Consultant cancels an in-progress edit
+- **WHEN** the Consultant clicks "ערוך" on a specification entry, changes a field, then clicks "ביטול"
+- **THEN** no API call is made, the entry's displayed values remain unchanged, and the static card is shown again
+
+#### Scenario: Editing a marble/stone specification with invalid values is rejected
+- **WHEN** the Consultant edits a marble/stone specification and clears "סוג / קוד שיש" or sets "שטח (מ\"ר)" to 0 or less, then clicks "שמור שינויים"
+- **THEN** the system rejects the update with the same field-specific error messages as the "add" form, and the entry is not modified
+
+### Requirement: The customer reviews the order's specification before signing the layout approval
+At the `REVIEWING_LAYOUT` step, the customer portal's layout-approval screen SHALL display a summary of the order's specification — every marble/stone specification (model/code, finish, square meters, edge detailing, water-edge flag, cooktop fee, notes) and every sink specification (brand, model, dimensions, color, mounting style, quantity, notes) — alongside the layout document preview, so the customer can review exactly what was ordered before signing `SLAB_LAYOUT_APPROVAL`. This is informational only and does not change the signature gate on `REVIEWING_LAYOUT → PRODUCTION`.
+
+#### Scenario: Customer sees the specification before signing the layout approval
+- **WHEN** the customer opens the layout-approval screen for an order in `REVIEWING_LAYOUT`
+- **THEN** the screen shows the order's marble/stone and sink specifications above or alongside the layout document, before the signature canvas is shown

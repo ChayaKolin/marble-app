@@ -66,6 +66,33 @@ public class MaterialSpecController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", spec.getId()));
     }
 
+    @PutMapping("/{specId}")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
+    public ResponseEntity<Map<String, Object>> update(@PathVariable UUID orderId, @PathVariable UUID specId,
+                                                       @RequestBody Map<String, Object> body) {
+        MaterialSpecification spec = repo.findById(specId)
+                .filter(s -> s.getOrder().getId().equals(orderId))
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+
+        String marbleModelCode = (String) body.get("marbleModelCode");
+        if (marbleModelCode == null || marbleModelCode.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "יש להזין סוג / קוד שיש");
+
+        BigDecimal squareMeters = parseDecimal(body.get("squareMeters"), "שטח (מ\"ר)", true);
+
+        spec.setMarbleModelCode(marbleModelCode);
+        spec.setFinishType((String) body.get("finishType"));
+        spec.setSquareMeters(squareMeters);
+        spec.setCounterEdgeDetailing((String) body.getOrDefault("counterEdgeDetailing", null));
+        spec.setWaterEdgeRequired(Boolean.TRUE.equals(body.get("waterEdgeRequired")));
+        if (body.get("cooktopBaseFee") != null)
+            spec.setCooktopBaseFee(parseDecimal(body.get("cooktopBaseFee"), "עלות כיריים", false));
+        spec.setNotes((String) body.getOrDefault("notes", null));
+
+        repo.save(spec);
+        return ResponseEntity.ok(Map.of("id", spec.getId()));
+    }
+
     @DeleteMapping("/{specId}")
     @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
     public ResponseEntity<Void> delete(@PathVariable UUID orderId, @PathVariable UUID specId) {

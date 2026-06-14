@@ -25,7 +25,10 @@ public record PortalOrderResponse(
         boolean layoutApprovalSigned,
         // Payment milestones
         List<PaymentMilestoneStatus> paymentMilestones,
-        OffsetDateTime createdAt
+        OffsetDateTime createdAt,
+        // Order specification (for customer review before signing)
+        List<PortalMaterialSpec> materialSpecs,
+        List<PortalSinkSpec> sinkSpecs
 ) {
     private static final Map<OrderStatus, String> STATUS_HE = Map.of(
             OrderStatus.QUOTATION,                   "הצעת מחיר",
@@ -42,7 +45,9 @@ public record PortalOrderResponse(
             Order order,
             boolean disclaimerSigned,
             boolean layoutSigned,
-            List<PaymentMilestoneStatus> milestones) {
+            List<PaymentMilestoneStatus> milestones,
+            List<PortalMaterialSpec> materialSpecs,
+            List<PortalSinkSpec> sinkSpecs) {
         return new PortalOrderResponse(
                 order.getId(),
                 order.getStatus(),
@@ -56,7 +61,9 @@ public record PortalOrderResponse(
                 disclaimerSigned,
                 layoutSigned,
                 milestones,
-                order.getCreatedAt()
+                order.getCreatedAt(),
+                materialSpecs,
+                sinkSpecs
         );
     }
 }

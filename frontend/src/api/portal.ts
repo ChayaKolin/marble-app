@@ -8,6 +8,28 @@ export interface PaymentMilestoneStatus {
   cleared: boolean
 }
 
+export interface PortalMaterialSpec {
+  marbleModelCode: string
+  finishType: string
+  squareMeters: number
+  counterEdgeDetailing: string | null
+  waterEdgeRequired: boolean
+  cooktopBaseFee: number
+  notes: string | null
+}
+
+export interface PortalSinkSpec {
+  brand: string
+  modelName: string
+  widthMm: number
+  heightMm: number
+  depthMm: number
+  color: string
+  mountingStyle: 'UNDERMOUNT' | 'FLUSH_MOUNT'
+  quantity: number
+  notes: string | null
+}
+
 export interface PortalOrderResponse {
   id: string
   status: OrderStatus
@@ -22,6 +44,8 @@ export interface PortalOrderResponse {
   layoutApprovalSigned: boolean
   paymentMilestones: PaymentMilestoneStatus[]
   createdAt: string
+  materialSpecs: PortalMaterialSpec[]
+  sinkSpecs: PortalSinkSpec[]
 }
 
 export async function fetchPortalOrders(): Promise<PortalOrderResponse[]> {

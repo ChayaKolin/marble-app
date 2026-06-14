@@ -1,14 +1,17 @@
 import { useState } from 'react'
 import SignatureCanvas from '../shared/SignatureCanvas'
 import { submitSignature } from '../../api/signatures'
+import type { PortalMaterialSpec, PortalSinkSpec } from '../../api/portal'
 
 interface Props {
   orderId: string
   layoutDocumentUrl?: string  // URL to the uploaded layout PDF
+  materialSpecs: PortalMaterialSpec[]
+  sinkSpecs: PortalSinkSpec[]
   onComplete: () => void
 }
 
-export default function LayoutApprovalSignature({ orderId, layoutDocumentUrl, onComplete }: Props) {
+export default function LayoutApprovalSignature({ orderId, layoutDocumentUrl, materialSpecs, sinkSpecs, onComplete }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [reviewed, setReviewed] = useState(false)
@@ -34,6 +37,40 @@ export default function LayoutApprovalSignature({ orderId, layoutDocumentUrl, on
           עיין/י בתוכנית הפריסה ואשר/י בחתימה לפני תחילת הייצור
         </p>
       </div>
+
+      {/* Order specification — for review before signing */}
+      {(materialSpecs.length > 0 || sinkSpecs.length > 0) && (
+        <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
+          <p className="text-slate-300 text-sm font-medium">המפרט שלך</p>
+
+          {materialSpecs.map((s, i) => (
+            <div key={`mat-${i}`} className="space-y-1 pb-2 border-b border-slate-800 last:border-0 last:pb-0">
+              <p className="text-slate-100 text-sm font-medium">
+                {s.marbleModelCode} <span className="text-slate-400 font-normal">· {s.finishType}</span>
+              </p>
+              <p className="text-emerald-300 text-sm">{s.squareMeters} מ"ר</p>
+              {s.counterEdgeDetailing && <p className="text-slate-400 text-xs">קאנט: {s.counterEdgeDetailing}</p>}
+              <div className="flex gap-3 text-xs">
+                {s.waterEdgeRequired && <span className="text-amber-400">קאנט מים ✓</span>}
+                {s.cooktopBaseFee > 0 && <span className="text-slate-500">כיריים: ₪{s.cooktopBaseFee}</span>}
+              </div>
+              {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
+            </div>
+          ))}
+
+          {sinkSpecs.map((s, i) => (
+            <div key={`sink-${i}`} className="space-y-1 pb-2 border-b border-slate-800 last:border-0 last:pb-0">
+              <p className="text-slate-100 text-sm font-medium">
+                {s.brand} <span className="text-slate-400 font-normal">· {s.modelName}</span>
+                {s.quantity > 1 && <span className="text-emerald-400"> × {s.quantity}</span>}
+              </p>
+              <p className="text-slate-400 text-xs">{s.widthMm}×{s.heightMm}×{s.depthMm} מ"מ · {s.color}</p>
+              <p className="text-slate-500 text-xs">{s.mountingStyle === 'UNDERMOUNT' ? 'הטמנה מתחת' : 'הטמנה שטוחה'}</p>
+              {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Layout document preview */}
       {layoutDocumentUrl ? (

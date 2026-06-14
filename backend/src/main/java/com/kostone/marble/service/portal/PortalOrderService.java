@@ -2,12 +2,16 @@ package com.kostone.marble.service.portal;
 
 import com.kostone.marble.domain.financial.FinancialLedger;
 import com.kostone.marble.domain.financial.FinancialLedgerRepository;
+import com.kostone.marble.domain.order.MaterialSpecificationRepository;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.order.OrderRepository;
+import com.kostone.marble.domain.order.SinkSpecificationRepository;
 import com.kostone.marble.domain.signature.DigitalSignatureRepository;
 import com.kostone.marble.domain.signature.SignatureCategory;
 import com.kostone.marble.dto.portal.PaymentMilestoneStatus;
+import com.kostone.marble.dto.portal.PortalMaterialSpec;
 import com.kostone.marble.dto.portal.PortalOrderResponse;
+import com.kostone.marble.dto.portal.PortalSinkSpec;
 import com.kostone.marble.security.MarbleUserDetails;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -27,6 +31,8 @@ public class PortalOrderService {
     private final OrderRepository orderRepository;
     private final FinancialLedgerRepository ledgerRepository;
     private final DigitalSignatureRepository signatureRepository;
+    private final MaterialSpecificationRepository materialSpecRepository;
+    private final SinkSpecificationRepository sinkSpecRepository;
 
     /**
      * Returns all active orders for the authenticated customer.
@@ -75,7 +81,12 @@ public class PortalOrderService {
                 .sorted(java.util.Comparator.comparingInt(PaymentMilestoneStatus::tier))
                 .toList();
 
-        return PortalOrderResponse.from(order, disclaimerSigned, layoutSigned, milestones);
+        List<PortalMaterialSpec> materialSpecs = materialSpecRepository.findByOrderId(order.getId()).stream()
+                .map(PortalMaterialSpec::from).toList();
+        List<PortalSinkSpec> sinkSpecs = sinkSpecRepository.findByOrderId(order.getId()).stream()
+                .map(PortalSinkSpec::from).toList();
+
+        return PortalOrderResponse.from(order, disclaimerSigned, layoutSigned, milestones, materialSpecs, sinkSpecs);
     }
 
     private UUID currentCustomerId() {

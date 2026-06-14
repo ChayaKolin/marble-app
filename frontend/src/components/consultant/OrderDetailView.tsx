@@ -93,6 +93,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   /* specs form */
   const [specForm, setSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200', notes: '' })
   const [sinkForm, setSinkForm] = useState({ brand: '', modelName: '', widthMm: '', heightMm: '', depthMm: '', color: '', mountingStyle: 'UNDERMOUNT', quantity: '1', notes: '' })
+
+  /* editing an existing marble/sink spec */
+  const [editingSpecId, setEditingSpecId] = useState<string | null>(null)
+  const [editSpecForm, setEditSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200', notes: '' })
+  const [editingSinkId, setEditingSinkId] = useState<string | null>(null)
+  const [editSinkForm, setEditSinkForm] = useState({ brand: '', modelName: '', widthMm: '', heightMm: '', depthMm: '', color: '', mountingStyle: 'UNDERMOUNT', quantity: '1', notes: '' })
   const [specsTab, setSpecsTab] = useState<'marble' | 'sinks'>('marble')
 
   const photoRef   = useRef<HTMLInputElement>(null)
@@ -357,6 +363,78 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     const timer = setTimeout(() => { addSink() }, 1200)
     return () => clearTimeout(timer)
   }, [sinkForm, busy])
+
+  function startEditSpec(s: MatSpec) {
+    setEditingSpecId(s.id)
+    setEditSpecForm({
+      marbleModelCode: s.marbleModelCode,
+      finishType: s.finishType,
+      squareMeters: String(s.squareMeters),
+      counterEdgeDetailing: s.counterEdgeDetailing,
+      waterEdgeRequired: s.waterEdgeRequired,
+      cooktopBaseFee: String(s.cooktopBaseFee),
+      notes: s.notes ?? '',
+    })
+  }
+
+  async function saveEditSpec(specId: string) {
+    const missing: string[] = []
+    if (!editSpecForm.marbleModelCode.trim()) missing.push('סוג / קוד שיש')
+    if (!(parseFloat(editSpecForm.squareMeters) > 0)) missing.push('שטח (מ"ר) — מספר גדול מ-0')
+    if (missing.length > 0) { flash(`יש למלא ${missing.join(' ו')}`, false); return }
+    setBusy('spec-edit')
+    try {
+      await axios.put(`/api/v1/orders/${order.id}/materials/${specId}`, {
+        ...editSpecForm,
+        squareMeters: parseFloat(editSpecForm.squareMeters),
+        cooktopBaseFee: parseFloat(editSpecForm.cooktopBaseFee || '200'),
+      })
+      setSpecs(list => list.map(s => s.id === specId
+        ? { ...editSpecForm, id: specId, squareMeters: parseFloat(editSpecForm.squareMeters), cooktopBaseFee: parseFloat(editSpecForm.cooktopBaseFee || '200') }
+        : s))
+      setEditingSpecId(null)
+      flash('המפרט עודכן')
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בעדכון המפרט', false) }
+    finally { setBusy('') }
+  }
+
+  function startEditSink(s: SinkSpec) {
+    setEditingSinkId(s.id)
+    setEditSinkForm({
+      brand: s.brand,
+      modelName: s.modelName,
+      widthMm: String(s.widthMm),
+      heightMm: String(s.heightMm),
+      depthMm: String(s.depthMm),
+      color: s.color,
+      mountingStyle: s.mountingStyle,
+      quantity: String(s.quantity),
+      notes: s.notes ?? '',
+    })
+  }
+
+  async function saveEditSink(sinkId: string) {
+    const missing: string[] = []
+    if (!editSinkForm.brand.trim()) missing.push('מותג')
+    if (!editSinkForm.modelName.trim()) missing.push('דגם')
+    if (missing.length > 0) { flash(`יש למלא ${missing.join(' ו')}`, false); return }
+    setBusy('sink-edit')
+    try {
+      await axios.put(`/api/v1/orders/${order.id}/sinks/${sinkId}`, {
+        ...editSinkForm,
+        widthMm: parseInt(editSinkForm.widthMm) || 0,
+        heightMm: parseInt(editSinkForm.heightMm) || 0,
+        depthMm: parseInt(editSinkForm.depthMm) || 0,
+        quantity: parseInt(editSinkForm.quantity) || 1,
+      })
+      setSinks(list => list.map(s => s.id === sinkId
+        ? { ...editSinkForm, id: sinkId, widthMm: parseInt(editSinkForm.widthMm) || 0, heightMm: parseInt(editSinkForm.heightMm) || 0, depthMm: parseInt(editSinkForm.depthMm) || 0, quantity: parseInt(editSinkForm.quantity) || 1 }
+        : s))
+      setEditingSinkId(null)
+      flash('הכיור עודכן')
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בעדכון הכיור', false) }
+    finally { setBusy('') }
+  }
 
   /** Soft-deletes the order — available until the customer digitally approves the slab layout. */
   async function handleDeleteOrder() {
@@ -1004,7 +1082,42 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {/* ── Marble specs ── */}
           {specsTab === 'marble' && (
             <div className="space-y-3">
-              {specs.map(s => (
+              {specs.map(s => editingSpecId === s.id ? (
+                <div key={s.id} className="bg-slate-900 border border-emerald-700 rounded-xl p-4 space-y-3">
+                  <p className="text-slate-300 text-sm font-medium">עריכת שיש / אבן</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SF label="סוג / קוד שיש *" value={editSpecForm.marbleModelCode} onChange={v => setEditSpecForm(f => ({ ...f, marbleModelCode: v }))} />
+                    <div className="space-y-1">
+                      <label className="text-slate-400 text-xs">סיום פני שטח</label>
+                      <select value={editSpecForm.finishType} onChange={e => setEditSpecForm(f => ({ ...f, finishType: e.target.value }))}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                        {FINISH_TYPES.map(f => <option key={f}>{f}</option>)}
+                      </select>
+                    </div>
+                    <SF label='שטח (מ"ר) *' value={editSpecForm.squareMeters} type="number" onChange={v => setEditSpecForm(f => ({ ...f, squareMeters: v }))} dir="ltr" />
+                    <SF label="קאנט (עיבוי קאנט)" value={editSpecForm.counterEdgeDetailing} onChange={v => setEditSpecForm(f => ({ ...f, counterEdgeDetailing: v }))} />
+                    <SF label="עלות כיריים (₪)" value={editSpecForm.cooktopBaseFee} type="number" onChange={v => setEditSpecForm(f => ({ ...f, cooktopBaseFee: v }))} dir="ltr" />
+                    <label className="flex items-center gap-2 cursor-pointer pt-5">
+                      <input type="checkbox" checked={editSpecForm.waterEdgeRequired} onChange={e => setEditSpecForm(f => ({ ...f, waterEdgeRequired: e.target.checked }))}
+                        className="h-4 w-4 rounded border-slate-600 bg-slate-800 text-emerald-500" />
+                      <span className="text-slate-300 text-sm">קאנט מים</span>
+                    </label>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-xs">הערה</label>
+                    <textarea value={editSpecForm.notes} onChange={e => setEditSpecForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => saveEditSpec(s.id)} disabled={busy === 'spec-edit'}
+                      className="flex-1 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium disabled:opacity-50 transition-colors">
+                      {busy === 'spec-edit' ? 'שומר...' : 'שמור שינויים'}
+                    </button>
+                    <button onClick={() => setEditingSpecId(null)} disabled={busy === 'spec-edit'}
+                      className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors">ביטול</button>
+                  </div>
+                </div>
+              ) : (
                 <div key={s.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-slate-100 font-medium">{s.marbleModelCode} <span className="text-slate-400 font-normal text-sm">· {s.finishType}</span></p>
@@ -1016,8 +1129,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     </div>
                     {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
                   </div>
-                  <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/materials/${s.id}`); setSpecs(p => p.filter(x => x.id !== s.id)) }}
-                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50 shrink-0">מחק</button>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => startEditSpec(s)}
+                      className="text-slate-300 hover:text-white text-xs px-2 py-1 rounded border border-slate-600">ערוך</button>
+                    <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/materials/${s.id}`); setSpecs(p => p.filter(x => x.id !== s.id)) }}
+                      className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50">מחק</button>
+                  </div>
                 </div>
               ))}
 
@@ -1056,7 +1173,40 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           {/* ── Sink specs ── */}
           {specsTab === 'sinks' && (
             <div className="space-y-3">
-              {sinks.map(s => (
+              {sinks.map(s => editingSinkId === s.id ? (
+                <div key={s.id} className="bg-slate-900 border border-emerald-700 rounded-xl p-4 space-y-3">
+                  <p className="text-slate-300 text-sm font-medium">עריכת כיור</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <SF label="מותג *" value={editSinkForm.brand} onChange={v => setEditSinkForm(f => ({ ...f, brand: v }))} />
+                    <SF label="דגם *" value={editSinkForm.modelName} onChange={v => setEditSinkForm(f => ({ ...f, modelName: v }))} />
+                    <SF label="רוחב (מ״מ)" value={editSinkForm.widthMm} type="number" onChange={v => setEditSinkForm(f => ({ ...f, widthMm: v }))} dir="ltr" />
+                    <SF label="עומק (מ״מ)" value={editSinkForm.depthMm} type="number" onChange={v => setEditSinkForm(f => ({ ...f, depthMm: v }))} dir="ltr" />
+                    <SF label="צבע" value={editSinkForm.color} onChange={v => setEditSinkForm(f => ({ ...f, color: v }))} />
+                    <div className="space-y-1">
+                      <label className="text-slate-400 text-xs">סוג הטמנה</label>
+                      <select value={editSinkForm.mountingStyle} onChange={e => setEditSinkForm(f => ({ ...f, mountingStyle: e.target.value }))}
+                        className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                        <option value="UNDERMOUNT">הטמנה מתחת</option>
+                        <option value="FLUSH_MOUNT">הטמנה שטוחה</option>
+                      </select>
+                    </div>
+                    <SF label="כמות" value={editSinkForm.quantity} type="number" onChange={v => setEditSinkForm(f => ({ ...f, quantity: v }))} dir="ltr" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-xs">הערה</label>
+                    <textarea value={editSinkForm.notes} onChange={e => setEditSinkForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => saveEditSink(s.id)} disabled={busy === 'sink-edit'}
+                      className="flex-1 py-2 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-medium disabled:opacity-50 transition-colors">
+                      {busy === 'sink-edit' ? 'שומר...' : 'שמור שינויים'}
+                    </button>
+                    <button onClick={() => setEditingSinkId(null)} disabled={busy === 'sink-edit'}
+                      className="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs font-medium transition-colors">ביטול</button>
+                  </div>
+                </div>
+              ) : (
                 <div key={s.id} className="bg-slate-900 border border-slate-700 rounded-xl p-4 flex items-start justify-between">
                   <div className="space-y-1">
                     <p className="text-slate-100 font-medium">
@@ -1067,8 +1217,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <p className="text-slate-500 text-xs">{s.mountingStyle === 'UNDERMOUNT' ? 'הטמנה מתחת' : 'הטמנה שטוחה'}</p>
                     {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
                   </div>
-                  <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/sinks/${s.id}`); setSinks(p => p.filter(x => x.id !== s.id)) }}
-                    className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50 shrink-0">מחק</button>
+                  <div className="flex gap-2 shrink-0">
+                    <button onClick={() => startEditSink(s)}
+                      className="text-slate-300 hover:text-white text-xs px-2 py-1 rounded border border-slate-600">ערוך</button>
+                    <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/sinks/${s.id}`); setSinks(p => p.filter(x => x.id !== s.id)) }}
+                      className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50">מחק</button>
+                  </div>
                 </div>
               ))}
 

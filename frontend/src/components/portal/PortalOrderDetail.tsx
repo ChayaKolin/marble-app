@@ -28,6 +28,8 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
       <LayoutApprovalSignature
         orderId={order.id}
         layoutDocumentUrl={order.layoutDocumentUrl ?? undefined}
+        materialSpecs={order.materialSpecs}
+        sinkSpecs={order.sinkSpecs}
         onComplete={() => { setScreen('detail'); onActionComplete() }}
       />
     )
