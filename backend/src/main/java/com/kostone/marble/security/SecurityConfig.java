@@ -34,18 +34,19 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable)
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Static frontend resources — always public
-                .requestMatchers(
-                    "/", "/index.html", "/assets/**",
-                    "/*.js", "/*.css", "/*.ico", "/*.svg", "/*.png"
-                ).permitAll()
                 // Public API endpoints
                 .requestMatchers(
                     "/api/v1/auth/login",
-                    "/api/v1/portal/auth/verify",
-                    "/files/**"
+                    "/api/v1/portal/auth/verify"
                 ).permitAll()
-                .anyRequest().authenticated()
+                .requestMatchers("/files/**").permitAll()
+                // All other API endpoints require authentication
+                .requestMatchers("/api/**").authenticated()
+                // Everything else is the SPA shell (static assets + client-side
+                // routes) — auth is enforced client-side via the JWT in
+                // localStorage and RoleRoute, so deep links must be servable
+                // (and fall back to index.html) without a server-side 401.
+                .anyRequest().permitAll()
             )
             .exceptionHandling(ex -> ex
                 .authenticationEntryPoint((req, res, e) ->
