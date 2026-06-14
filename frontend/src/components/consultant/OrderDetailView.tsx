@@ -154,6 +154,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }, [order.measurementsDocumentUrl])
 
   const layoutSigned = sigs.some(s => s.category === 'SLAB_LAYOUT_APPROVAL')
+  const quotationApprovalSigned = sigs.some(s => s.category === 'QUOTATION_APPROVAL')
 
   // Poll for the customer's digital signature while awaiting it, so the
   // Consultant sees "✓ חתום — מאושר לייצור" appear on its own once the
@@ -165,6 +166,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     }, 10000)
     return () => clearInterval(interval)
   }, [order.id, order.status, layoutSigned])
+
+  // Same polling pattern for the quotation-approval signature at the QUOTATION step.
+  useEffect(() => {
+    if (order.status !== 'QUOTATION' || quotationApprovalSigned) return
+    const interval = setInterval(() => {
+      axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [order.id, order.status, quotationApprovalSigned])
   const depositCleared = ledger.some(l => l.milestoneTier === 1 && l.cleared)
   const stepIndex = STATUS_STEPS.findIndex(s => s.status === order.status)
 
@@ -472,6 +482,57 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 הלקוח קיבל את הצעת המחיר הראשונית. לאחר שהגיעו להסכמה — סגרי את העסקה, בחרי מודד מהרשימה וקבעי תווך הגעה
                 לאתר (תווך קבוע של 4 שעות); התור יופיע ביומן גם אצל מנהל המפעל.
               </p>
+
+              {/* Send detailed quotation for customer approval (optional, informational) */}
+              <div className="bg-slate-800/50 border border-slate-700 rounded-xl p-3 mb-4 space-y-3">
+                <p className="text-slate-300 text-sm font-medium">שליחת הצעה לאישור הלקוח</p>
+                <p className="text-slate-500 text-xs">
+                  שלחי ללקוח קישור לפורטל בו יוכל לצפות בפרטי ההזמנה (מפרט, כיורים, סכום) ולחתום לאישור — אינו חוסם את המשך התהליך.
+                </p>
+
+                {!quoteComplete && (
+                  <p className="text-amber-400 text-xs">
+                    ⬆ יש להשלים מפרט שיש/אבן וסכום כולל לפני שליחה ללקוח לאישור
+                  </p>
+                )}
+
+                <div className="flex gap-2">
+                  {(['WHATSAPP', 'EMAIL'] as const).map(ch => (
+                    <button key={ch} onClick={() => setSendChannel(ch)} disabled={!quoteComplete}
+                      className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                      {ch === 'WHATSAPP' ? '📱 וואטסאפ' : '📧 אימייל'}
+                    </button>
+                  ))}
+                </div>
+
+                <button onClick={sendToCustomer} disabled={busy === 'send' || !quoteComplete}
+                  className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                  {busy === 'send' ? 'שולח...' : `📤 שלח הצעה ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'} של הלקוח`}
+                </button>
+
+                {portalLink && (
+                  <div className="bg-slate-900 border border-purple-800/50 rounded-xl p-3 space-y-2">
+                    <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני (שלחי לוואטסאפ או אימייל):</p>
+                    <div className="flex items-center gap-2">
+                      <p className="flex-1 text-purple-300 text-xs font-mono break-all bg-slate-950 rounded px-2 py-1.5 select-all">
+                        {portalLink}
+                      </p>
+                      <button onClick={copyPortalLink}
+                        className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white transition-colors">
+                        {copied ? '✓ הועתק' : 'העתק'}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between bg-slate-900 rounded-lg px-3 py-2">
+                  <p className="text-slate-300 text-sm">חתימת הלקוח על ההצעה</p>
+                  {quotationApprovalSigned
+                    ? <span className="text-emerald-400 text-sm font-bold">✓ הלקוח אישר את ההצעה</span>
+                    : <span className="text-amber-400 text-xs">ממתין לאישור הלקוח</span>
+                  }
+                </div>
+              </div>
 
               {/* Measurer selection — pick from the roster, or add a new one inline */}
               <div className="space-y-2 mb-3">

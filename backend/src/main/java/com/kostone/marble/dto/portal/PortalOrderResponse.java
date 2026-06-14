@@ -3,6 +3,7 @@ package com.kostone.marble.dto.portal;
 import com.kostone.marble.domain.order.Order;
 import com.kostone.marble.domain.order.OrderStatus;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +24,12 @@ public record PortalOrderResponse(
         // Signature status (for portal actions)
         boolean measurementDisclaimerSigned,
         boolean layoutApprovalSigned,
+        boolean quotationApprovalSigned,
+        // Quotation details (for QUOTATION-stage approval)
+        BigDecimal totalGrossAmount,
+        boolean craneRequired,
+        List<PortalMaterialSpec> materialSpecs,
+        List<PortalSinkSpec> sinkSpecs,
         // Payment milestones
         List<PaymentMilestoneStatus> paymentMilestones,
         OffsetDateTime createdAt
@@ -42,6 +49,9 @@ public record PortalOrderResponse(
             Order order,
             boolean disclaimerSigned,
             boolean layoutSigned,
+            boolean quotationApprovalSigned,
+            List<PortalMaterialSpec> materialSpecs,
+            List<PortalSinkSpec> sinkSpecs,
             List<PaymentMilestoneStatus> milestones) {
         return new PortalOrderResponse(
                 order.getId(),
@@ -55,6 +65,11 @@ public record PortalOrderResponse(
                 order.getMeasurementsDocumentUrl(),
                 disclaimerSigned,
                 layoutSigned,
+                quotationApprovalSigned,
+                order.getTotalGrossAmount(),
+                order.isCraneRequired(),
+                materialSpecs,
+                sinkSpecs,
                 milestones,
                 order.getCreatedAt()
         );

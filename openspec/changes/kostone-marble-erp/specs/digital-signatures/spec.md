@@ -18,6 +18,17 @@ While an order is on the `REVIEWING_LAYOUT` step and no `SLAB_LAYOUT_APPROVAL` s
 - **WHEN** the Consultant is viewing the REVIEWING_LAYOUT step of an order awaiting the customer's layout signature, and the customer signs via the portal in the meantime
 - **THEN** the workflow tab updates on its own to show "✓ חתום — מאושר לייצור" and enables the "הורד לייצור" button, without a manual page reload
 
+### Requirement: QUOTATION_APPROVAL signature records customer review of the quotation before measurement
+While an order is in `QUOTATION` status, the Consultant MAY send the customer a portal magic-link (via `POST /api/v1/portal/auth/request`, the same mechanism used for other portal access). The customer portal SHALL display the order's marble/stone specs, sink specs, total amount with the 20%/80% payment breakdown, and the crane disclaimer (if `crane_required`), and offer a signature canvas. Submitting the signature creates a `QUOTATION_APPROVAL` record in `digital_signatures`. This signature is **informational only** — it does NOT gate the `QUOTATION → CLOSED_AWAITING_MEASUREMENT` transition, which continues to require the existing 20% deposit (tier 1) as its sole hard gate.
+
+#### Scenario: Customer reviews and signs the quotation
+- **WHEN** a customer in the portal opens an order in `QUOTATION` status, reviews the displayed specs/sinks/total, and submits their signature via the canvas
+- **THEN** a `QUOTATION_APPROVAL` signature record is written for the order, and the Consultant's order view shows "✓ הלקוח אישר את ההצעה" without requiring a manual refresh
+
+#### Scenario: Quotation transition unaffected by signature status
+- **WHEN** the Consultant advances an order from `QUOTATION` to `CLOSED_AWAITING_MEASUREMENT`
+- **THEN** the transition is governed only by the existing 20% deposit gate; the presence or absence of a `QUOTATION_APPROVAL` signature has no effect on this transition
+
 ### Requirement: PRE_MEASUREMENT_DISCLAIMER signature is captured in the customer portal
 The system SHALL present a mandatory acknowledgement dialog to the customer in the portal before measurement-related actions. The acknowledgement SHALL be captured as a `PRE_MEASUREMENT_DISCLAIMER` record in `digital_signatures`.
 

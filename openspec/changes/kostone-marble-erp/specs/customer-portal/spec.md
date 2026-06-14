@@ -28,3 +28,14 @@ The customer portal SHALL display the uploaded layout plan document and a signat
 #### Scenario: Layout not yet uploaded
 - **WHEN** a customer opens their portal but Hotman has not yet uploaded the layout
 - **THEN** the portal shows a status message in Hebrew indicating the layout is being prepared
+
+### Requirement: Customer reviews and approves the detailed quotation before measurement
+While an order is in `QUOTATION` status, the customer portal SHALL display the order's marble/stone specs, sink specs, total amount with the 20%/80% payment breakdown, effective site address, and the crane disclaimer (if applicable), along with a signature canvas. Submitting the signature creates a `QUOTATION_APPROVAL` record in `digital_signatures`.
+
+#### Scenario: Customer views and signs the quotation
+- **WHEN** a customer opens an order in `QUOTATION` status in the portal and reviews the displayed specs, sinks, and total amount
+- **THEN** they can draw their signature and submit it, creating a `QUOTATION_APPROVAL` record and showing a confirmation in Hebrew
+
+#### Scenario: Order list flags pending quotation approval
+- **WHEN** a customer's order is in `QUOTATION` status and no `QUOTATION_APPROVAL` signature exists yet
+- **THEN** the portal's order list shows a Hebrew "action needed" badge prompting the customer to review and approve the quotation
