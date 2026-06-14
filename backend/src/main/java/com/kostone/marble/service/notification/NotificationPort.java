@@ -6,9 +6,11 @@ package com.kostone.marble.service.notification;
  */
 public interface NotificationPort {
 
-    void sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl);
+    /** @return true if the link was delivered via this channel; false if delivery failed (logged, not thrown). */
+    boolean sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl);
 
-    void sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl);
+    /** @return true if the link was delivered via this channel; false if delivery failed (logged, not thrown). */
+    boolean sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl);
 
     void notifyLayoutReady(String customerEmail, String customerPhone, String customerName, String portalUrl);
 

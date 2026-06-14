@@ -36,7 +36,7 @@ public class RealNotificationAdapter implements NotificationPort {
     // ── Hebrew message templates ─────────────────────────────────────────
 
     @Override
-    public void sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl) {
+    public boolean sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl) {
         String subject = "Kostone Marble — גישה לפורטל הלקוח";
         String body = String.format("""
                 שלום %s,
@@ -49,19 +49,21 @@ public class RealNotificationAdapter implements NotificationPort {
                 Kostone Marble
                 kostonemarble@gmail.com
                 """, customerName, magicLinkUrl);
-        emailAdapter.send(toAddress, subject, body);
+        return emailAdapter.send(toAddress, subject, body);
     }
 
     @Override
-    public void sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl) {
+    public boolean sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl) {
         String msg = String.format(
                 "שלום %s,\n\nהנה הקישור שלך לפורטל Kostone Marble:\n%s\n\nתקף ל-2 שעות.",
                 customerName, magicLinkUrl);
         // No email address available in this method's signature — if WhatsApp can't be
         // delivered, the Consultant still has the link to share manually (returned by
         // the calling endpoint).
-        sendWhatsApp(toPhoneNumber, msg, () ->
-                log.warn("WhatsApp magic-link delivery unavailable for {} — share the portal link manually", customerName));
+        return sendWhatsApp(toPhoneNumber, msg, () -> {
+            log.warn("WhatsApp magic-link delivery unavailable for {} — share the portal link manually", customerName);
+            return false;
+        });
     }
 
     @Override
@@ -69,11 +71,8 @@ public class RealNotificationAdapter implements NotificationPort {
         String msg = String.format(
                 "שלום %s,\n\nתוכנית הפריסה לפרויקט שלך מוכנה לאישור.\n\nנא להיכנס לפורטל ולחתום:\n%s",
                 customerName, portalUrl);
-        sendWhatsApp(customerPhone, msg, () -> {
-            if (customerEmail != null) {
-                emailAdapter.send(customerEmail, "Kostone Marble — תוכנית הפריסה מוכנה לאישורך", msg);
-            }
-        });
+        sendWhatsApp(customerPhone, msg, () ->
+                customerEmail != null && emailAdapter.send(customerEmail, "Kostone Marble — תוכנית הפריסה מוכנה לאישורך", msg));
     }
 
     @Override
@@ -91,8 +90,10 @@ public class RealNotificationAdapter implements NotificationPort {
         String msg = String.format(
                 "שלום %s,\n\nנקבעה לך עבודת התקנה:\nלקוח: %s\nכתובת: %s\nתאריך: %s\n\nהיכנס לאפליקציה לפרטים מלאים.",
                 installerName, customerName, address, scheduledDate);
-        sendWhatsApp(installerPhone, msg, () ->
-                log.warn("WhatsApp failed for installer {} — no email fallback for installers", installerName));
+        sendWhatsApp(installerPhone, msg, () -> {
+            log.warn("WhatsApp failed for installer {} — no email fallback for installers", installerName);
+            return false;
+        });
     }
 
     @Override
@@ -104,26 +105,26 @@ public class RealNotificationAdapter implements NotificationPort {
         emailAdapter.send(consultantEmail, subject, body);
     }
 
-    // ── Internal helper: try WhatsApp, fall back to runnable on failure ──
+    // ── Internal helper: try WhatsApp, fall back on failure. Returns whether delivery
+    //    succeeded via WhatsApp or the fallback. ──
 
-    private void sendWhatsApp(String toPhone, String body, Runnable fallback) {
+    private boolean sendWhatsApp(String toPhone, String body, java.util.function.BooleanSupplier fallback) {
         if (toPhone == null || toPhone.isBlank()) {
             log.warn("WhatsApp delivery skipped — no phone number");
-            fallback.run();
-            return;
+            return fallback.getAsBoolean();
         }
         if (twilioAccountSid.isBlank()) {
             log.info("WhatsApp delivery skipped — Twilio not configured, using email fallback");
-            fallback.run();
-            return;
+            return fallback.getAsBoolean();
         }
         try {
             String target = toPhone.startsWith("whatsapp:") ? toPhone : "whatsapp:" + toPhone;
             Message.creator(new PhoneNumber(target), new PhoneNumber(whatsappFrom), body).create();
             log.info("WhatsApp sent to {}", toPhone);
+            return true;
         } catch (Exception e) {
             log.error("WhatsApp delivery failed for {} — falling back: {}", toPhone, e.getMessage());
-            fallback.run();  // Task 13.5: email fallback on WhatsApp failure
+            return fallback.getAsBoolean();  // Task 13.5: email fallback on WhatsApp failure
         }
     }
 }

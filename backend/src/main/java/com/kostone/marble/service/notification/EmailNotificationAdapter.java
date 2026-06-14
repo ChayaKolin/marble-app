@@ -22,7 +22,13 @@ public class EmailNotificationAdapter {
     @Value("${kostone.system.email:kostonemarble@gmail.com}")
     private String fromAddress;
 
-    public void send(String to, String subject, String body) {
+    /**
+     * Sends an email. Returns true on success; on failure (e.g. SMTP connectivity
+     * issues) logs the error and returns false rather than throwing, since email
+     * delivery is a best-effort side effect that must not fail the calling
+     * business operation (magic-link issuance, layout upload, etc.).
+     */
+    public boolean send(String to, String subject, String body) {
         try {
             SimpleMailMessage msg = new SimpleMailMessage();
             msg.setFrom(fromAddress);
@@ -31,9 +37,10 @@ public class EmailNotificationAdapter {
             msg.setText(body);
             mailSender.send(msg);
             log.info("Email sent to {}: {}", to, subject);
+            return true;
         } catch (Exception e) {
             log.error("Failed to send email to {}: {}", to, e.getMessage());
-            throw e;
+            return false;
         }
     }
 }

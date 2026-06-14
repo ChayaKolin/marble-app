@@ -48,6 +48,17 @@ The real notification adapter SHALL activate whenever **either** Twilio (`twilio
 - **WHEN** neither `TWILIO_ACCOUNT_SID` nor `KOSTONE_EMAIL_PASSWORD` is set
 - **THEN** the stub adapter logs all notification content and the Consultant shares portal links manually, as before
 
+### Requirement: Notification delivery failures never fail the triggering operation
+SMTP and WhatsApp delivery errors (e.g. connection timeouts, provider outages) SHALL be caught at the adapter level, logged, and reported as a `false` delivery result — never thrown as exceptions that would roll back or fail the calling business operation.
+
+#### Scenario: SMTP connection fails during magic-link request
+- **WHEN** `POST /api/v1/portal/auth/request` is called but the SMTP server connection times out
+- **THEN** the magic-link token is still persisted and returned to the Consultant (HTTP 200, `delivered: false`) rather than the request failing with HTTP 500
+
+#### Scenario: SMTP connection fails during layout upload
+- **WHEN** Hotman uploads the layout plan via `POST /api/v1/orders/{id}/layout` but the customer-notification email fails to send
+- **THEN** the layout upload itself completes successfully and the response still includes the portal magic-link for manual sharing
+
 ### Requirement: Notifications use pre-approved Hebrew templates for WhatsApp Business
 All outbound WhatsApp messages SHALL use Twilio-approved Hebrew message templates to comply with WhatsApp Business API requirements.
 

@@ -43,22 +43,28 @@ public class PortalAuthService {
      * Generates a one-time magic-link token, invalidates previous unused tokens,
      * stores the SHA-256 hash, and delivers the plain token to the customer.
      * Called by Consultant only (enforced at controller layer).
+     *
+     * The token is persisted before delivery is attempted, so the link is valid
+     * even if delivery fails — a delivery failure (e.g. SMTP/WhatsApp outage) is
+     * reported via {@code delivered} but does not fail the request, since the
+     * Consultant can still copy and share the link manually.
      */
-    /** Returns the magic-link URL so the caller can display or copy it. */
     @Transactional
-    public String requestPortalAccess(PortalAuthRequest request) {
+    public PortalAccessResult requestPortalAccess(PortalAuthRequest request) {
         Customer customer = customerRepository.findByIdAndDeletedAtIsNull(request.customerId())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
 
         String magicLink = issueMagicLink(customer, request.channel());
 
-        if ("WHATSAPP".equals(request.channel())) {
-            notificationPort.sendMagicLinkWhatsApp(customer.getPhoneNumber(), customer.getFullName(), magicLink);
-        } else {
-            notificationPort.sendMagicLinkEmail(customer.getEmailAddress(), customer.getFullName(), magicLink);
-        }
-        return magicLink;
+        boolean delivered = "WHATSAPP".equals(request.channel())
+                ? notificationPort.sendMagicLinkWhatsApp(customer.getPhoneNumber(), customer.getFullName(), magicLink)
+                : notificationPort.sendMagicLinkEmail(customer.getEmailAddress(), customer.getFullName(), magicLink);
+
+        return new PortalAccessResult(magicLink, delivered);
     }
+
+    /** Result of a magic-link request: the link itself, and whether delivery succeeded. */
+    public record PortalAccessResult(String portalUrl, boolean delivered) {}
 
     /**
      * Issues a fresh one-time magic-link token for the given customer (invalidating

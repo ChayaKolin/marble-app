@@ -16,13 +16,15 @@ import org.springframework.stereotype.Component;
 public class StubNotificationAdapter implements NotificationPort {
 
     @Override
-    public void sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl) {
+    public boolean sendMagicLinkEmail(String toAddress, String customerName, String magicLinkUrl) {
         log.info("[STUB EMAIL] To: {} | Name: {} | Link: {}", toAddress, customerName, magicLinkUrl);
+        return true;
     }
 
     @Override
-    public void sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl) {
+    public boolean sendMagicLinkWhatsApp(String toPhoneNumber, String customerName, String magicLinkUrl) {
         log.info("[STUB WHATSAPP] To: {} | Name: {} | Link: {}", toPhoneNumber, customerName, magicLinkUrl);
+        return true;
     }
 
     @Override

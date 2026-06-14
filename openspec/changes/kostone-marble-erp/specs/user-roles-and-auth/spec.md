@@ -42,7 +42,11 @@ The system SHALL never create or store a password for Customer-role users. Authe
 
 #### Scenario: Magic-link request sent
 - **WHEN** the Consultant calls `POST /api/v1/portal/auth/request` with a valid customer ID and channel
-- **THEN** the system generates a 32-byte random token, stores its SHA-256 hash in `customer_portal_tokens`, and delivers the plain token to the customer via the specified channel
+- **THEN** the system generates a 32-byte random token, stores its SHA-256 hash in `customer_portal_tokens`, persists it before attempting delivery, and returns the resulting `portalUrl` along with a `delivered` boolean indicating whether the email/WhatsApp send succeeded
+
+#### Scenario: Notification delivery fails
+- **WHEN** the email or WhatsApp provider is unreachable or returns an error while delivering the magic link
+- **THEN** the request still succeeds (HTTP 200) with `delivered: false` and the valid `portalUrl`, so the Consultant can copy and share the link manually — the failure is logged but never surfaces as a 500
 
 #### Scenario: Token verification succeeds
 - **WHEN** a customer calls `GET /api/v1/portal/auth/verify?token=<plain_token>` with a valid, unexpired, unused token

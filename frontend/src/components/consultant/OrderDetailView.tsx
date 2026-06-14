@@ -283,7 +283,11 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
       const res = await axios.post('/api/v1/portal/auth/request', { customerId: order.customerId, channel: sendChannel })
       const url = res.data?.portalUrl ?? ''
       setPortalLink(url)
-      flash(`✓ קישור נשלח${sendChannel === 'WHATSAPP' ? ' לוואטסאפ' : ' למייל'} — ניתן גם להעתיק ידנית`)
+      if (res.data?.delivered) {
+        flash(`✓ קישור נשלח${sendChannel === 'WHATSAPP' ? ' לוואטסאפ' : ' למייל'} — ניתן גם להעתיק ידנית`)
+      } else {
+        flash(`⚠ הקישור נוצר אך השליחה ${sendChannel === 'WHATSAPP' ? 'לוואטסאפ' : 'למייל'} נכשלה — יש להעתיק ולשלוח ידנית`, false)
+      }
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשליחה', false) }
     finally { setBusy('') }
   }
