@@ -22,7 +22,7 @@ public class Measurer {
     @Column(name = "first_name", nullable = false, length = 100)
     private String firstName;
 
-    @Column(name = "last_name", nullable = false, length = 100)
+    @Column(name = "last_name", length = 100)
     private String lastName;
 
     @Column(name = "phone_number", nullable = false, length = 30)
@@ -39,6 +39,6 @@ public class Measurer {
     }
 
     public String getFullName() {
-        return firstName + " " + lastName;
+        return (lastName == null || lastName.isBlank()) ? firstName : firstName + " " + lastName;
     }
 }

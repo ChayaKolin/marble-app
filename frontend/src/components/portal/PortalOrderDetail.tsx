@@ -3,9 +3,8 @@ import { type PortalOrderResponse } from '../../api/portal'
 import { ORDER_STATUS_HE } from '../../api/orders'
 import PreMeasurementDisclaimer from './PreMeasurementDisclaimer'
 import LayoutApprovalSignature from './LayoutApprovalSignature'
-import QuotationApprovalSignature from './QuotationApprovalSignature'
 
-type ActiveScreen = 'detail' | 'disclaimer' | 'layout' | 'quotation'
+type ActiveScreen = 'detail' | 'disclaimer' | 'layout'
 
 interface Props {
   order: PortalOrderResponse
@@ -29,15 +28,6 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
       <LayoutApprovalSignature
         orderId={order.id}
         layoutDocumentUrl={order.layoutDocumentUrl ?? undefined}
-        onComplete={() => { setScreen('detail'); onActionComplete() }}
-      />
-    )
-  }
-
-  if (screen === 'quotation') {
-    return (
-      <QuotationApprovalSignature
-        order={order}
         onComplete={() => { setScreen('detail'); onActionComplete() }}
       />
     )
@@ -89,32 +79,6 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
 
       {/* Actions */}
       <div className="space-y-3">
-        {/* Quotation approval */}
-        {order.status === 'QUOTATION' && (
-          <div className={`rounded-xl border p-4 space-y-3 ${
-            order.quotationApprovalSigned
-              ? 'border-emerald-800 bg-emerald-950/20'
-              : 'border-amber-700 bg-amber-950/20'
-          }`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-200">אישור הצעת מחיר</p>
-              {order.quotationApprovalSigned
-                ? <span className="text-emerald-400 text-xs">✓ אישרת את ההצעה</span>
-                : <span className="text-amber-400 text-xs">נדרש אישורך</span>
-              }
-            </div>
-            {!order.quotationApprovalSigned && (
-              <button
-                onClick={() => setScreen('quotation')}
-                className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500
-                           text-white text-sm font-medium transition-colors"
-              >
-                צפה בהצעה המפורטת וחתום לאישור
-              </button>
-            )}
-          </div>
-        )}
-
         {/* Pre-measurement disclaimer */}
         {order.status === 'CLOSED_AWAITING_MEASUREMENT' && (
           <div className={`rounded-xl border p-4 space-y-3 ${

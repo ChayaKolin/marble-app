@@ -4,7 +4,6 @@ export type SignatureCategory =
   | 'PRE_MEASUREMENT_DISCLAIMER'
   | 'SLAB_LAYOUT_APPROVAL'
   | 'FINAL_POST_INSTALLATION'
-  | 'QUOTATION_APPROVAL'
 
 export interface SignatureResponse {
   id: string

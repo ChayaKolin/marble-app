@@ -8,10 +8,10 @@ Valid transitions:
 - `CLOSED_AWAITING_MEASUREMENT` → `REVIEWING_LAYOUT` (measurements uploaded)
 - `REVIEWING_LAYOUT` → `PRODUCTION` (SLAB_LAYOUT_APPROVAL signature present — hard gate)
 - `PRODUCTION` → `AWAITING_INSTALLATION` (factory cutting complete)
-- `AWAITING_INSTALLATION` → `COMPLETED` (installation done, 80% payment confirmed)
+- `AWAITING_INSTALLATION` → `COMPLETED` (installation done, FINAL_POST_INSTALLATION signature present — hard gate, 80% payment confirmed)
 - `AWAITING_INSTALLATION` → `PENDING_REPAIR` (on-site issue found)
 - `PENDING_REPAIR` → `AWAITING_INSTALLATION` (return visit scheduled)
-- `PENDING_REPAIR` → `COMPLETED` (repair done, fully resolved)
+- `PENDING_REPAIR` → `COMPLETED` (repair done, fully resolved, FINAL_POST_INSTALLATION signature present — hard gate)
 - `COMPLETED` → `ARCHIVED` (manual archiving by Consultant)
 
 #### Scenario: Valid transition accepted
@@ -32,6 +32,17 @@ The system SHALL refuse the transition from `REVIEWING_LAYOUT` to `PRODUCTION` i
 #### Scenario: Transition allowed — signature present
 - **WHEN** the Consultant advances an order from `REVIEWING_LAYOUT` to `PRODUCTION` and a valid `SLAB_LAYOUT_APPROVAL` signature record exists for that order
 - **THEN** the order transitions to `PRODUCTION` and the SLA timer is initiated
+
+### Requirement: {AWAITING_INSTALLATION, PENDING_REPAIR} to COMPLETED is hard-gated by the final installation signature
+The system SHALL refuse the transition to `COMPLETED` (from `AWAITING_INSTALLATION` or `PENDING_REPAIR`) if no `FINAL_POST_INSTALLATION` record exists in `digital_signatures` for the order. This signature is the customer's explicit confirmation that everything arrived as ordered, and is a prerequisite for collecting the final (80%) payment.
+
+#### Scenario: Transition blocked — no final installation signature
+- **WHEN** the Consultant attempts to advance an order from `AWAITING_INSTALLATION` or `PENDING_REPAIR` to `COMPLETED` and no `FINAL_POST_INSTALLATION` signature exists for that order
+- **THEN** the system returns HTTP 409 with a message indicating the customer's signature confirming the installation is required before completion
+
+#### Scenario: Transition allowed — final installation signature present
+- **WHEN** the Consultant advances an order from `AWAITING_INSTALLATION` or `PENDING_REPAIR` to `COMPLETED` and a `FINAL_POST_INSTALLATION` signature record exists for that order
+- **THEN** the order transitions to `COMPLETED`
 
 ### Requirement: QUOTATION to CLOSED_AWAITING_MEASUREMENT requires 20% deposit
 The system SHALL refuse the transition from `QUOTATION` to `CLOSED_AWAITING_MEASUREMENT` if the `financial_ledger` does not contain a cleared `milestone_tier = 1` record covering at least 20.00% of `total_gross_amount`.

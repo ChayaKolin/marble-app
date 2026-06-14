@@ -64,11 +64,6 @@ export default function PortalOrderList({ orders, onSelect }: Props) {
           )}
 
           {/* Action needed indicator */}
-          {(order.status === 'QUOTATION' && !order.quotationApprovalSigned) && (
-            <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg px-3 py-1.5">
-              <p className="text-amber-300 text-xs font-medium">📝 נדרש אישורך על ההצעה</p>
-            </div>
-          )}
           {(order.status === 'REVIEWING_LAYOUT' && !order.layoutApprovalSigned) && (
             <div className="bg-amber-900/30 border border-amber-700/50 rounded-lg px-3 py-1.5">
               <p className="text-amber-300 text-xs font-medium">⚠️ נדרשת חתימתך על תוכנית הפריסה</p>

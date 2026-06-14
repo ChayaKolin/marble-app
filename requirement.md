@@ -172,7 +172,7 @@ The system logs highly granular data schemas with strict formatting rules:
 |---|---|---|---|---|---|
 | Pre-Measurement Disclaimer | `PRE_MEASUREMENT_DISCLAIMER` | Customer | Customer Portal | Yes | `QUOTATION` → `CLOSED_AWAITING_MEASUREMENT` acknowledgement |
 | Slab Layout Approval | `SLAB_LAYOUT_APPROVAL` | Customer | Customer Portal | **Yes — hard gate** | `REVIEWING_LAYOUT` → `PRODUCTION` blocked until present |
-| Post-Installation Record | `FINAL_POST_INSTALLATION` | Customer (on installer device) | Installer Mobile App | **No — optional** | Record only; does not gate any transition |
+| Post-Installation Record | `FINAL_POST_INSTALLATION` | Customer (on installer device) | Installer Mobile App | **Yes — hard gate** | Blocks marking the logistics assignment complete AND blocks `{AWAITING_INSTALLATION, PENDING_REPAIR}` → `COMPLETED` until present |
 
 ### 3.6 Measurement & Layout Lifecycle Rules
 
@@ -187,7 +187,7 @@ The system logs highly granular data schemas with strict formatting rules:
 - **Dispatch Assignment:** When the order reaches `AWAITING_INSTALLATION`, Hotman assigns an installer and delivery date. Creating a dispatch assignment automatically generates a linked `calendar_events` entry. The order remains in `AWAITING_INSTALLATION` until the Consultant confirms installation complete and 80% payment received.
 - **PENDING_REPAIR Flow:** If an on-site issue is found (cut correction, missing backsplash, re-polishing), the Consultant moves the order to `PENDING_REPAIR`. A new `logistics_assignment` with `is_primary = FALSE` is created for the return visit, auto-generating a `SITE_VISIT` calendar event. On return visit completion, the Consultant advances the order to `AWAITING_INSTALLATION` (if further work remains) or directly to `COMPLETED`.
 - **Multiple Assignments:** An order may accumulate multiple `logistics_assignments` through PENDING_REPAIR cycles. The first (`is_primary = TRUE`) represents the main installation; all subsequent (`is_primary = FALSE`) represent repair/return visits. Only the primary completion triggers the 80% payment confirmation flow.
-- **Field Handshake (Optional):** Post-installation, the Installer app surfaces an optional signature canvas. If the customer is present and willing, the installer captures a `FINAL_POST_INSTALLATION` signature as a record. This is not a hard gate — the Consultant confirms 80% payment and marks completion independently of this signature.
+- **Field Handshake — MANDATORY Signature:** Post-installation, the Installer app surfaces a signature canvas where the customer confirms everything arrived as ordered, captured as `FINAL_POST_INSTALLATION` in `digital_signatures`. This is a hard gate on two fronts: the logistics assignment cannot be marked complete without it, and the order cannot transition to `COMPLETED` (and thus the final 80% payment cannot be confirmed) without it.
 
 ### 3.8 Installation Calendar & Scheduling
 
@@ -493,10 +493,12 @@ paths:
       summary: Mark job complete and optionally capture post-installation signature
       description: >
         Invoked by the Installer app to mark a logistics assignment as complete.
-        The post-installation signature (signatureData) is OPTIONAL — omitting it is valid.
-        Marking the job complete does not itself close the order or trigger the 80% payment
-        milestone; the Consultant confirms payment separately. If signatureData is provided,
-        a FINAL_POST_INSTALLATION record is written to digital_signatures as a record only.
+        A FINAL_POST_INSTALLATION signature (signatureData) confirming the customer received
+        everything as ordered is MANDATORY — the request is rejected with 409 if no such
+        record exists in digital_signatures for the order. Marking the job complete does not
+        itself close the order or trigger the 80% payment milestone; the Consultant confirms
+        payment and advances the order to COMPLETED separately — which itself requires the
+        same FINAL_POST_INSTALLATION signature as a hard gate.
       parameters:
         - name: id
           in: path

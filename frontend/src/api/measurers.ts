@@ -3,7 +3,7 @@ import axios from 'axios'
 export interface MeasurerResponse {
   id: string
   firstName: string
-  lastName: string
+  lastName: string | null
   phoneNumber: string
 }
 

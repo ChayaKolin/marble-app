@@ -20,7 +20,7 @@ public class MeasurerService {
     public MeasurerResponse create(CreateMeasurerRequest req) {
         Measurer measurer = new Measurer();
         measurer.setFirstName(req.firstName());
-        measurer.setLastName(req.lastName());
+        measurer.setLastName(req.lastName() == null || req.lastName().isBlank() ? null : req.lastName());
         measurer.setPhoneNumber(req.phoneNumber());
         return MeasurerResponse.from(measurerRepository.save(measurer));
     }

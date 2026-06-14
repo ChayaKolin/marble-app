@@ -10,6 +10,7 @@ import com.kostone.marble.domain.signature.DigitalSignatureRepository;
 import com.kostone.marble.domain.signature.SignatureCategory;
 import com.kostone.marble.domain.user.User;
 import com.kostone.marble.domain.user.UserRepository;
+import com.kostone.marble.service.activity.ActivityLogService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -41,6 +42,7 @@ class OrderTransitionTest {
     @Mock UserRepository userRepository;
     @Mock FinancialLedgerRepository ledgerRepository;
     @Mock DigitalSignatureRepository signatureRepository;
+    @Mock ActivityLogService activityLogService;
     @Mock SecurityContext securityContext;
     @Mock Authentication authentication;
 
@@ -90,6 +92,10 @@ class OrderTransitionTest {
         }
         if (fromStatus == REVIEWING_LAYOUT) {
             when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.SLAB_LAYOUT_APPROVAL))
+                    .thenReturn(true);
+        }
+        if (toStatus == COMPLETED) {
+            when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
                     .thenReturn(true);
         }
 
@@ -175,5 +181,45 @@ class OrderTransitionTest {
 
         var result = orderService.transition(order.getId(), PRODUCTION);
         assertThat(result.status()).isEqualTo(PRODUCTION);
+    }
+
+    // -------------------------------------------------------------------------
+    // Gate: final post-installation signature — 409 when absent on → COMPLETED
+    // -------------------------------------------------------------------------
+
+    @Test
+    void awaiting_installation_to_completed_blocked_when_unsigned() {
+        Order order = makeOrder(AWAITING_INSTALLATION);
+        when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
+        when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> orderService.transition(order.getId(), COMPLETED))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409));
+    }
+
+    @Test
+    void awaiting_installation_to_completed_allowed_when_signed() {
+        Order order = makeOrder(AWAITING_INSTALLATION);
+        when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
+        when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
+                .thenReturn(true);
+        when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var result = orderService.transition(order.getId(), COMPLETED);
+        assertThat(result.status()).isEqualTo(COMPLETED);
+    }
+
+    @Test
+    void pending_repair_to_completed_blocked_when_unsigned() {
+        Order order = makeOrder(PENDING_REPAIR);
+        when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
+        when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> orderService.transition(order.getId(), COMPLETED))
+                .isInstanceOf(ResponseStatusException.class)
+                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409));
     }
 }

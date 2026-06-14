@@ -3,6 +3,5 @@ package com.kostone.marble.domain.signature;
 public enum SignatureCategory {
     PRE_MEASUREMENT_DISCLAIMER,
     SLAB_LAYOUT_APPROVAL,       // MANDATORY — blocks REVIEWING_LAYOUT → PRODUCTION
-    FINAL_POST_INSTALLATION,    // OPTIONAL
-    QUOTATION_APPROVAL          // OPTIONAL — customer reviewed & approved the quotation before measurement
+    FINAL_POST_INSTALLATION     // MANDATORY — blocks {AWAITING_INSTALLATION, PENDING_REPAIR} → COMPLETED
 }

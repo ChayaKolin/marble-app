@@ -167,6 +167,7 @@ public class OrderService {
      * — Valid-transition table (400 on invalid path)
      * — 20% deposit gate: QUOTATION → CLOSED_AWAITING_MEASUREMENT (409 if unpaid)
      * — Layout signature gate: REVIEWING_LAYOUT → PRODUCTION (409 if unsigned)
+     * — Final installation signature gate: → COMPLETED (409 if unsigned)
      */
     @Transactional
     public OrderResponse transition(UUID orderId, OrderStatus targetStatus) {
@@ -189,6 +190,11 @@ public class OrderService {
             assertLayoutSigned(order);
         }
 
+        // Gate 3 — FINAL_POST_INSTALLATION signature required before COMPLETED
+        if (targetStatus == COMPLETED) {
+            assertFinalInstallationSigned(order);
+        }
+
         order.setStatus(targetStatus);
         Order saved = orderRepository.save(order);
         activityLogService.record(ActivityEntityType.ORDER, saved.getId(), ActivityAction.ORDER_STATUS_CHANGED,
@@ -203,6 +209,15 @@ public class OrderService {
         if (!signed) {
             throw new ResponseStatusException(HttpStatus.CONFLICT,
                     "חתימת הלקוח על תוכנית הפריסה חובה לפני תחילת ייצור");
+        }
+    }
+
+    private void assertFinalInstallationSigned(Order order) {
+        boolean signed = signatureRepository.existsByOrderIdAndCategory(
+                order.getId(), SignatureCategory.FINAL_POST_INSTALLATION);
+        if (!signed) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "חתימת הלקוח המאשרת שההתקנה בוצעה כשורה חובה לפני סיום ההזמנה");
         }
     }
 
