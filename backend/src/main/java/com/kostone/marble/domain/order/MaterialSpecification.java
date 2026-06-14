@@ -36,4 +36,7 @@ public class MaterialSpecification {
 
     @Column(name = "cooktop_base_fee", nullable = false, precision = 6, scale = 2)
     private BigDecimal cooktopBaseFee = new BigDecimal("200.00");
+
+    @Column(name = "notes")
+    private String notes;
 }

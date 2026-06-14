@@ -10,7 +10,8 @@ public record PortalMaterialSpec(
         BigDecimal squareMeters,
         String counterEdgeDetailing,
         boolean waterEdgeRequired,
-        BigDecimal cooktopBaseFee
+        BigDecimal cooktopBaseFee,
+        String notes
 ) {
     public static PortalMaterialSpec from(MaterialSpecification spec) {
         return new PortalMaterialSpec(
@@ -19,7 +20,8 @@ public record PortalMaterialSpec(
                 spec.getSquareMeters(),
                 spec.getCounterEdgeDetailing(),
                 spec.isWaterEdgeRequired(),
-                spec.getCooktopBaseFee()
+                spec.getCooktopBaseFee(),
+                spec.getNotes()
         );
     }
 }

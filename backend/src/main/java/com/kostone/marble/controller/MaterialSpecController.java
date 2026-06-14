@@ -32,7 +32,8 @@ public class MaterialSpecController {
                 "squareMeters", m.getSquareMeters(),
                 "counterEdgeDetailing", m.getCounterEdgeDetailing() != null ? m.getCounterEdgeDetailing() : "",
                 "waterEdgeRequired", m.isWaterEdgeRequired(),
-                "cooktopBaseFee", m.getCooktopBaseFee()
+                "cooktopBaseFee", m.getCooktopBaseFee(),
+                "notes", m.getNotes() != null ? m.getNotes() : ""
             )).toList()
         );
     }
@@ -59,6 +60,7 @@ public class MaterialSpecController {
         spec.setWaterEdgeRequired(Boolean.TRUE.equals(body.get("waterEdgeRequired")));
         if (body.get("cooktopBaseFee") != null)
             spec.setCooktopBaseFee(parseDecimal(body.get("cooktopBaseFee"), "עלות כיריים", false));
+        spec.setNotes((String) body.getOrDefault("notes", null));
 
         repo.save(spec);
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("id", spec.getId()));

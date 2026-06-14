@@ -64,6 +64,7 @@ export default function QuotationApprovalSignature({ order, onComplete }: Props)
                     {s.waterEdgeRequired && ' · מגבה למים'}
                     {Number(s.cooktopBaseFee) > 0 && ` · עלות כיריים: ₪${Number(s.cooktopBaseFee).toLocaleString('he-IL')}`}
                   </p>
+                  {s.notes && <p className="text-slate-500 text-xs">הערה: {s.notes}</p>}
                 </div>
               ))}
             </div>

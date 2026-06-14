@@ -15,6 +15,7 @@ export interface PortalMaterialSpec {
   counterEdgeDetailing: string | null
   waterEdgeRequired: boolean
   cooktopBaseFee: number
+  notes: string | null
 }
 
 export interface PortalSinkSpec {

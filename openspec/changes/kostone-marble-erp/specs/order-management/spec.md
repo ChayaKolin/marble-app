@@ -119,7 +119,7 @@ The system SHALL prevent the Consultant from sending the customer a request to r
 - **THEN** the send button is enabled and the Consultant can request the customer's review and digital signature on the full, priced proposal
 
 ### Requirement: Sink specifications support a quantity and free-text notes
-Each sink specification entry SHALL have a `quantity INT NOT NULL DEFAULT 1` and an optional `notes TEXT` field. This allows the Consultant to record a single entry for multiple identical sinks (e.g. a matching pair — one for dairy use, one for meat use — entered as quantity 2) instead of duplicating the entry, and to capture free-text remarks (e.g. installation preferences) per sink entry. The "+ הוסף כיור" form in the order's "specs" / sinks sub-tab SHALL include a quantity number input (default 1) and a notes text input. Existing sink entries SHALL display their quantity (when greater than 1) and notes (when present).
+Each sink specification entry SHALL have a `quantity INT NOT NULL DEFAULT 1` and an optional `notes TEXT` field. This allows the Consultant to record a single entry for multiple identical sinks (e.g. a matching pair — one for dairy use, one for meat use — entered as quantity 2) instead of duplicating the entry, and to capture free-text remarks (e.g. installation preferences) per sink entry. The sink specification form in the order's "specs" / sinks sub-tab SHALL include a quantity number input (default 1) and a notes text input. Existing sink entries SHALL display their quantity (when greater than 1) and notes (when present).
 
 #### Scenario: Sink added with quantity greater than one
 - **WHEN** the Consultant adds a sink specification and sets quantity to 2
@@ -133,8 +133,19 @@ Each sink specification entry SHALL have a `quantity INT NOT NULL DEFAULT 1` and
 - **WHEN** the Consultant adds a sink specification without changing the quantity field
 - **THEN** the sink entry is saved with `quantity = 1` and no "× N" indicator is shown
 
+### Requirement: Marble/material specifications support free-text notes
+Each marble/material specification entry SHALL have an optional `notes TEXT` field, mirroring the sink specification's notes field, to capture free-text remarks (e.g. slab selection preferences, special cutting instructions) per material entry. The marble/stone specification form in the order's "specs" / marble sub-tab SHALL include a notes text input. Existing marble/stone entries SHALL display their notes (when present), and the notes field SHALL also be included in the proposal preview and the customer portal's quotation/proposal views alongside the other material specification details.
+
+#### Scenario: Marble/stone specification added with a note
+- **WHEN** the Consultant fills in the notes field while the marble-spec form's required fields ("סוג / קוד שיש" and "שטח (מ\"ר)") are also filled in
+- **THEN** the specification is saved with the note included, and the note is displayed on that entry's card in the "specs" tab and in the proposal preview
+
+#### Scenario: Marble/stone specification added without a note
+- **WHEN** the Consultant adds a marble/stone specification without filling in the notes field
+- **THEN** the specification is saved with no notes, and no note line is shown on that entry's card
+
 ### Requirement: Marble/material specification submissions are validated with precise error messages
-When the Consultant submits the "+ הוסף שיש" form in the "specs" tab's "marble and stone" sub-tab, both the frontend and the backend SHALL validate "סוג / קוד שיש" (model/code, non-blank) and "שטח (מ\"ר)" (square meters, a number greater than 0) before saving. If "עלות כיריים" (cooktop base fee) is supplied it SHALL be a non-negative number (zero is allowed, meaning no cooktop cutout). On failure the system SHALL return a specific message naming the invalid field and the reason (e.g. "שטח (מ\"ר) חייב להיות גדול מ-0"), rather than a generic save-failure message. Any other unexpected server-side error SHALL be returned as a real `500` with a message, rather than allowed to fall through to the default error-dispatch path that resets the security context and surfaces as a misleading `401` (auto-logout).
+Whenever a marble/material specification is saved — automatically from the "specs" tab's "marble and stone" sub-tab form once its required fields are filled in, or from the new-order form's optional marble section — both the frontend and the backend SHALL validate "סוג / קוד שיש" (model/code, non-blank) and "שטח (מ\"ר)" (square meters, a number greater than 0) before saving. If "עלות כיריים" (cooktop base fee) is supplied it SHALL be a non-negative number (zero is allowed, meaning no cooktop cutout). On failure the system SHALL return a specific message naming the invalid field and the reason (e.g. "שטח (מ\"ר) חייב להיות גדול מ-0"), rather than a generic save-failure message. Any other unexpected server-side error SHALL be returned as a real `500` with a message, rather than allowed to fall through to the default error-dispatch path that resets the security context and surfaces as a misleading `401` (auto-logout).
 
 #### Scenario: Square meters left blank or non-numeric
 - **WHEN** the Consultant submits the marble-spec form with an empty or non-numeric "שטח (מ\"ר)" value
@@ -152,16 +163,26 @@ When the Consultant submits the "+ הוסף שיש" form in the "specs" tab's "m
 - **WHEN** an unhandled exception occurs while processing a request from an authenticated user
 - **THEN** the system returns a `500` response with an error message, and the Consultant's session remains valid for subsequent requests (no forced logout)
 
-### Requirement: Required fields are marked and the total amount saves automatically
-On the order detail "workflow" tab, the "סכום כולל" (total gross amount) field and all other fields required to advance the order or send the quote to the customer SHALL be marked with a trailing `*` in their label or placeholder. The total amount input SHALL be saved automatically when the Consultant moves focus away from the field (`onBlur`), without requiring a separate "עדכן סכום" click; the explicit button remains available for the same action. If the "send to customer" completeness gate is blocking on a missing marble/stone specification or total amount, and the Consultant has already filled in the corresponding form fields without saving them, the gate SHALL show an additional hint pointing at the specific action still needed (clicking "+ הוסף שיש", or that the amount will save automatically on blur).
+### Requirement: Required fields are marked and form entries save automatically
+On the order detail "workflow" tab, the "סכום כולל" (total gross amount) field and all other fields required to advance the order or send the quote to the customer SHALL be marked with a trailing `*` in their label or placeholder. The total amount input SHALL be saved automatically when the Consultant moves focus away from the field (`onBlur`), without requiring a separate "עדכן סכום" click; the explicit button remains available for the same action.
+
+On the "specs" tab, the marble/stone specification form and the sink specification form SHALL NOT have an explicit "add" button. Once a form's required fields are filled in (model/code and a square-meters value greater than 0 for marble/stone; brand and model for sinks), the system SHALL automatically save the new specification a short moment after the Consultant stops changing the form, then clear the form so the Consultant can enter the next item. If the "send to customer" completeness gate is blocking on a missing marble/stone specification or total amount, and the Consultant has already filled in the corresponding form fields, the gate SHALL show an additional hint indicating that the entry will be saved automatically.
 
 #### Scenario: Total amount saves on blur
 - **WHEN** the Consultant types a valid amount into the "סכום כולל" field on the workflow tab and clicks elsewhere on the page
 - **THEN** the amount is saved via `PUT /api/v1/orders/{id}` without the Consultant needing to click "עדכן סכום"
 
+#### Scenario: Marble/stone specification saves automatically
+- **WHEN** the Consultant fills in "סוג / קוד שיש" and a "שטח (מ\"ר)" greater than 0 in the marble-spec form and pauses without clicking any button
+- **THEN** the specification is saved via `POST /api/v1/orders/{id}/materials`, the new item appears in the marble/stone list, and the form is cleared for the next entry
+
+#### Scenario: Sink specification saves automatically
+- **WHEN** the Consultant fills in "מותג" and "דגם" in the sink-spec form and pauses without clicking any button
+- **THEN** the sink specification is saved via `POST /api/v1/orders/{id}/sinks`, the new item appears in the sinks list, and the form is cleared for the next entry
+
 #### Scenario: Completeness gate hints at unsaved marble-spec form data
-- **WHEN** the "send to customer" gate is shown because no marble/stone specification exists yet, and the Consultant has filled in valid "סוג / קוד שיש" and "שטח (מ\"ר)" values in the marble-spec form without clicking "+ הוסף שיש"
-- **THEN** the gate message additionally indicates that the filled-in fields still need to be saved by clicking "+ הוסף שיש"
+- **WHEN** the "send to customer" gate is shown because no marble/stone specification exists yet, and the Consultant has filled in valid "סוג / קוד שיש" and "שטח (מ\"ר)" values in the marble-spec form
+- **THEN** the gate message additionally indicates that the filled-in fields will be saved automatically momentarily
 
 ### Requirement: Consultant can preview the proposal before sending it to the customer
 On the "REVIEWING_LAYOUT" step of the order detail "workflow" tab, a "תצוגה מקדימה של ההצעה" (proposal preview) toggle SHALL be available above the send-channel selector and "שלח הצעה" button. When expanded, it SHALL show a read-only summary of everything the customer's portal/proposal will reflect: the site address, the full list of marble/stone specifications (model/code, finish, square meters, edge detailing, water-edge flag, cooktop fee), the full list of sink specifications (brand, model, dimensions, color, mounting style, quantity, notes), the total amount with its 20%/80% payment breakdown (or a warning if not yet set), the crane disclaimer (`CRANE_DISCLAIMER_HE`, verbatim) if `craneRequired` is true, and whether a layout document has been uploaded. The preview SHALL reflect current in-memory state and require no additional API calls. Sending to the customer remains a separate, explicit action and is not triggered by opening the preview.

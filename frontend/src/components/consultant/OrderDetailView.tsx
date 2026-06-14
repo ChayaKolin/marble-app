@@ -9,7 +9,7 @@ import { PHONE_PATTERN, PHONE_TITLE_HE, sanitizePhoneInput, CRANE_DISCLAIMER_HE 
 
 /* ── Types ──────────────────────────────────────────────────────────── */
 interface Photo      { id: string; fileUrl: string }
-interface MatSpec    { id: string; marbleModelCode: string; finishType: string; squareMeters: number; counterEdgeDetailing: string; waterEdgeRequired: boolean; cooktopBaseFee: number }
+interface MatSpec    { id: string; marbleModelCode: string; finishType: string; squareMeters: number; counterEdgeDetailing: string; waterEdgeRequired: boolean; cooktopBaseFee: number; notes?: string }
 interface SinkSpec   { id: string; brand: string; modelName: string; widthMm: number; heightMm: number; depthMm: number; color: string; mountingStyle: string; quantity: number; notes?: string }
 interface Sig        { category: string; signedAt: string }
 interface LedgerEntry{ id: string; amountAllocated: number; milestoneTier: number; cleared: boolean }
@@ -91,7 +91,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [newInstallerForm, setNewInstallerForm] = useState({ firstName: '', lastName: '', phoneNumber: '' })
 
   /* specs form */
-  const [specForm, setSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200' })
+  const [specForm, setSpecForm] = useState({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200', notes: '' })
   const [sinkForm, setSinkForm] = useState({ brand: '', modelName: '', widthMm: '', heightMm: '', depthMm: '', color: '', mountingStyle: 'UNDERMOUNT', quantity: '1', notes: '' })
   const [specsTab, setSpecsTab] = useState<'marble' | 'sinks'>('marble')
 
@@ -345,11 +345,28 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     try {
       const r = await axios.post(`/api/v1/orders/${order.id}/materials`, { ...specForm, squareMeters: parseFloat(specForm.squareMeters), cooktopBaseFee: parseFloat(specForm.cooktopBaseFee || '200') })
       setSpecs(s => [...s, { ...specForm, id: r.data.id, squareMeters: parseFloat(specForm.squareMeters), cooktopBaseFee: parseFloat(specForm.cooktopBaseFee || '200'), waterEdgeRequired: specForm.waterEdgeRequired }])
-      setSpecForm({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200' })
+      setSpecForm({ marbleModelCode: '', finishType: 'מבריק', squareMeters: '', counterEdgeDetailing: '', waterEdgeRequired: false, cooktopBaseFee: '200', notes: '' })
       flash('מפרט נוסף')
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשמירת המפרט', false) }
     finally { setBusy('') }
   }
+
+  // Auto-save a new marble/stone spec once its required fields are filled and
+  // the consultant pauses — replaces the old "+ הוסף שיש" button.
+  useEffect(() => {
+    if (!specForm.marbleModelCode.trim() || !(parseFloat(specForm.squareMeters) > 0)) return
+    if (busy === 'spec') return
+    const timer = setTimeout(() => { addSpec() }, 1200)
+    return () => clearTimeout(timer)
+  }, [specForm, busy])
+
+  // Same auto-save pattern for sink specs — replaces "+ הוסף כיור".
+  useEffect(() => {
+    if (!sinkForm.brand.trim() || !sinkForm.modelName.trim()) return
+    if (busy === 'sink') return
+    const timer = setTimeout(() => { addSink() }, 1200)
+    return () => clearTimeout(timer)
+  }, [sinkForm, busy])
 
   /** Soft-deletes the order — available until the customer digitally approves the slab layout. */
   async function handleDeleteOrder() {
@@ -738,7 +755,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <p className="text-amber-400 text-xs">
                       ⬆ חסר מפרט שיש/אבן (להבדיל מכיור!) — יש להוסיף פריט עם "סוג / קוד שיש" ו"שטח (מ"ר)" בתת-הלשונית "שיש ואבן" שבתוך לשונית "מפרט"
                       {specForm.marbleModelCode.trim() && parseFloat(specForm.squareMeters) > 0 &&
-                        ' — מילאת את השדות, אך עדיין יש ללחוץ על "+ הוסף שיש" כדי לשמור אותם'}
+                        ' — מילאת את השדות, הפריט יישמר אוטומטית בעוד רגע'}
                     </p>
                   )}
                   {order.totalGrossAmount == null && (
@@ -788,6 +805,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                               {s.waterEdgeRequired && ' · מגבה למים'}
                               {Number(s.cooktopBaseFee) > 0 && ` · עלות כיריים: ₪${Number(s.cooktopBaseFee).toLocaleString('he-IL')}`}
                             </p>
+                            {s.notes && <p className="text-slate-500 text-xs">הערה: {s.notes}</p>}
                           </div>
                         ))}
                       </div>
@@ -1057,6 +1075,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       {s.waterEdgeRequired && <span className="text-amber-400">קאנט מים ✓</span>}
                       {s.cooktopBaseFee > 0 && <span className="text-slate-500">כיריים: ₪{s.cooktopBaseFee}</span>}
                     </div>
+                    {s.notes && <p className="text-slate-400 text-xs">הערה: {s.notes}</p>}
                   </div>
                   <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/materials/${s.id}`); setSpecs(p => p.filter(x => x.id !== s.id)) }}
                     className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50 shrink-0">מחק</button>
@@ -1064,7 +1083,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               ))}
 
               <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3">
-                <p className="text-slate-300 text-sm font-medium">+ הוסף סוג שיש</p>
+                <p className="text-slate-300 text-sm font-medium">הוספת שיש / אבן</p>
                 <div className="grid grid-cols-2 gap-3">
                   <SF label="סוג / קוד שיש *" value={specForm.marbleModelCode} onChange={v => setSpecForm(f => ({ ...f, marbleModelCode: v }))} />
                   <div className="space-y-1">
@@ -1083,10 +1102,14 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <span className="text-slate-300 text-sm">קאנט מים</span>
                   </label>
                 </div>
-                <button onClick={addSpec} disabled={busy === 'spec'}
-                  className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm disabled:opacity-50">
-                  {busy === 'spec' ? '...' : '+ הוסף שיש'}
-                </button>
+                <div className="space-y-1">
+                  <label className="text-slate-400 text-xs">הערה</label>
+                  <textarea value={specForm.notes} onChange={e => setSpecForm(f => ({ ...f, notes: e.target.value }))} rows={2}
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
+                </div>
+                <p className="text-center text-xs text-slate-500">
+                  {busy === 'spec' ? 'שומר...' : 'מילוי "סוג / קוד שיש" ו"שטח (מ"ר)" ישמור את הפריט אוטומטית'}
+                </p>
               </div>
             </div>
           )}
@@ -1111,7 +1134,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               ))}
 
               <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3">
-                <p className="text-slate-300 text-sm font-medium">+ הוסף כיור</p>
+                <p className="text-slate-300 text-sm font-medium">הוספת כיור</p>
                 <div className="grid grid-cols-2 gap-3">
                   <SF label="מותג *" value={sinkForm.brand} onChange={v => setSinkForm(f => ({ ...f, brand: v }))} />
                   <SF label="דגם *" value={sinkForm.modelName} onChange={v => setSinkForm(f => ({ ...f, modelName: v }))} />
@@ -1133,10 +1156,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   <textarea value={sinkForm.notes} onChange={e => setSinkForm(f => ({ ...f, notes: e.target.value }))} rows={2}
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
                 </div>
-                <button onClick={addSink} disabled={busy === 'sink'}
-                  className="w-full py-2.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm disabled:opacity-50">
-                  {busy === 'sink' ? '...' : '+ הוסף כיור'}
-                </button>
+                <p className="text-center text-xs text-slate-500">
+                  {busy === 'sink' ? 'שומר...' : 'מילוי "מותג" ו"דגם" ישמור את הכיור אוטומטית'}
+                </p>
               </div>
             </div>
           )}
