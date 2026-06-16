@@ -105,21 +105,19 @@ export default function LayoutApprovalSignature({ orderId, layoutDocumentUrl, ma
           type="checkbox"
           checked={reviewed}
           onChange={e => setReviewed(e.target.checked)}
-          disabled={!layoutDocumentUrl}
           className="mt-1 h-4 w-4 rounded border-slate-600 bg-slate-800
-                     text-emerald-500 focus:ring-emerald-500 cursor-pointer
-                     disabled:cursor-not-allowed"
+                     text-emerald-500 focus:ring-emerald-500 cursor-pointer"
         />
         <label
           htmlFor="reviewed"
           className="text-slate-300 text-sm cursor-pointer select-none"
         >
-          עיינתי בתוכנית הפריסה ואני מאשר/ת להמשיך לייצור
+          עיינתי בפרטי ההזמנה ואני מאשר/ת להמשיך לייצור
         </label>
       </div>
 
       {/* Signature capture — only shown after reviewing */}
-      {reviewed && layoutDocumentUrl && (
+      {reviewed && (
         <>
           <div className="bg-red-900/20 border border-red-800 rounded-xl p-4">
             <p className="text-red-300 text-xs font-medium">

@@ -122,19 +122,13 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
               }
             </div>
             {!order.layoutApprovalSigned && (
-              <>
-                {order.layoutDocumentUrl ? (
-                  <button
-                    onClick={() => setScreen('layout')}
-                    className="w-full py-2.5 rounded-lg bg-red-700 hover:bg-red-600
-                               text-white text-sm font-medium transition-colors"
-                  >
-                    צפה בתוכנית וחתום לאישור
-                  </button>
-                ) : (
-                  <p className="text-slate-500 text-xs">התוכנית בהכנה — תקבל/י הודעה כשתהיה מוכנה</p>
-                )}
-              </>
+              <button
+                onClick={() => setScreen('layout')}
+                className="w-full py-2.5 rounded-lg bg-red-700 hover:bg-red-600
+                           text-white text-sm font-medium transition-colors"
+              >
+                {order.layoutDocumentUrl ? 'צפה בתוכנית וחתום לאישור' : 'צפה במפרט וחתום לאישור'}
+              </button>
             )}
           </div>
         )}
