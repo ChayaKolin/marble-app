@@ -36,9 +36,28 @@ The system SHALL refuse the transition from `REVIEWING_LAYOUT` to `PRODUCTION` i
 ### Requirement: {AWAITING_INSTALLATION, PENDING_REPAIR} to COMPLETED is hard-gated by the final installation signature
 The system SHALL refuse the transition to `COMPLETED` (from `AWAITING_INSTALLATION` or `PENDING_REPAIR`) if no `FINAL_POST_INSTALLATION` record exists in `digital_signatures` for the order. This signature is the customer's explicit confirmation that everything arrived as ordered, and is a prerequisite for collecting the final (80%) payment.
 
+The `FINAL_POST_INSTALLATION` signature can be collected via **two routes** — either satisfies the gate:
+
+1. **On the installer's device** — the Installer opens their daily-jobs list, taps "סיום עבודה — חתימת לקוח", and hands the device to the customer to sign on-screen (`INSTALLER` role submits `POST /api/v1/orders/{id}/signatures` with `FINAL_POST_INSTALLATION` and then marks logistics complete).
+
+2. **Via the customer portal** — the Consultant sends the customer a portal magic-link from STEP 5 (`AWAITING_INSTALLATION`). The customer opens the link, views the installed item list, checks the confirmation box, and signs. The portal calls `POST /api/v1/orders/{id}/signatures` with `FINAL_POST_INSTALLATION` under the `CUSTOMER` JWT (both `INSTALLER` and `CUSTOMER` roles are allowed to submit this category).
+
+The Consultant's order detail view SHALL reflect the signature status in STEP 5 (`AWAITING_INSTALLATION`/`PENDING_REPAIR`):
+- While unsigned: an amber notice explains that the Installer must collect the signature on their dashboard; the "סמן כהושלם" button is disabled.
+- Once signed: a green "✓ הלקוח חתם על אישור סיום ההתקנה" confirmation appears and the button becomes active.
+- The view SHALL poll the signatures endpoint every 10 seconds while in `AWAITING_INSTALLATION` and the signature is absent, so the button unlocks automatically without a page refresh.
+
 #### Scenario: Transition blocked — no final installation signature
 - **WHEN** the Consultant attempts to advance an order from `AWAITING_INSTALLATION` or `PENDING_REPAIR` to `COMPLETED` and no `FINAL_POST_INSTALLATION` signature exists for that order
-- **THEN** the system returns HTTP 409 with a message indicating the customer's signature confirming the installation is required before completion
+- **THEN** the system returns HTTP 409 with a message indicating the customer's signature confirming the installation is required before completion; the Consultant UI also disables the "סמן כהושלם" button pre-emptively so the 409 is rarely reached
+
+#### Scenario: Consultant sees that signature is pending
+- **WHEN** an order is in `AWAITING_INSTALLATION` and the `FINAL_POST_INSTALLATION` signature has not yet been collected
+- **THEN** the order detail view shows an amber notice explaining that the Installer needs to collect the customer's signature on the installer dashboard, and the "סמן כהושלם" button is disabled
+
+#### Scenario: Consultant's view auto-updates once the Installer signs
+- **WHEN** the Installer collects the final installation signature and the Consultant's order detail view is open (polling every 10 s)
+- **THEN** the amber notice is replaced by a green confirmation and the "סמן כהושלם" button becomes enabled — without a manual page refresh
 
 #### Scenario: Transition allowed — final installation signature present
 - **WHEN** the Consultant advances an order from `AWAITING_INSTALLATION` or `PENDING_REPAIR` to `COMPLETED` and a `FINAL_POST_INSTALLATION` signature record exists for that order

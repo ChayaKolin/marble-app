@@ -63,6 +63,8 @@ public class PortalOrderService {
                 order.getId(), SignatureCategory.PRE_MEASUREMENT_DISCLAIMER);
         boolean layoutSigned = signatureRepository.existsByOrderIdAndCategory(
                 order.getId(), SignatureCategory.SLAB_LAYOUT_APPROVAL);
+        boolean finalInstallationSigned = signatureRepository.existsByOrderIdAndCategory(
+                order.getId(), SignatureCategory.FINAL_POST_INSTALLATION);
 
         List<FinancialLedger> ledgerEntries = ledgerRepository.findByOrderId(order.getId());
         List<PaymentMilestoneStatus> milestones = ledgerEntries.stream()
@@ -86,7 +88,7 @@ public class PortalOrderService {
         List<PortalSinkSpec> sinkSpecs = sinkSpecRepository.findByOrderId(order.getId()).stream()
                 .map(PortalSinkSpec::from).toList();
 
-        return PortalOrderResponse.from(order, disclaimerSigned, layoutSigned, milestones, materialSpecs, sinkSpecs);
+        return PortalOrderResponse.from(order, disclaimerSigned, layoutSigned, finalInstallationSigned, milestones, materialSpecs, sinkSpecs);
     }
 
     private UUID currentCustomerId() {

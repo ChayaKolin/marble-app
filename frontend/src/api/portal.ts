@@ -42,6 +42,7 @@ export interface PortalOrderResponse {
   measurementsDocumentUrl: string | null
   measurementDisclaimerSigned: boolean
   layoutApprovalSigned: boolean
+  finalInstallationSigned: boolean
   paymentMilestones: PaymentMilestoneStatus[]
   createdAt: string
   materialSpecs: PortalMaterialSpec[]

@@ -10,7 +10,7 @@ Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
 [INFO] 
 [INFO] --- resources:3.3.1:resources (default-resources) @ marble ---
 [INFO] Copying 3 resources from src\main\resources to target\classes
-[INFO] Copying 15 resources from src\main\resources to target\classes
+[INFO] Copying 16 resources from src\main\resources to target\classes
 [INFO] 
 [INFO] --- compiler:3.13.0:compile (default-compile) @ marble ---
 [INFO] Nothing to compile - all classes are up to date.
@@ -37,50 +37,41 @@ Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
 
  :: Spring Boot ::                (v3.3.5)
 
-2026-06-14T22:52:03.884+03:00  INFO 1944 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Starting MarbleApplication using Java 21.0.11 with PID 1944 (C:\Users\USER\Desktop\marble-app\backend\target\classes started by USER in C:\Users\USER\Desktop\marble-app\backend)
-2026-06-14T22:52:03.888+03:00  INFO 1944 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : No active profile set, falling back to 1 default profile: "default"
-2026-06-14T22:52:05.031+03:00  INFO 1944 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-06-14T22:52:05.167+03:00  INFO 1944 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 127 ms. Found 14 JPA repository interfaces.
-2026-06-14T22:52:06.220+03:00  INFO 1944 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
-2026-06-14T22:52:06.245+03:00  INFO 1944 --- [kostone-marble] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
-2026-06-14T22:52:06.245+03:00  INFO 1944 --- [kostone-marble] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.31]
-2026-06-14T22:52:06.394+03:00  INFO 1944 --- [kostone-marble] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
-2026-06-14T22:52:06.402+03:00  INFO 1944 --- [kostone-marble] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2435 ms
-2026-06-14T22:52:07.704+03:00  INFO 1944 --- [kostone-marble] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/kostonemarble_db (PostgreSQL 18.4)
-2026-06-14T22:52:07.730+03:00  WARN 1944 --- [kostone-marble] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: PostgreSQL 18.4 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 16.
-2026-06-14T22:52:07.854+03:00  INFO 1944 --- [kostone-marble] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 14 migrations (execution time 00:00.093s)
-2026-06-14T22:52:07.960+03:00  INFO 1944 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 14
-2026-06-14T22:52:07.965+03:00  INFO 1944 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Schema "public" is up to date. No migration necessary.
-2026-06-14T22:52:08.154+03:00  INFO 1944 --- [kostone-marble] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-06-14T22:52:08.293+03:00  INFO 1944 --- [kostone-marble] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
-2026-06-14T22:52:08.362+03:00  INFO 1944 --- [kostone-marble] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-06-14T22:52:09.079+03:00  INFO 1944 --- [kostone-marble] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-06-14T22:52:09.161+03:00  INFO 1944 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-06-14T22:52:09.322+03:00  INFO 1944 --- [kostone-marble] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6106dfb6
-2026-06-14T22:52:09.322+03:00  INFO 1944 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-06-14T22:52:09.403+03:00  WARN 1944 --- [kostone-marble] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-06-14T22:52:11.694+03:00  INFO 1944 --- [kostone-marble] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-06-14T22:52:11.796+03:00  INFO 1944 --- [kostone-marble] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-06-14T22:52:11.829+03:00  WARN 1944 --- [kostone-marble] [           main] com.kostone.marble.config.TwilioConfig   : Twilio credentials not set — WhatsApp notifications will use stub
-2026-06-14T22:52:12.661+03:00  INFO 1944 --- [kostone-marble] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
-2026-06-14T22:52:14.053+03:00  INFO 1944 --- [kostone-marble] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
-2026-06-14T22:52:14.058+03:00  WARN 1944 --- [kostone-marble] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
-2026-06-14T22:52:14.981+03:00  WARN 1944 --- [kostone-marble] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-06-14T22:52:16.596+03:00  INFO 1944 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
-2026-06-14T22:52:16.623+03:00  INFO 1944 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Started MarbleApplication in 13.254 seconds (process running for 13.774)
-2026-06-14T22:52:27.549+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
-2026-06-14T22:52:27.549+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
-2026-06-14T22:52:27.563+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 14 ms
-2026-06-14T22:52:30.732+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
-2026-06-14T22:52:41.889+03:00  INFO 1944 --- [kostone-marble] [io-8080-exec-10] c.k.m.s.n.RealNotificationAdapter        : WhatsApp delivery skipped — Twilio not configured, using email fallback
-2026-06-14T22:52:41.890+03:00  WARN 1944 --- [kostone-marble] [io-8080-exec-10] c.k.m.s.n.RealNotificationAdapter        : WhatsApp magic-link delivery unavailable for chaya — share the portal link manually
-2026-06-16T01:47:00.106+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1d2h32m27s817ms37µs500ns).
-2026-06-16T10:05:44.939+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=7h43m24s284ms551µs200ns).
-2026-06-16T10:34:57.471+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=11m12s155ms450µs200ns).
-2026-06-16T12:26:04.662+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=1h4m36s465ms53µs200ns).
-2026-06-16T12:47:32.781+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=9m27s965ms811µs400ns).
-2026-06-16T13:26:48.439+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=3m15s168ms877µs600ns).
-2026-06-16T21:01:41.247+03:00  WARN 1944 --- [kostone-marble] [l-1 housekeeper] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Thread starvation or clock leap detected (housekeeper delta=5h2m1s78ms816µs600ns).
-2026-06-16T21:09:08.456+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-3] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
-2026-06-16T21:09:32.706+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-5] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
-2026-06-16T21:11:27.455+03:00  INFO 1944 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-16T21:22:03.926+03:00  INFO 14468 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Starting MarbleApplication using Java 21.0.11 with PID 14468 (C:\Users\USER\Desktop\marble-app\backend\target\classes started by USER in C:\Users\USER\Desktop\marble-app\backend)
+2026-06-16T21:22:03.935+03:00  INFO 14468 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : No active profile set, falling back to 1 default profile: "default"
+2026-06-16T21:22:06.963+03:00  INFO 14468 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-06-16T21:22:07.397+03:00  INFO 14468 --- [kostone-marble] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 393 ms. Found 14 JPA repository interfaces.
+2026-06-16T21:22:09.875+03:00  INFO 14468 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port 8080 (http)
+2026-06-16T21:22:09.917+03:00  INFO 14468 --- [kostone-marble] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-06-16T21:22:09.917+03:00  INFO 14468 --- [kostone-marble] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/10.1.31]
+2026-06-16T21:22:10.146+03:00  INFO 14468 --- [kostone-marble] [           main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2026-06-16T21:22:10.146+03:00  INFO 14468 --- [kostone-marble] [           main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 6043 ms
+2026-06-16T21:22:12.047+03:00  INFO 14468 --- [kostone-marble] [           main] org.flywaydb.core.FlywayExecutor         : Database: jdbc:postgresql://localhost:5432/kostonemarble_db (PostgreSQL 18.4)
+2026-06-16T21:22:12.073+03:00  WARN 14468 --- [kostone-marble] [           main] o.f.c.internal.database.base.Database    : Flyway upgrade recommended: PostgreSQL 18.4 is newer than this version of Flyway and support has not been tested. The latest supported version of PostgreSQL is 16.
+2026-06-16T21:22:12.238+03:00  INFO 14468 --- [kostone-marble] [           main] o.f.core.internal.command.DbValidate     : Successfully validated 15 migrations (execution time 00:00.131s)
+2026-06-16T21:22:12.419+03:00  INFO 14468 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Current version of schema "public": 14
+2026-06-16T21:22:12.487+03:00  INFO 14468 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Migrating schema "public" to version "15 - measurement payment breakdown"
+2026-06-16T21:22:12.615+03:00  INFO 14468 --- [kostone-marble] [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema "public", now at version v15 (execution time 00:00.097s)
+2026-06-16T21:22:12.960+03:00  INFO 14468 --- [kostone-marble] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2026-06-16T21:22:13.221+03:00  INFO 14468 --- [kostone-marble] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.5.3.Final
+2026-06-16T21:22:13.335+03:00  INFO 14468 --- [kostone-marble] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
+2026-06-16T21:22:14.571+03:00  INFO 14468 --- [kostone-marble] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-06-16T21:22:14.746+03:00  INFO 14468 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-06-16T21:22:14.940+03:00  INFO 14468 --- [kostone-marble] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@6ae6d078
+2026-06-16T21:22:14.957+03:00  INFO 14468 --- [kostone-marble] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-06-16T21:22:15.054+03:00  WARN 14468 --- [kostone-marble] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2026-06-16T21:22:20.163+03:00  INFO 14468 --- [kostone-marble] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-06-16T21:22:20.468+03:00  INFO 14468 --- [kostone-marble] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-06-16T21:22:20.533+03:00  WARN 14468 --- [kostone-marble] [           main] com.kostone.marble.config.TwilioConfig   : Twilio credentials not set — WhatsApp notifications will use stub
+2026-06-16T21:22:22.223+03:00  INFO 14468 --- [kostone-marble] [           main] o.s.d.j.r.query.QueryEnhancerFactory     : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-06-16T21:22:24.457+03:00  INFO 14468 --- [kostone-marble] [           main] eAuthenticationProviderManagerConfigurer : Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2026-06-16T21:22:24.463+03:00  WARN 14468 --- [kostone-marble] [           main] r$InitializeUserDetailsManagerConfigurer : Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used for username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider.
+2026-06-16T21:22:25.895+03:00  WARN 14468 --- [kostone-marble] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2026-06-16T21:22:28.698+03:00  INFO 14468 --- [kostone-marble] [           main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port 8080 (http) with context path '/'
+2026-06-16T21:22:28.723+03:00  INFO 14468 --- [kostone-marble] [           main] com.kostone.marble.MarbleApplication     : Started MarbleApplication in 25.988 seconds (process running for 27.155)
+2026-06-16T21:22:51.390+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-06-16T21:22:51.391+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-06-16T21:22:51.396+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 5 ms
+2026-06-16T21:30:19.761+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-16T21:31:33.524+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-7] c.k.m.s.c.CalendarEventCreationListener  : Auto-created INSTALLATION calendar event for assignment ef09d620-1e4b-4939-a543-8f8518a3c235
+2026-06-16T21:46:42.733+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a4d5df91-0823-4860-aa31-907ad465b81b\407b4bcb-069b-4322-9bad-3a737da04e11_______1.jpg

@@ -3,8 +3,9 @@ import { type PortalOrderResponse } from '../../api/portal'
 import { ORDER_STATUS_HE } from '../../api/orders'
 import PreMeasurementDisclaimer from './PreMeasurementDisclaimer'
 import LayoutApprovalSignature from './LayoutApprovalSignature'
+import FinalInstallationSignature from './FinalInstallationSignature'
 
-type ActiveScreen = 'detail' | 'disclaimer' | 'layout'
+type ActiveScreen = 'detail' | 'disclaimer' | 'layout' | 'installation'
 
 interface Props {
   order: PortalOrderResponse
@@ -28,6 +29,17 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
       <LayoutApprovalSignature
         orderId={order.id}
         layoutDocumentUrl={order.layoutDocumentUrl ?? undefined}
+        materialSpecs={order.materialSpecs}
+        sinkSpecs={order.sinkSpecs}
+        onComplete={() => { setScreen('detail'); onActionComplete() }}
+      />
+    )
+  }
+
+  if (screen === 'installation') {
+    return (
+      <FinalInstallationSignature
+        orderId={order.id}
         materialSpecs={order.materialSpecs}
         sinkSpecs={order.sinkSpecs}
         onComplete={() => { setScreen('detail'); onActionComplete() }}
@@ -102,6 +114,32 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
                            text-white text-sm font-medium transition-colors"
               >
                 חתום על אישור המדידה
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Final installation approval */}
+        {order.status === 'AWAITING_INSTALLATION' && (
+          <div className={`rounded-xl border p-4 space-y-3 ${
+            order.finalInstallationSigned
+              ? 'border-emerald-800 bg-emerald-950/20'
+              : 'border-amber-700 bg-amber-950/20'
+          }`}>
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-slate-200">אישור סיום ההתקנה</p>
+              {order.finalInstallationSigned
+                ? <span className="text-emerald-400 text-xs">✓ נחתם — תודה!</span>
+                : <span className="text-amber-400 text-xs">נדרש אישורך</span>
+              }
+            </div>
+            {!order.finalInstallationSigned && (
+              <button
+                onClick={() => setScreen('installation')}
+                className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500
+                           text-white text-sm font-medium transition-colors"
+              >
+                אשר שההתקנה הושלמה וחתום
               </button>
             )}
           </div>

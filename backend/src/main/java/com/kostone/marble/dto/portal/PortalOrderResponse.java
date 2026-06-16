@@ -23,6 +23,7 @@ public record PortalOrderResponse(
         // Signature status (for portal actions)
         boolean measurementDisclaimerSigned,
         boolean layoutApprovalSigned,
+        boolean finalInstallationSigned,
         // Payment milestones
         List<PaymentMilestoneStatus> paymentMilestones,
         OffsetDateTime createdAt,
@@ -45,6 +46,7 @@ public record PortalOrderResponse(
             Order order,
             boolean disclaimerSigned,
             boolean layoutSigned,
+            boolean finalInstallationSigned,
             List<PaymentMilestoneStatus> milestones,
             List<PortalMaterialSpec> materialSpecs,
             List<PortalSinkSpec> sinkSpecs) {
@@ -60,6 +62,7 @@ public record PortalOrderResponse(
                 order.getMeasurementsDocumentUrl(),
                 disclaimerSigned,
                 layoutSigned,
+                finalInstallationSigned,
                 milestones,
                 order.getCreatedAt(),
                 materialSpecs,

@@ -167,10 +167,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   }, [order.measurementsDocumentUrl])
 
   const layoutSigned = sigs.some(s => s.category === 'SLAB_LAYOUT_APPROVAL')
+  const finalSigned  = sigs.some(s => s.category === 'FINAL_POST_INSTALLATION')
 
-  // Poll for the customer's digital signature while awaiting it, so the
-  // Consultant sees "✓ חתום — מאושר לייצור" appear on its own once the
-  // customer approves on the portal — no manual refresh needed.
   useEffect(() => {
     if (order.status !== 'REVIEWING_LAYOUT' || layoutSigned) return
     const interval = setInterval(() => {
@@ -178,6 +176,16 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     }, 10000)
     return () => clearInterval(interval)
   }, [order.id, order.status, layoutSigned])
+
+  // Poll for the installer's post-installation signature so "סמן כהושלם"
+  // unlocks automatically once the installer collects it on their dashboard.
+  useEffect(() => {
+    if (order.status !== 'AWAITING_INSTALLATION' || finalSigned) return
+    const interval = setInterval(() => {
+      axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
+    }, 10000)
+    return () => clearInterval(interval)
+  }, [order.id, order.status, finalSigned])
   const depositCleared = ledger.some(l => l.milestoneTier === 1 && l.cleared)
   const stepIndex = STATUS_STEPS.findIndex(s => s.status === order.status)
 
@@ -377,22 +385,22 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     finally { setBusy('') }
   }
 
-  // Auto-save a new marble/stone spec once its required fields are filled and
-  // the consultant pauses — replaces the old "+ הוסף שיש" button.
-  useEffect(() => {
-    if (!specForm.marbleModelCode.trim() || !(parseFloat(specForm.squareMeters) > 0)) return
-    if (busy === 'spec') return
-    const timer = setTimeout(() => { addSpec() }, 1200)
-    return () => clearTimeout(timer)
-  }, [specForm, busy])
+  // Save a new marble spec when the consultant leaves the add-form (onBlur on
+  // the container). A debounce-timer approach fired mid-typing if the user
+  // paused while writing notes — this is safer: save on focus-leave only.
+  function tryAddSpecOnBlur(e: React.FocusEvent<HTMLDivElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    if (specForm.marbleModelCode.trim() && parseFloat(specForm.squareMeters) > 0 && busy !== 'spec') {
+      addSpec()
+    }
+  }
 
-  // Same auto-save pattern for sink specs — replaces "+ הוסף כיור".
-  useEffect(() => {
-    if (!sinkForm.brand.trim() || !sinkForm.modelName.trim()) return
-    if (busy === 'sink') return
-    const timer = setTimeout(() => { addSink() }, 1200)
-    return () => clearTimeout(timer)
-  }, [sinkForm, busy])
+  function tryAddSinkOnBlur(e: React.FocusEvent<HTMLDivElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    if (sinkForm.brand.trim() && sinkForm.modelName.trim() && busy !== 'sink') {
+      addSink()
+    }
+  }
 
   function startEditSpec(s: MatSpec) {
     setEditingSpecId(s.id)
@@ -1080,7 +1088,62 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   className="w-full py-2.5 rounded-lg bg-cyan-700 hover:bg-cyan-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
                   {busy === 'logistics' ? '...' : '📅 שבץ מתקין ותאריך'}
                 </button>
-                <button onClick={() => advanceTo('COMPLETED')} disabled={busy === 'advance'}
+
+                <hr className="border-slate-700" />
+
+                {/* Send portal link for remote customer signature */}
+                <div className="space-y-2">
+                  <p className="text-slate-300 text-sm font-medium">שלח ללקוח לאישור ההתקנה</p>
+                  <p className="text-slate-500 text-xs">
+                    הלקוח יקבל קישור לחתימה דיגיטלית מהטלפון שלו. לחלופין, המתקין יכול לקבל חתימה ישירות בדשבורד המתקין.
+                  </p>
+                  <div className="flex gap-2">
+                    {(['WHATSAPP', 'EMAIL'] as const).map(ch => (
+                      <button key={ch} onClick={() => setSendChannel(ch)}
+                        className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
+                        {ch === 'WHATSAPP' ? '📱 וואטסאפ' : '📧 אימייל'}
+                      </button>
+                    ))}
+                  </div>
+                  <button onClick={sendToCustomer} disabled={busy === 'send'}
+                    className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    {busy === 'send' ? 'שולח...' : `📤 שלח קישור לאישור ההתקנה ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'}`}
+                  </button>
+                  {portalLink && (
+                    <div className="bg-slate-800 border border-purple-800/50 rounded-xl p-3 space-y-2">
+                      <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני:</p>
+                      <div className="flex items-center gap-2">
+                        <p className="flex-1 text-purple-300 text-xs font-mono break-all bg-slate-900 rounded px-2 py-1.5 select-all">
+                          {portalLink}
+                        </p>
+                        <button onClick={copyPortalLink}
+                          className="shrink-0 text-xs px-3 py-1.5 rounded-lg bg-purple-700 hover:bg-purple-600 text-white transition-colors">
+                          {copied ? '✓ הועתק' : 'העתק'}
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <hr className="border-slate-700" />
+
+                {/* Final-signature status — required before COMPLETED */}
+                {finalSigned ? (
+                  <div className="flex items-center gap-2 rounded-lg bg-emerald-900/30 border border-emerald-700/50 px-3 py-2.5">
+                    <span className="text-emerald-400 text-sm">✓</span>
+                    <p className="text-emerald-300 text-sm">הלקוח חתם על אישור סיום ההתקנה</p>
+                  </div>
+                ) : (
+                  <div className="rounded-lg bg-amber-900/20 border border-amber-700/40 px-3 py-2.5 space-y-1">
+                    <p className="text-amber-300 text-sm font-medium">ממתין לחתימת הלקוח</p>
+                    <p className="text-amber-200/70 text-xs">
+                      לאחר ביצוע ההתקנה, המתקין פותח את הדשבורד שלו ← "סיום עבודה — חתימת לקוח"
+                      ומגיש את המכשיר ללקוח לחתימה. הדף יתעדכן אוטומטית.
+                    </p>
+                  </div>
+                )}
+
+                <button onClick={() => advanceTo('COMPLETED')} disabled={busy === 'advance' || !finalSigned}
                   className="w-full py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm disabled:opacity-50 transition-colors">
                   {busy === 'advance' ? '...' : '✓ סמן כהושלם (80% שולמה)'}
                 </button>
@@ -1200,7 +1263,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
               ))}
 
-              <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3">
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3" onBlur={tryAddSpecOnBlur}>
                 <p className="text-slate-300 text-sm font-medium">הוספת שיש / אבן</p>
                 <div className="grid grid-cols-2 gap-3">
                   <SF label="סוג / קוד שיש *" value={specForm.marbleModelCode} onChange={v => setSpecForm(f => ({ ...f, marbleModelCode: v }))} />
@@ -1226,7 +1289,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
                 </div>
                 <p className="text-center text-xs text-slate-500">
-                  {busy === 'spec' ? 'שומר...' : 'מילוי "סוג / קוד שיש" ו"שטח (מ"ר)" ישמור את הפריט אוטומטית'}
+                  {busy === 'spec' ? 'שומר...' : 'יישמר עם יציאה מהטופס (כשמגדירים סוג שיש ושטח)'}
                 </p>
               </div>
             </div>
@@ -1288,7 +1351,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
               ))}
 
-              <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3">
+              <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3" onBlur={tryAddSinkOnBlur}>
                 <p className="text-slate-300 text-sm font-medium">הוספת כיור</p>
                 <div className="grid grid-cols-2 gap-3">
                   <SF label="מותג *" value={sinkForm.brand} onChange={v => setSinkForm(f => ({ ...f, brand: v }))} />
@@ -1312,7 +1375,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 resize-none" />
                 </div>
                 <p className="text-center text-xs text-slate-500">
-                  {busy === 'sink' ? 'שומר...' : 'מילוי "מותג" ו"דגם" ישמור את הכיור אוטומטית'}
+                  {busy === 'sink' ? 'שומר...' : 'יישמר עם יציאה מהטופס (כשמגדירים מותג ודגם)'}
                 </p>
               </div>
             </div>

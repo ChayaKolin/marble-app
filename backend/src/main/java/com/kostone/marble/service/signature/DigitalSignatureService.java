@@ -68,11 +68,9 @@ public class DigitalSignatureService {
                 if (!order.getCustomer().getId().equals(customerId)) {
                     throw new ResponseStatusException(HttpStatus.FORBIDDEN, "אין הרשאה לחתום על הזמנה זו");
                 }
-                // Customers may only sign these two categories
-                if (category == SignatureCategory.FINAL_POST_INSTALLATION) {
-                    throw new ResponseStatusException(HttpStatus.FORBIDDEN,
-                            "חתימת לאחר התקנה מבוצעת על ידי המתקין");
-                }
+                // Customers may sign any category on their own order; no further restriction.
+                // FINAL_POST_INSTALLATION can be collected on the installer's device (INSTALLER role)
+                // or via the customer portal (CUSTOMER role) — either satisfies the gate.
             }
             case INSTALLER -> {
                 // Installers submit the mandatory post-installation signature only —

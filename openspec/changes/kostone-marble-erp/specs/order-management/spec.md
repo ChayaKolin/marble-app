@@ -166,23 +166,27 @@ Whenever a marble/material specification is saved — automatically from the "sp
 ### Requirement: Required fields are marked and form entries save automatically
 On the order detail "workflow" tab, the "סכום כולל" (total gross amount) field and all other fields required to advance the order or send the quote to the customer SHALL be marked with a trailing `*` in their label or placeholder. The total amount input SHALL be saved automatically when the Consultant moves focus away from the field (`onBlur`), without requiring a separate "עדכן סכום" click; the explicit button remains available for the same action.
 
-On the "specs" tab, the marble/stone specification form and the sink specification form SHALL NOT have an explicit "add" button. Once a form's required fields are filled in (model/code and a square-meters value greater than 0 for marble/stone; brand and model for sinks), the system SHALL automatically save the new specification a short moment after the Consultant stops changing the form, then clear the form so the Consultant can enter the next item. If the "send to customer" completeness gate is blocking on a missing marble/stone specification or total amount, and the Consultant has already filled in the corresponding form fields, the gate SHALL show an additional hint indicating that the entry will be saved automatically.
+On the "specs" tab, the marble/stone specification form and the sink specification form SHALL NOT have an explicit "add" button. Once a form's required fields are filled in (model/code and a square-meters value greater than 0 for marble/stone; brand and model for sinks), the system SHALL automatically save the new specification when the Consultant moves focus out of the form entirely (on the `onBlur` event for the form container, firing only when focus leaves to an element outside that form). The form SHALL NOT save while the Consultant is still interacting with any field inside it — specifically, tabbing between fields within the form or typing in the notes field SHALL NOT trigger a save. After a successful save the form is cleared so the Consultant can enter the next item. If the "send to customer" completeness gate is blocking on a missing marble/stone specification or total amount, and the Consultant has already filled in the corresponding form fields, the gate SHALL show an additional hint indicating that the entry will be saved when the Consultant leaves the form.
 
 #### Scenario: Total amount saves on blur
 - **WHEN** the Consultant types a valid amount into the "סכום כולל" field on the workflow tab and clicks elsewhere on the page
 - **THEN** the amount is saved via `PUT /api/v1/orders/{id}` without the Consultant needing to click "עדכן סכום"
 
-#### Scenario: Marble/stone specification saves automatically
-- **WHEN** the Consultant fills in "סוג / קוד שיש" and a "שטח (מ\"ר)" greater than 0 in the marble-spec form and pauses without clicking any button
+#### Scenario: Marble/stone specification saves when focus leaves the form
+- **WHEN** the Consultant fills in "סוג / קוד שיש" and a "שטח (מ\"ר)" greater than 0 in the marble-spec form and then clicks or tabs to an element outside the form
 - **THEN** the specification is saved via `POST /api/v1/orders/{id}/materials`, the new item appears in the marble/stone list, and the form is cleared for the next entry
 
-#### Scenario: Sink specification saves automatically
-- **WHEN** the Consultant fills in "מותג" and "דגם" in the sink-spec form and pauses without clicking any button
+#### Scenario: Typing in the notes field does not trigger a premature save
+- **WHEN** the Consultant is typing in the notes field of the marble-spec or sink-spec add form while the required fields are already filled
+- **THEN** the form does NOT save mid-typing; the save only fires when the Consultant moves focus out of the entire form
+
+#### Scenario: Sink specification saves when focus leaves the form
+- **WHEN** the Consultant fills in "מותג" and "דגם" in the sink-spec form and then clicks or tabs to an element outside the form
 - **THEN** the sink specification is saved via `POST /api/v1/orders/{id}/sinks`, the new item appears in the sinks list, and the form is cleared for the next entry
 
 #### Scenario: Completeness gate hints at unsaved marble-spec form data
 - **WHEN** the "send to customer" gate is shown because no marble/stone specification exists yet, and the Consultant has filled in valid "סוג / קוד שיש" and "שטח (מ\"ר)" values in the marble-spec form
-- **THEN** the gate message additionally indicates that the filled-in fields will be saved automatically momentarily
+- **THEN** the gate message additionally indicates that the filled-in fields will be saved when the Consultant leaves the form
 
 ### Requirement: Consultant can preview the proposal before sending it to the customer
 On the "REVIEWING_LAYOUT" step of the order detail "workflow" tab, a "תצוגה מקדימה של ההצעה" (proposal preview) toggle SHALL be available above the send-channel selector and "שלח הצעה" button. When expanded, it SHALL show a read-only summary of everything the customer's portal/proposal will reflect: the site address, the full list of marble/stone specifications (model/code, finish, square meters, edge detailing, water-edge flag, cooktop fee), the full list of sink specifications (brand, model, dimensions, color, mounting style, quantity, notes), the total amount with its 20%/80% payment breakdown (or a warning if not yet set), the crane disclaimer (`CRANE_DISCLAIMER_HE`, verbatim) if `craneRequired` is true, and whether a layout document has been uploaded. The preview SHALL reflect current in-memory state and require no additional API calls. Sending to the customer remains a separate, explicit action and is not triggered by opening the preview.
