@@ -15,12 +15,12 @@ When an order is created, the system SHALL pre-populate the order's address fiel
 - **WHEN** an Installer views their assigned job on the mobile calendar
 - **THEN** the displayed address is the order-level override if set, otherwise the customer's default address
 
-### Requirement: Orders support a free-text notes field
-Every order SHALL have a `notes TEXT` field for general internal notes. The Consultant SHALL be able to create and update order notes at any time. Notes SHALL be visible to the Consultant in the order detail view and on the calendar event side panel.
+### Requirement: Orders support a free-text notes field with auto-save
+Every order SHALL have a `notes TEXT` field for general internal notes. The Consultant SHALL be able to create and update order notes at any time. Notes SHALL be visible to the Consultant in the order detail view and on the calendar event side panel. Notes SHALL save automatically via a debounce (1.2 s after the Consultant stops typing) with no explicit "save" button; a subtle "שומר..." / "✓ נשמר" status indicator replaces the button.
 
-#### Scenario: Order note saved
-- **WHEN** the Consultant types a note on an order and saves
-- **THEN** the note is persisted and displayed in the order detail and calendar side panel
+#### Scenario: Order note auto-saved after typing
+- **WHEN** the Consultant types a note on an order and pauses for 1.2 seconds
+- **THEN** the note is persisted via `PUT /api/v1/orders/{id}` without any explicit save action; "✓ נשמר" briefly appears and fades
 
 ### Requirement: Orders are soft-deleted, never hard-deleted
 The system SHALL set `deleted_at = NOW()` when the Consultant deletes an order. Soft-deleted orders SHALL be hidden from all standard order list views. The Consultant SHALL be able to restore a soft-deleted order from the Trash view. Deletion is permitted at any point up until the customer has digitally approved the slab layout (the `SLAB_LAYOUT_APPROVAL` signature in `digital_signatures`) — once that signature exists (the order is in or past `PRODUCTION`), the order can no longer be deleted. The order detail view SHALL offer a "delete order" action with a confirmation dialog whenever deletion is permitted, regardless of which status (`QUOTATION`, `CLOSED_AWAITING_MEASUREMENT`, or `REVIEWING_LAYOUT` before signature) the order is currently in. The confirmation dialog SHALL include an optional free-text "reason for deletion" field; if filled in, the reason SHALL be recorded in the activity log alongside the deletion event (see the data-safety "Activity log" requirement).
@@ -201,6 +201,17 @@ On the "specs" tab, every existing marble/stone specification and sink specifica
 #### Scenario: Consultant edits a sink specification
 - **WHEN** the Consultant clicks "ערוך" on an existing sink specification entry, changes a field (e.g. "צבע"), and clicks "שמור שינויים"
 - **THEN** the entry is updated via `PUT /api/v1/orders/{orderId}/sinks/{sinkId}`, the sinks list reflects the new value, and the edit form closes
+
+### Requirement: Consultant can record the cash payment breakdown received at measurement time
+The `orders` table SHALL have three nullable `NUMERIC(12,2)` columns: `measurement_payment_total`, `measurement_payment_to_consultant`, `measurement_payment_to_measurer`. These record the actual cash the customer brings at the measurement visit — which may differ from the 20% milestone calculation — split into the portion kept by the Consultant and the portion paid to the measurer. All three fields are optional; the Consultant fills them in when applicable. They are saved automatically on blur via `PUT /api/v1/orders/{id}` (the existing partial-update endpoint). The fields appear in the `CLOSED_AWAITING_MEASUREMENT` step of the order detail workflow tab, labeled "סה\"כ שהביא", "אלייך", and "למודד".
+
+#### Scenario: Consultant records the measurement payment
+- **WHEN** the order is in `CLOSED_AWAITING_MEASUREMENT` and the Consultant enters amounts in the three payment-breakdown fields and moves focus away
+- **THEN** each value is saved via `PUT /api/v1/orders/{id}` and the fields retain their values on the next page load
+
+#### Scenario: Measurement payment fields left empty
+- **WHEN** the Consultant does not fill in any measurement payment fields
+- **THEN** no validation error occurs and the fields remain `null` in the database; the existing `depositCleared` / milestone flow is unaffected
 
 #### Scenario: Consultant cancels an in-progress edit
 - **WHEN** the Consultant clicks "ערוך" on a specification entry, changes a field, then clicks "ביטול"

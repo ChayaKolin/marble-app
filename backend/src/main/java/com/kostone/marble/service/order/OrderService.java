@@ -242,6 +242,18 @@ public class OrderService {
                 order.setTotalGrossAmount(parsed);
             }
         }
+        if (fields.containsKey("measurementPaymentTotal")) {
+            Object v = fields.get("measurementPaymentTotal");
+            order.setMeasurementPaymentTotal(v == null || v.toString().isBlank() ? null : new BigDecimal(v.toString()));
+        }
+        if (fields.containsKey("measurementPaymentToConsultant")) {
+            Object v = fields.get("measurementPaymentToConsultant");
+            order.setMeasurementPaymentToConsultant(v == null || v.toString().isBlank() ? null : new BigDecimal(v.toString()));
+        }
+        if (fields.containsKey("measurementPaymentToMeasurer")) {
+            Object v = fields.get("measurementPaymentToMeasurer");
+            order.setMeasurementPaymentToMeasurer(v == null || v.toString().isBlank() ? null : new BigDecimal(v.toString()));
+        }
         return OrderResponse.from(orderRepository.save(order));
     }
 

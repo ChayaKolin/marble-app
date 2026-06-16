@@ -55,7 +55,14 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [sigs, setSigs]       = useState<Sig[]>([])
   const [ledger, setLedger]   = useState<LedgerEntry[]>([])
   const [notes, setNotes]     = useState(order.notes ?? '')
+  const [notesStatus, setNotesStatus] = useState<'' | 'saving' | 'saved'>('')
+  const notesSavedRef = useRef(order.notes ?? '')
   const [amountDraft, setAmountDraft] = useState(order.totalGrossAmount != null ? String(order.totalGrossAmount) : '')
+
+  /* measurement payment breakdown — all optional */
+  const [measPmtTotal, setMeasPmtTotal]           = useState(order.measurementPaymentTotal != null ? String(order.measurementPaymentTotal) : '')
+  const [measPmtConsultant, setMeasPmtConsultant] = useState(order.measurementPaymentToConsultant != null ? String(order.measurementPaymentToConsultant) : '')
+  const [measPmtMeasurer, setMeasPmtMeasurer]     = useState(order.measurementPaymentToMeasurer != null ? String(order.measurementPaymentToMeasurer) : '')
   const [msg, setMsg]         = useState<{ text: string; ok: boolean }>({ text: '', ok: true })
   const [busy, setBusy]       = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -179,6 +186,25 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* ── Actions ──────────────────────────────────────────────────────── */
   const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
+
+  /* Auto-save notes on debounce — no save button needed */
+  useEffect(() => {
+    if (notes === notesSavedRef.current) return
+    setNotesStatus('saving')
+    const t = setTimeout(async () => {
+      try {
+        await axios.put(`/api/v1/orders/${order.id}`, { notes: notes || null })
+        notesSavedRef.current = notes
+        setNotesStatus('saved')
+        setTimeout(() => setNotesStatus(''), 2000)
+      } catch { setNotesStatus('') }
+    }, 1200)
+    return () => clearTimeout(t)
+  }, [notes, order.id])
+
+  async function saveMeasurementPayment(field: string, value: string) {
+    await axios.put(`/api/v1/orders/${order.id}`, { [field]: value || null }).catch(() => {})
+  }
 
   /** Saves the total amount automatically once the consultant moves away from the field — no extra click needed. */
   async function saveAmount() {
@@ -552,16 +578,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           </div>
 
           {/* Notes */}
-          <div className="space-y-2">
-            <label className="text-slate-400 text-xs font-medium">הערות כלליות</label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-slate-400 text-xs font-medium">הערות כלליות</label>
+              {notesStatus === 'saving' && <span className="text-slate-500 text-xs">שומר...</span>}
+              {notesStatus === 'saved'  && <span className="text-emerald-500 text-xs">✓ נשמר</span>}
+            </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="הוסף הערות..."
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600 resize-none" />
-            <button onClick={async () => { setBusy('notes'); try { await axios.put(`/api/v1/orders/${order.id}`, { notes }); flash('נשמר'); onUpdated() } catch { flash('שגיאה', false) } finally { setBusy('') } }}
-              disabled={busy === 'notes'}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
-              {busy === 'notes' ? '...' : 'שמור הערות'}
-            </button>
           </div>
 
           {/* ── STEP 1: QUOTATION — close the deal ────────────────── */}
@@ -666,10 +691,44 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 )}
               </div>
 
+              {/* Payment received at measurement — all optional */}
+              <div className="space-y-2 mb-4">
+                <p className="text-slate-300 text-xs font-medium">ב. תשלום שהתקבל במדידה (אופציונלי)</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-xs">סה"כ שהביא</label>
+                    <input type="number" min="0" step="0.01" dir="ltr"
+                      value={measPmtTotal}
+                      onChange={e => setMeasPmtTotal(e.target.value)}
+                      onBlur={() => saveMeasurementPayment('measurementPaymentTotal', measPmtTotal)}
+                      placeholder="₪"
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-xs">אלייך</label>
+                    <input type="number" min="0" step="0.01" dir="ltr"
+                      value={measPmtConsultant}
+                      onChange={e => setMeasPmtConsultant(e.target.value)}
+                      onBlur={() => saveMeasurementPayment('measurementPaymentToConsultant', measPmtConsultant)}
+                      placeholder="₪"
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-slate-400 text-xs">למודד</label>
+                    <input type="number" min="0" step="0.01" dir="ltr"
+                      value={measPmtMeasurer}
+                      onChange={e => setMeasPmtMeasurer(e.target.value)}
+                      onBlur={() => saveMeasurementPayment('measurementPaymentToMeasurer', measPmtMeasurer)}
+                      placeholder="₪"
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                  </div>
+                </div>
+              </div>
+
               <hr className="border-slate-700 mb-4" />
 
-              {/* 2B + 2C: Checkboxes — both required to advance */}
-              <p className="text-slate-300 text-xs font-medium mb-3">ב. אישורים לפני המשך</p>
+              {/* 2C + 2D: Checkboxes — both required to advance */}
+              <p className="text-slate-300 text-xs font-medium mb-3">ג. אישורים לפני המשך</p>
 
               {/* Checkbox 1: Measurer paid */}
               {order.totalGrossAmount == null ? (
@@ -1059,16 +1118,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
         <div className="space-y-4">
 
           {/* Notes row */}
-          <div className="space-y-2">
-            <label className="text-slate-400 text-xs font-medium">הערות הזמנה</label>
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="text-slate-400 text-xs font-medium">הערות הזמנה</label>
+              {notesStatus === 'saving' && <span className="text-slate-500 text-xs">שומר...</span>}
+              {notesStatus === 'saved'  && <span className="text-emerald-500 text-xs">✓ נשמר</span>}
+            </div>
             <textarea value={notes} onChange={e => setNotes(e.target.value)} rows={2}
               placeholder="הוסף הערות לגבי ההזמנה..."
               className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600 resize-none" />
-            <button onClick={async () => { setBusy('notes'); try { await axios.put(`/api/v1/orders/${order.id}`, { notes }); flash('נשמר'); onUpdated() } catch { flash('שגיאה', false) } finally { setBusy('') } }}
-              disabled={busy === 'notes'}
-              className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
-              {busy === 'notes' ? '...' : 'שמור הערות'}
-            </button>
           </div>
 
           {/* Sub-tabs: Marble / Sinks */}

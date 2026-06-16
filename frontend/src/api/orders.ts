@@ -38,6 +38,9 @@ export interface OrderResponse {
   craneRequired: boolean
   factorySlaDeadline: string | null
   notes: string | null
+  measurementPaymentTotal: number | null
+  measurementPaymentToConsultant: number | null
+  measurementPaymentToMeasurer: number | null
   layoutDocumentUrl: string | null
   measurementsDocumentUrl: string | null
   createdAt: string

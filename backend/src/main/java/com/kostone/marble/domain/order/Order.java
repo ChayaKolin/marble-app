@@ -66,6 +66,16 @@ public class Order {
     @Column(name = "notes")
     private String notes;
 
+    // Optional breakdown of cash received at measurement time
+    @Column(name = "measurement_payment_total", precision = 12, scale = 2)
+    private BigDecimal measurementPaymentTotal;
+
+    @Column(name = "measurement_payment_to_consultant", precision = 12, scale = 2)
+    private BigDecimal measurementPaymentToConsultant;
+
+    @Column(name = "measurement_payment_to_measurer", precision = 12, scale = 2)
+    private BigDecimal measurementPaymentToMeasurer;
+
     @Column(name = "layout_document_url", length = 500)
     private String layoutDocumentUrl;
 
