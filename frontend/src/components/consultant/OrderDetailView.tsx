@@ -66,6 +66,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [notesStatus, setNotesStatus] = useState<'' | 'saving' | 'saved'>('')
   const notesSavedRef = useRef(order.notes ?? '')
   const [amountDraft, setAmountDraft] = useState(order.totalGrossAmount != null ? String(order.totalGrossAmount) : '')
+  /** Agreed advance/deposit amount — defaults to 20% of total but editable. Flows into STEP 2 as default measurer payment. */
+  const [depositDraft, setDepositDraft] = useState('')
 
   /* measurement payment breakdown — all optional */
   const [measPmtTotal, setMeasPmtTotal]           = useState(order.measurementPaymentTotal != null ? String(order.measurementPaymentTotal) : '')
@@ -205,10 +207,16 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const quoteComplete = specs.length > 0 && order.totalGrossAmount != null
 
   /* ── Actions ──────────────────────────────────────────────────────── */
-  const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
-  /** If the consultant typed a manual "למודד" amount, that overrides the 20% default. */
-  const effectiveMeasurerFee = measPmtMeasurer ? parseFloat(measPmtMeasurer) : measurerFeeAmount
-  const isManualMeasurerFee  = !!measPmtMeasurer
+  const defaultDeposit20pct  = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
+  /** Agreed deposit: what the owner entered in STEP 1, or 20% if untouched. */
+  const agreedDeposit        = depositDraft ? parseFloat(depositDraft) : defaultDeposit20pct
+  const agreedBalance        = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - agreedDeposit : null
+  const depositIsCustom      = !!depositDraft && Math.abs(agreedDeposit - defaultDeposit20pct) > 0.01
+  /** In STEP 2: manual "למודד" field overrides the agreed deposit; agreed deposit overrides 20% default. */
+  const effectiveMeasurerFee = measPmtMeasurer ? parseFloat(measPmtMeasurer) : agreedDeposit
+  const isManualMeasurerFee  = !!measPmtMeasurer || depositIsCustom
+  // keep old name so nothing else breaks
+  const measurerFeeAmount    = defaultDeposit20pct
   /** How much of the total is still outstanding (total minus all cleared ledger entries). */
   const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
   const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalCleared : null
@@ -814,7 +822,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   {/* Effective measurer fee */}
                   <div className="bg-slate-800 rounded-lg px-4 py-2 flex items-center justify-between">
                     <span className="text-slate-400 text-sm">
-                      תשלום למודד {isManualMeasurerFee ? <span className="text-slate-500 text-xs">(ידני)</span> : <span className="text-slate-500 text-xs">(20%)</span>}
+                      תשלום למודד{' '}
+                      {measPmtMeasurer
+                        ? <span className="text-slate-500 text-xs">(ידני)</span>
+                        : depositIsCustom
+                        ? <span className="text-slate-500 text-xs">(מקדמה מוסכמת)</span>
+                        : <span className="text-slate-500 text-xs">(20% ברירת מחדל)</span>}
                     </span>
                     <span className="text-amber-300 font-bold">₪{effectiveMeasurerFee.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                   </div>
@@ -991,18 +1004,31 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     {order.totalGrossAmount == null ? (
                       <p className="text-amber-400 text-xs">⬆ סכום כולל לא נקבע</p>
                     ) : (
-                      <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2 text-sm space-y-1">
+                      <div className="bg-slate-900 border border-slate-800 rounded-lg px-3 py-2.5 text-sm space-y-2">
                         <div className="flex items-center justify-between">
                           <span className="text-slate-300">סכום כולל</span>
                           <span className="text-emerald-300 font-semibold">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400">מקדמה (20%)</span>
-                          <span className="text-slate-300">₪{(Number(order.totalGrossAmount) * 0.2).toLocaleString('he-IL')}</span>
+                        <div className="flex items-start justify-between gap-3 text-xs">
+                          <div className="space-y-0.5">
+                            <p className="text-slate-400">מקדמה מוסכמת</p>
+                            <p className="text-slate-600 text-xs leading-tight">ניתן לשנות לסכום שסוכם עם הלקוח</p>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <span className="text-slate-400">₪</span>
+                            <input
+                              type="number" min="0" step="0.01" dir="ltr"
+                              value={depositDraft || String(Math.round(defaultDeposit20pct * 100) / 100)}
+                              onChange={e => setDepositDraft(e.target.value)}
+                              className="w-24 bg-slate-800 border border-slate-700 rounded px-2 py-1 text-slate-100 text-xs text-left focus:outline-none focus:border-emerald-500"
+                            />
+                          </div>
                         </div>
-                        <div className="flex items-center justify-between text-xs">
-                          <span className="text-slate-400">יתרה (80%)</span>
-                          <span className="text-slate-300">₪{(Number(order.totalGrossAmount) * 0.8).toLocaleString('he-IL')}</span>
+                        <div className="flex items-center justify-between text-xs border-t border-slate-800 pt-1.5">
+                          <span className="text-slate-400">יתרה לתשלום</span>
+                          <span className="text-slate-300">
+                            ₪{(agreedBalance ?? 0).toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}
+                          </span>
                         </div>
                       </div>
                     )}
