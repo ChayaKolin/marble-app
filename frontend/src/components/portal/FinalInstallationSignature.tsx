@@ -92,9 +92,20 @@ export default function FinalInstallationSignature({ orderId, materialSpecs, sin
       {/* Signature canvas — shown only after confirming */}
       {confirmed && (
         <>
+          <div className="rounded-xl border border-amber-700/60 bg-amber-950/30 p-4 space-y-2">
+            <p className="text-amber-300 text-sm font-semibold">לתשומת לבך לפני החתימה</p>
+            <p className="text-amber-200/80 text-sm leading-relaxed">
+              בחתימתך אתה/את מאשר/ת כי עברת על כל הפריטים בעת נוכחות המתקין וכי כל דבר תקין.
+            </p>
+            <p className="text-amber-200/80 text-sm leading-relaxed">
+              תקלות או ליקויים שלא הועלו בשעת ההתקנה עצמה לא יתקבלו במסגרת השירות הכלול.
+              ביקור טכנאי לאחר מכן כרוך ב־<span className="font-semibold text-amber-300">דמי ביקור של ₪600</span>.
+            </p>
+          </div>
+
           <div className="bg-emerald-900/20 border border-emerald-800 rounded-xl p-4">
             <p className="text-emerald-300 text-xs font-medium">
-              חתימתך מאשרת את קבלת העבודה ואת סיום ההתקנה בהצלחה
+              חתימתך מאשרת את קבלת העבודה, סיום ההתקנה בהצלחה, והסכמתך לתנאים לעיל
             </p>
           </div>
 
