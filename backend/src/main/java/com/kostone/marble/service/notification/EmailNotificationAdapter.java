@@ -17,10 +17,10 @@ import java.util.Collections;
 @Slf4j
 public class EmailNotificationAdapter {
 
-    @Value("${BREVO_API_KEY}")
+    @Value("${BREVO_API_KEY:}")
     private String apiKey;
 
-    @Value("${KOSTONE_SYSTEM_EMAIL}")
+    @Value("${KOSTONE_SYSTEM_EMAIL:kostonemarble@gmail.com}")
     private String fromAddress;
 
     public boolean send(String to, String subject, String body) {
