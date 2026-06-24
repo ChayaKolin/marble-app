@@ -19,7 +19,7 @@ public class EmailNotificationAdapter {
 
     private final JavaMailSender mailSender;
 
-    @Value("${kostone.system.email:kostonemarble@gmail.com}")
+    @Value("${spring.mail.username:kostonemarble@gmail.com}")
     private String fromAddress;
 
     /**

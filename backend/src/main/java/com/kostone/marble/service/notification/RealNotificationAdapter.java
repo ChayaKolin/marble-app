@@ -30,7 +30,7 @@ public class RealNotificationAdapter implements NotificationPort {
     @Value("${twilio.whatsapp-from:whatsapp:+14155238886}")
     private String whatsappFrom;
 
-    @Value("${kostone.system.email:kostonemarble@gmail.com}")
+    @Value("${spring.mail.username:kostonemarble@gmail.com}")
     private String systemEmail;
 
     // ── Hebrew message templates ─────────────────────────────────────────
