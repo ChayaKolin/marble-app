@@ -31,9 +31,9 @@ export default function FinalInstallationSignature({ orderId, materialSpecs, sin
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-slate-100 font-semibold text-lg mb-1">אישור סיום ההתקנה</h2>
+        <h2 className="text-slate-100 font-semibold text-lg mb-1">אישור קבלת העבודה</h2>
         <p className="text-slate-400 text-sm">
-          אנא ודא/י שכל הפריטים הותקנו כמפורט ואשר/י בחתימה
+          ההתקנה הושלמה. אנא עברי על הפרטים למטה, ודאי שהכל תקין, ואשרי בחתימה.
         </p>
       </div>
 

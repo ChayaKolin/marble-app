@@ -126,11 +126,18 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
               ? 'border-emerald-800 bg-emerald-950/20'
               : 'border-amber-700 bg-amber-950/20'
           }`}>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-slate-200">אישור סיום ההתקנה</p>
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <p className="text-sm font-medium text-slate-200">אישור קבלת העבודה</p>
+                {!order.finalInstallationSigned && (
+                  <p className="text-slate-400 text-xs mt-0.5">
+                    ההתקנה הושלמה — נדרש אישורך שהכל תקין
+                  </p>
+                )}
+              </div>
               {order.finalInstallationSigned
-                ? <span className="text-emerald-400 text-xs">✓ נחתם — תודה!</span>
-                : <span className="text-amber-400 text-xs">נדרש אישורך</span>
+                ? <span className="text-emerald-400 text-xs shrink-0">✓ נחתם — תודה!</span>
+                : <span className="text-amber-400 text-xs shrink-0">ממתין לאישורך</span>
               }
             </div>
             {!order.finalInstallationSigned && (
@@ -139,7 +146,7 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
                 className="w-full py-2.5 rounded-lg bg-amber-600 hover:bg-amber-500
                            text-white text-sm font-medium transition-colors"
               >
-                אשר שההתקנה הושלמה וחתום
+                עבור לאישור וחתימה
               </button>
             )}
           </div>

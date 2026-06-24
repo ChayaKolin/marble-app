@@ -87,7 +87,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [localMeasureUrl, setLocalMeasureUrl] = useState(order.measurementsDocumentUrl ?? '')
 
   /* send to customer */
-  const [sendChannel, setSendChannel] = useState<'EMAIL' | 'WHATSAPP'>('WHATSAPP')
+  const sendChannel = 'EMAIL' as const
   const [portalLink, setPortalLink]   = useState('')
   const [copied, setCopied]           = useState(false)
   const [showPreview, setShowPreview] = useState(false)
@@ -344,9 +344,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
       const url = res.data?.portalUrl ?? ''
       setPortalLink(url)
       if (res.data?.delivered) {
-        flash(`✓ קישור נשלח${sendChannel === 'WHATSAPP' ? ' לוואטסאפ' : ' למייל'} — ניתן גם להעתיק ידנית`)
+        flash('✓ קישור נשלח למייל — ניתן גם להעתיק ידנית')
       } else {
-        flash(`⚠ הקישור נוצר אך השליחה ${sendChannel === 'WHATSAPP' ? 'לוואטסאפ' : 'למייל'} נכשלה — יש להעתיק ולשלוח ידנית`, false)
+        flash('⚠ הקישור נוצר אך השליחה למייל נכשלה — יש להעתיק ולשלוח ידנית', false)
       }
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשליחה', false) }
     finally { setBusy('') }
@@ -1050,25 +1050,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
               )}
 
-              {/* Send channel selector */}
-              <div className="flex gap-2 mb-3">
-                {(['WHATSAPP', 'EMAIL'] as const).map(ch => (
-                  <button key={ch} onClick={() => setSendChannel(ch)} disabled={!quoteComplete}
-                    className={`flex-1 py-2 rounded-lg text-sm border transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
-                    {ch === 'WHATSAPP' ? '📱 וואטסאפ' : '📧 אימייל'}
-                  </button>
-                ))}
-              </div>
-
               <button onClick={sendToCustomer} disabled={busy === 'send' || !quoteComplete}
                 className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-3">
-                {busy === 'send' ? 'שולח...' : `📤 שלח הצעה מפורטת ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'} של הלקוח`}
+                {busy === 'send' ? 'שולח...' : '📤 שלח הצעה מפורטת לאימייל של הלקוח'}
               </button>
 
               {/* Portal link — shown after sending so consultant can also share manually */}
               {portalLink && (
                 <div className="mb-4 bg-slate-800 border border-purple-800/50 rounded-xl p-3 space-y-2">
-                  <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני (שלחי לוואטסאפ או אימייל):</p>
+                  <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני:</p>
                   <div className="flex items-center gap-2">
                     <p className="flex-1 text-purple-300 text-xs font-mono break-all bg-slate-900 rounded px-2 py-1.5 select-all">
                       {portalLink}
@@ -1078,7 +1068,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       {copied ? '✓ הועתק' : 'העתק'}
                     </button>
                   </div>
-                  <p className="text-slate-500 text-xs">⏱ הקישור תקף ל-24 שעות (אימייל) / 2 שעות (וואטסאפ)</p>
+                  <p className="text-slate-500 text-xs">⏱ הקישור תקף ל-24 שעות</p>
                 </div>
               )}
 
@@ -1187,17 +1177,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   <p className="text-slate-500 text-xs">
                     הלקוח יקבל קישור לחתימה דיגיטלית מהטלפון שלו. לחלופין, המתקין יכול לקבל חתימה ישירות בדשבורד המתקין.
                   </p>
-                  <div className="flex gap-2">
-                    {(['WHATSAPP', 'EMAIL'] as const).map(ch => (
-                      <button key={ch} onClick={() => setSendChannel(ch)}
-                        className={`flex-1 py-2 rounded-lg text-sm border transition-colors ${sendChannel === ch ? 'bg-emerald-800/60 border-emerald-600 text-emerald-300 font-medium' : 'border-slate-700 text-slate-400 hover:border-slate-500'}`}>
-                        {ch === 'WHATSAPP' ? '📱 וואטסאפ' : '📧 אימייל'}
-                      </button>
-                    ))}
-                  </div>
                   <button onClick={sendToCustomer} disabled={busy === 'send'}
                     className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
-                    {busy === 'send' ? 'שולח...' : `📤 שלח קישור לאישור ההתקנה ל${sendChannel === 'WHATSAPP' ? 'וואטסאפ' : 'אימייל'}`}
+                    {busy === 'send' ? 'שולח...' : '📤 שלח קישור לאישור ההתקנה לאימייל'}
                   </button>
                   {portalLink && (
                     <div className="bg-slate-800 border border-purple-800/50 rounded-xl p-3 space-y-2">

@@ -36,7 +36,7 @@ public record PortalOrderResponse(
             OrderStatus.CLOSED_AWAITING_MEASUREMENT, "סגירה ומחכה למדידה",
             OrderStatus.REVIEWING_LAYOUT,            "לעבור על התוכנית",
             OrderStatus.PRODUCTION,                  "ייצור",
-            OrderStatus.AWAITING_INSTALLATION,       "מחכה להתקנה",
+            OrderStatus.AWAITING_INSTALLATION,       "הותקן — ממתין לאישורך",
             OrderStatus.PENDING_REPAIR,              "מחכה לתיקון",
             OrderStatus.COMPLETED,                   "מושלם",
             OrderStatus.ARCHIVED,                    "ארכיון"
