@@ -9,7 +9,7 @@ public record PaymentMilestoneStatus(
         boolean cleared
 ) {
     public static PaymentMilestoneStatus of(int tier, BigDecimal amount, boolean cleared) {
-        String label = tier == 1 ? "מקדמה מוסכמת" : "יתרה לתשלום";
+        String label = tier == 1 ? "תשלום ששולם עד כה:" : "יתרה לתשלום";
         return new PaymentMilestoneStatus(tier, label, amount, cleared);
     }
 }

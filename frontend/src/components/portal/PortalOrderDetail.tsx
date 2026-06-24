@@ -78,7 +78,7 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
             <div key={m.tier} className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-2 min-w-0">
                 <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${m.cleared ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                <span className="text-slate-300 text-sm truncate">{m.labelHe}</span>
+                <span className="text-slate-300 text-sm">{m.labelHe}</span>
               </div>
               <div className="flex items-center gap-2 shrink-0">
                 <span className={`text-sm font-medium ${m.cleared ? 'text-emerald-300' : 'text-slate-400'}`}>

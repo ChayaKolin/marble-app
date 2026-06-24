@@ -218,16 +218,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const depositIsCustom      = !!depositDraft && Math.abs(agreedDeposit - defaultDeposit20pct) > 0.01
   /** In STEP 2: manual "למודד" field overrides the agreed deposit; agreed deposit overrides 20% default. */
   const effectiveMeasurerFee = measPmtMeasurer ? parseFloat(measPmtMeasurer) : agreedDeposit
-  const isManualMeasurerFee  = !!measPmtMeasurer || depositIsCustom
-  // keep old name so nothing else breaks
-  const measurerFeeAmount    = defaultDeposit20pct
   /** How much of the total is still outstanding (total minus all cleared ledger entries). */
   const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
   // Consultant's measurement fee is stored on the order (not in the ledger) — must add it separately
   const consultantMeasurementFee = measPmtConsultant ? parseFloat(measPmtConsultant) : 0
   const totalPaidSoFar  = totalCleared + consultantMeasurementFee
   const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalPaidSoFar : null
-  const finalPaymentCleared = ledger.some(l => l.milestoneTier === 2 && l.cleared)
 
   /* Auto-save notes on debounce — no save button needed */
   useEffect(() => {
@@ -1258,7 +1254,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
           )}
 
           {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
-            <StepCard title="שלב 5 — אישור לקוח">
+            <StepCard title="שלב 5 — אישור לקוח" color="purple">
               <div className="space-y-4">
                 <p className="text-slate-400 text-xs">
                   ההתקנה הושלמה והתשלום התקבל. שלח ללקוח קישור לאישור דיגיטלי, או המתקין יגיש את המכשיר לחתימה.

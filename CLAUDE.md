@@ -50,13 +50,15 @@ Single Railway deployment: the `Dockerfile` builds the frontend first and copies
 - `service/storage` — `FileStorageService` writes uploads to `app.upload-dir` (`UPLOAD_DIR` env var in prod); files are served via `GET /files/**` (publicly accessible, no auth required per `SecurityConfig`)
 
 ### The order lifecycle is the spine of the system
-8-status state machine (`OrderStatus`): `QUOTATION → CLOSED_AWAITING_MEASUREMENT → REVIEWING_LAYOUT → PRODUCTION → AWAITING_INSTALLATION → {COMPLETED | PENDING_REPAIR} → ARCHIVED`. Full transition diagram and business rules live in `requirement.md` §3.
+9-status state machine (`OrderStatus`): `QUOTATION → CLOSED_AWAITING_MEASUREMENT → REVIEWING_LAYOUT → PRODUCTION → AWAITING_INSTALLATION → AWAITING_CUSTOMER_APPROVAL → {COMPLETED | PENDING_REPAIR} → ARCHIVED`. Full transition diagram and business rules live in `requirement.md` §3.
 
 Valid transitions are enforced **in the application layer** (not the DB) via a static `Map<OrderStatus, Set<OrderStatus>>` table in `OrderService.transition()` (`backend/.../service/order/OrderService.java`) — invalid transitions throw `400`. Two transitions carry hard gates that throw `409 Conflict` if unmet:
-- `QUOTATION → CLOSED_AWAITING_MEASUREMENT`: requires exactly 20% of `total_gross_amount` cleared in `financial_ledger` (tier 1)
-- `REVIEWING_LAYOUT → PRODUCTION`: requires a `SLAB_LAYOUT_APPROVAL` row in `digital_signatures` for the order — **the only mandatory customer signature**, captured via the customer portal canvas
+- `REVIEWING_LAYOUT → PRODUCTION`: requires a `SLAB_LAYOUT_APPROVAL` row in `digital_signatures` for the order — captured via the customer portal canvas
+- `→ COMPLETED` (from any predecessor): requires a `FINAL_POST_INSTALLATION` row in `digital_signatures` for the order
 
-A customer may have at most one "open" order at a time (anything not in `{COMPLETED, ARCHIVED}`) — enforced in `OrderService.create()`.
+There is **no financial gate** on `QUOTATION → CLOSED_AWAITING_MEASUREMENT` — the measurer payment (20%) happens after measuring, not before.
+
+`PENDING_REPAIR` can branch back to `AWAITING_INSTALLATION`, `AWAITING_CUSTOMER_APPROVAL`, or `COMPLETED`. A customer may have at most one "open" order at a time (anything not in `{COMPLETED, ARCHIVED}`) — enforced in `OrderService.create()`.
 
 `OrderTransitionTest` parameterizes over every valid/invalid transition pair — when changing the state machine, update `VALID_TRANSITIONS` and this test together.
 
@@ -66,13 +68,20 @@ Orders have three kinds of child records that live in separate tables with `ON D
 - **`sink_specifications`** — sink type/mount details (`SinkSpecification`, `SinkMountStyle` enum, managed via `OrderController`)
 - **`order_photos`** — multiple photo files per order (`OrderPhoto`, `OrderPhotoController`; files stored via `FileStorageService`)
 
+**Digital signatures** (`domain/signature`) have three categories tracked in `SignatureCategory`: `SLAB_LAYOUT_APPROVAL` (gate for PRODUCTION), `FINAL_POST_INSTALLATION` (gate for COMPLETED), and `PRE_MEASUREMENT_DISCLAIMER`. The first two are hard gates; the third is informational.
+
 **Measurers** (`domain/measurer/Measurer`) are measurement technicians managed as a separate entity (not in the `users` table). They have soft-delete (`deleted_at`) and are attached to orders for measurement scheduling. Managed via `MeasurerController`.
 
 ### Activity log — cross-cutting audit trail
 `ActivityLogService` is called throughout `OrderService` and `CustomerService` to record every significant mutation: `(entityType, entityId, action, performedByUserId, performedByName, description, reason)`. Stored in `activity_log` table. Exposed read-only via `ActivityLogController` (Consultant only). When adding new business operations, wire `ActivityLogService.log(...)` to maintain audit coverage.
 
-### BigDecimal is enforced by an ArchUnit test
-`BigDecimalArchRuleTest` (in `backend/src/test/.../arch`) fails the build if any class in `domain.financial`, `domain.order`, `service.financial`, or `service.order` declares a `float`/`double` field or returns one from a method. All financial and dimensional values **must** use `java.math.BigDecimal`. Don't introduce primitives in those packages — the test will catch it, but write `BigDecimal` from the start.
+### Test suite
+Five test classes under `backend/src/test/`:
+- `arch/BigDecimalArchRuleTest` — ArchUnit rule: fails if any class in `domain.financial`, `domain.order`, `service.financial`, or `service.order` uses `float`/`double`. All financial and dimensional values **must** use `java.math.BigDecimal`.
+- `service/order/OrderTransitionTest` — parameterizes every valid/invalid transition pair; update alongside `VALID_TRANSITIONS`.
+- `service/order/OrderSignatureGateIntegrationTest` — verifies the two signature gates throw 409.
+- `service/order/OrderSoftDeleteTest` — verifies soft-delete behaviour.
+- `security/AuthControllerIntegrationTest` — JWT auth flow integration test.
 
 ### Soft delete — never hard-delete `orders` or `customers`
 Both tables carry `deleted_at TIMESTAMP WITH TIME ZONE` (NULL = active). Every read query must filter `deleted_at IS NULL` — repositories expose `findByIdAndDeletedAtIsNull` / `findAllActive` style methods for this; use them rather than the generic `findById`. Soft-delete via `softDelete()` (stamps `deleted_at = now()`), restore via `restore()` (`deleted_at = null`). All FKs referencing `orders`/`customers` use `ON DELETE RESTRICT` as a second safety layer (the lone exception: `calendar_events.related_order_id` uses `ON DELETE SET NULL`). Issuing `DELETE FROM orders`/`customers` from application code is considered a bug.
