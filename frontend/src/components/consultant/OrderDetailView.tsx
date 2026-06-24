@@ -242,7 +242,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
   // Consultant's measurement fee is stored on the order (not in the ledger) — must add it separately
   const consultantMeasurementFee = measPmtConsultant ? parseFloat(measPmtConsultant) : 0
-  const totalPaidSoFar  = totalCleared + consultantMeasurementFee
+  const measurerFee              = measPmtMeasurer   ? parseFloat(measPmtMeasurer)   : 0
+  const totalPaidSoFar  = totalCleared + consultantMeasurementFee + measurerFee
   const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalPaidSoFar : null
 
   /* Auto-save notes on debounce — no save button needed */
