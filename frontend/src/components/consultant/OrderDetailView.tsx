@@ -827,11 +827,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               <p className="text-slate-300 text-xs font-medium mb-3">ג. אישורים לפני המשך</p>
 
               {/* Checkbox 1: Measurer paid */}
-              {order.totalGrossAmount == null ? (
-                <div className="mb-3 bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2">
-                  <p className="text-amber-300 text-sm">יש להזין סכום כולל להזמנה (ראו בראש העמוד) לפני אישור תשלום למודד</p>
-                </div>
-              ) : depositCleared ? (
+              {depositCleared ? (
                 <div className="flex items-center gap-2 mb-3 bg-emerald-900/20 border border-emerald-800/40 rounded-lg px-3 py-2">
                   <span className="text-emerald-400 text-sm">✓</span>
                   <span className="text-emerald-300 text-sm">
@@ -842,6 +838,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
               ) : (
                 <div className="mb-3 space-y-2">
+                  {/* Remind to enter total if missing — informational only, does not block the button */}
+                  {order.totalGrossAmount == null && (
+                    <div className="bg-amber-900/20 border border-amber-700/40 rounded-lg px-3 py-2">
+                      <p className="text-amber-300 text-xs">מומלץ להזין סכום כולל להזמנה (ראו בראש העמוד) לפני אישור התשלום</p>
+                    </div>
+                  )}
                   {/* Remaining balance summary */}
                   {amountRemaining != null && (
                     <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 space-y-1 border border-slate-700">
