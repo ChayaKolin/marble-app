@@ -94,7 +94,7 @@ export default function CustomerList() {
       ) : (
         <div className="rounded-xl border border-slate-700 divide-y divide-slate-800 overflow-hidden">
           {filtered.map(c => (
-            <div key={c.id} className="flex items-center gap-4 px-4 py-3 bg-slate-900 hover:bg-slate-800 transition-colors">
+            <div key={c.id} className="flex items-center gap-3 px-3 sm:px-4 py-3 bg-slate-900 hover:bg-slate-800 transition-colors">
               {/* Avatar */}
               <div className="w-9 h-9 rounded-full bg-emerald-800 flex items-center justify-center shrink-0">
                 <span className="text-emerald-200 font-bold text-sm">{c.fullName.charAt(0)}</span>

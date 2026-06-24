@@ -504,7 +504,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* ── Render ──────────────────────────────────────────────────────── */
   return (
-    <div className="p-4 space-y-4 max-w-2xl" dir="rtl">
+    <div className="p-4 space-y-4 max-w-2xl mx-auto" dir="rtl">
 
       {/* Header */}
       <div className="flex items-center gap-3 flex-wrap">
@@ -564,29 +564,35 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
         <div className="space-y-4">
 
           {/* Summary row */}
-          <div className="flex flex-wrap items-end gap-4 text-sm bg-slate-900 rounded-xl border border-slate-700 p-3">
-            <div className="space-y-1">
-              <p className="text-slate-500 text-xs">סכום כולל *</p>
-              {order.totalGrossAmount == null ? (
-                <p className="text-amber-400 text-xs">טרם נקבע — יוגדר לאחר המדידה</p>
-              ) : (
-                <p className="text-emerald-300 font-semibold">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</p>
-              )}
+          <div className="bg-slate-900 rounded-xl border border-slate-700 p-3 space-y-3">
+            {/* Amount row */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="shrink-0">
+                <p className="text-slate-500 text-xs">סכום כולל *</p>
+                {order.totalGrossAmount == null ? (
+                  <p className="text-amber-400 text-xs">טרם נקבע</p>
+                ) : (
+                  <p className="text-emerald-300 font-semibold text-sm">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</p>
+                )}
+              </div>
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <input type="number" min="0.01" step="0.01" value={amountDraft} dir="ltr"
+                  onChange={e => setAmountDraft(e.target.value)}
+                  onBlur={saveAmount}
+                  placeholder="הזן/עדכן סכום... *"
+                  className="flex-1 min-w-0 bg-slate-800 border border-slate-700 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                <button onClick={saveAmount} disabled={busy === 'amount'}
+                  className="shrink-0 text-xs px-3 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
+                  {busy === 'amount' ? '...' : 'עדכן'}
+                </button>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <input type="number" min="0.01" step="0.01" value={amountDraft} dir="ltr"
-                onChange={e => setAmountDraft(e.target.value)}
-                onBlur={saveAmount}
-                placeholder="הזן/עדכן סכום... *"
-                className="w-32 bg-slate-800 border border-slate-700 rounded-lg px-2 py-1 text-slate-100 text-xs focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
-              <button onClick={saveAmount} disabled={busy === 'amount'}
-                className="text-xs px-3 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-200 disabled:opacity-50">
-                {busy === 'amount' ? '...' : 'עדכן סכום'}
-              </button>
+            {/* Meta badges */}
+            <div className="flex flex-wrap gap-3 text-xs">
+              <div><span className="text-slate-500">פתיחה: </span><span className="text-slate-300">{new Date(order.createdAt).toLocaleDateString('he-IL')}</span></div>
+              {depositCleared && <div><span className="text-emerald-400">✓ מקדמה שולמה</span></div>}
+              {layoutSigned && <div><span className="text-emerald-400">✓ תוכנית חתומה</span></div>}
             </div>
-            <div><p className="text-slate-500 text-xs">פתיחה</p><p className="text-slate-300">{new Date(order.createdAt).toLocaleDateString('he-IL')}</p></div>
-            {depositCleared && <div><p className="text-slate-500 text-xs">מקדמה</p><p className="text-emerald-400 text-xs">✓ שולמה</p></div>}
-            {layoutSigned && <div><p className="text-slate-500 text-xs">תוכנית</p><p className="text-emerald-400 text-xs">✓ חתומה</p></div>}
           </div>
 
           {/* Notes */}
@@ -628,15 +634,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 </div>
                 {showNewMeasurer && (
                   <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input type="text" value={newMeasurerForm.firstName} required
                         onChange={e => setNewMeasurerForm(f => ({ ...f, firstName: e.target.value }))}
                         placeholder="שם פרטי *"
-                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                       <input type="text" value={newMeasurerForm.lastName}
                         onChange={e => setNewMeasurerForm(f => ({ ...f, lastName: e.target.value }))}
                         placeholder="שם משפחה"
-                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                        className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                     </div>
                     <input type="tel" value={newMeasurerForm.phoneNumber} dir="ltr" required
                       onChange={e => setNewMeasurerForm(f => ({ ...f, phoneNumber: sanitizePhoneInput(e.target.value) }))}
@@ -650,7 +656,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-1">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-1">
                 <div className="space-y-1">
                   <label className="text-slate-400 text-xs">תאריך הגעת המודד *</label>
                   <input type="date" value={measureSchedule.date} dir="ltr"
@@ -706,7 +712,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               {/* Payment received at measurement — all optional */}
               <div className="space-y-2 mb-4">
                 <p className="text-slate-300 text-xs font-medium">ב. תשלום שהתקבל במדידה (אופציונלי)</p>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                   <div className="space-y-1">
                     <label className="text-slate-400 text-xs">סה"כ שהביא</label>
                     <input type="number" min="0" step="0.01" dir="ltr"
@@ -714,7 +720,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       onChange={e => setMeasPmtTotal(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentTotal', measPmtTotal)}
                       placeholder="₪"
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-slate-400 text-xs">אלייך</label>
@@ -723,7 +729,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       onChange={e => setMeasPmtConsultant(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentToConsultant', measPmtConsultant)}
                       placeholder="₪"
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                   </div>
                   <div className="space-y-1">
                     <label className="text-slate-400 text-xs">למודד</label>
@@ -732,7 +738,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       onChange={e => setMeasPmtMeasurer(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentToMeasurer', measPmtMeasurer)}
                       placeholder="₪"
-                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                      className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                   </div>
                 </div>
               </div>
@@ -1054,15 +1060,15 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   {installers.length === 0 && <p className="text-slate-600 text-xs">אין מתקינים רשומים עדיין</p>}
                   {showNewInstaller && (
                     <div className="bg-slate-800/60 border border-slate-700 rounded-lg p-3 space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <input type="text" value={newInstallerForm.firstName} required
                           onChange={e => setNewInstallerForm(f => ({ ...f, firstName: e.target.value }))}
                           placeholder="שם פרטי *"
-                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                         <input type="text" value={newInstallerForm.lastName}
                           onChange={e => setNewInstallerForm(f => ({ ...f, lastName: e.target.value }))}
                           placeholder="שם משפחה"
-                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
+                          className="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
                       </div>
                       <input type="tel" value={newInstallerForm.phoneNumber} dir="ltr" required
                         onChange={e => setNewInstallerForm(f => ({ ...f, phoneNumber: sanitizePhoneInput(e.target.value) }))}
@@ -1075,7 +1081,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="space-y-1">
                     <label className="text-slate-400 text-xs">תאריך התקנה *</label>
                     <input type="datetime-local" value={logForm.date} dir="ltr"
@@ -1214,7 +1220,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               {specs.map(s => editingSpecId === s.id ? (
                 <div key={s.id} className="bg-slate-900 border border-emerald-700 rounded-xl p-4 space-y-3">
                   <p className="text-slate-300 text-sm font-medium">עריכת שיש / אבן</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <SF label="סוג / קוד שיש *" value={editSpecForm.marbleModelCode} onChange={v => setEditSpecForm(f => ({ ...f, marbleModelCode: v }))} />
                     <div className="space-y-1">
                       <label className="text-slate-400 text-xs">סיום פני שטח</label>
@@ -1260,9 +1266,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => startEditSpec(s)}
-                      className="text-slate-300 hover:text-white text-xs px-2 py-1 rounded border border-slate-600">ערוך</button>
+                      className="text-slate-300 hover:text-white text-xs px-3 py-2 rounded border border-slate-600">ערוך</button>
                     <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/materials/${s.id}`); setSpecs(p => p.filter(x => x.id !== s.id)) }}
-                      className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50">מחק</button>
+                      className="text-red-400 hover:text-red-300 text-xs px-3 py-2 rounded border border-red-900/50">מחק</button>
                   </div>
                 </div>
               ))}
@@ -1305,7 +1311,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               {sinks.map(s => editingSinkId === s.id ? (
                 <div key={s.id} className="bg-slate-900 border border-emerald-700 rounded-xl p-4 space-y-3">
                   <p className="text-slate-300 text-sm font-medium">עריכת כיור</p>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <SF label="מותג *" value={editSinkForm.brand} onChange={v => setEditSinkForm(f => ({ ...f, brand: v }))} />
                     <SF label="דגם *" value={editSinkForm.modelName} onChange={v => setEditSinkForm(f => ({ ...f, modelName: v }))} />
                     <SF label="רוחב (מ״מ)" value={editSinkForm.widthMm} type="number" onChange={v => setEditSinkForm(f => ({ ...f, widthMm: v }))} dir="ltr" />
@@ -1348,9 +1354,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   </div>
                   <div className="flex gap-2 shrink-0">
                     <button onClick={() => startEditSink(s)}
-                      className="text-slate-300 hover:text-white text-xs px-2 py-1 rounded border border-slate-600">ערוך</button>
+                      className="text-slate-300 hover:text-white text-xs px-3 py-2 rounded border border-slate-600">ערוך</button>
                     <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/sinks/${s.id}`); setSinks(p => p.filter(x => x.id !== s.id)) }}
-                      className="text-red-400 hover:text-red-300 text-xs px-2 py-1 rounded border border-red-900/50">מחק</button>
+                      className="text-red-400 hover:text-red-300 text-xs px-3 py-2 rounded border border-red-900/50">מחק</button>
                   </div>
                 </div>
               ))}
@@ -1439,13 +1445,13 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               <p className="text-slate-500 text-sm">לחץ להוספת תמונה</p>
             </div>
           ) : (
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {photos.map(p => (
                 <div key={p.id} className="relative group rounded-lg overflow-hidden bg-slate-800 aspect-square">
                   <img src={p.fileUrl} alt="" className="w-full h-full object-cover" />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors" />
                   <button onClick={async () => { await axios.delete(`/api/v1/orders/${order.id}/photos/${p.id}`); setPhotos(ph => ph.filter(x => x.id !== p.id)) }}
-                    className="absolute top-1.5 left-1.5 w-7 h-7 rounded-full bg-red-700 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">✕</button>
+                    className="absolute top-1.5 start-1.5 w-8 h-8 rounded-full bg-red-700 text-white text-xs opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">✕</button>
                 </div>
               ))}
               <div onClick={() => photoRef.current?.click()}

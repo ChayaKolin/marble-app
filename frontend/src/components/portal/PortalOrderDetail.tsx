@@ -73,16 +73,16 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
         <div className="rounded-xl border border-slate-700 bg-slate-900 p-4 space-y-3">
           <p className="text-slate-400 text-xs font-medium">תשלומים</p>
           {order.paymentMilestones.map(m => (
-            <div key={m.tier} className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <span className={`w-2.5 h-2.5 rounded-full ${m.cleared ? 'bg-emerald-400' : 'bg-slate-600'}`} />
-                <span className="text-slate-300 text-sm">{m.labelHe}</span>
+            <div key={m.tier} className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 min-w-0">
+                <span className={`shrink-0 w-2.5 h-2.5 rounded-full ${m.cleared ? 'bg-emerald-400' : 'bg-slate-600'}`} />
+                <span className="text-slate-300 text-sm truncate">{m.labelHe}</span>
               </div>
-              <div className="text-left">
+              <div className="flex items-center gap-2 shrink-0">
                 <span className={`text-sm font-medium ${m.cleared ? 'text-emerald-300' : 'text-slate-400'}`}>
                   ₪{m.amount.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
                 </span>
-                <span className={`text-xs mr-2 ${m.cleared ? 'text-emerald-500' : 'text-slate-600'}`}>
+                <span className={`text-xs ${m.cleared ? 'text-emerald-500' : 'text-slate-600'}`}>
                   {m.cleared ? '✓ שולם' : 'טרם שולם'}
                 </span>
               </div>

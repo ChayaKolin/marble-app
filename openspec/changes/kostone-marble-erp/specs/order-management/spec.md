@@ -15,6 +15,15 @@ When an order is created, the system SHALL pre-populate the order's address fiel
 - **WHEN** an Installer views their assigned job on the mobile calendar
 - **THEN** the displayed address is the order-level override if set, otherwise the customer's default address
 
+### Requirement: Mobile-responsive layout across all dashboards
+All views SHALL be fully usable on mobile screens (≥ 320 px wide). Specific requirements:
+- All form grids SHALL use `grid-cols-1` on mobile, expanding to `grid-cols-2` or `grid-cols-3` only at `sm` breakpoint (640 px).
+- Photo grids use `grid-cols-2` on mobile, `grid-cols-3` on `sm+`.
+- Touch targets (buttons, checkboxes) SHALL be at minimum 36 × 36 px.
+- The amount-input summary row stacks responsively and uses `flex-1` instead of a fixed `w-32`.
+- Delete buttons on photos use `start-1.5` (logical RTL) instead of `left-1.5`.
+- The customer portal (`/portal`) is `max-w-lg mx-auto` and designed mobile-first.
+
 ### Requirement: Orders support a free-text notes field with auto-save
 Every order SHALL have a `notes TEXT` field for general internal notes. The Consultant SHALL be able to create and update order notes at any time. Notes SHALL be visible to the Consultant in the order detail view and on the calendar event side panel. Notes SHALL save automatically via a debounce (1.2 s after the Consultant stops typing) with no explicit "save" button; a subtle "שומר..." / "✓ נשמר" status indicator replaces the button.
 

@@ -93,7 +93,7 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
           <hr className="border-slate-700" />
           <p className="text-slate-400 text-xs font-medium">אדריכל / מעצב (אופציונלי)</p>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <Field label="שם אדריכל" value={form.architectName} onChange={v => set('architectName', v)} />
             <Field label="טלפון אדריכל" value={form.architectPhone} onChange={v => set('architectPhone', sanitizePhoneInput(v))}
                    onBlur={() => handleBlur('architectPhone')} error={fieldErrors.architectPhone}
