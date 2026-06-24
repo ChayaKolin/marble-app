@@ -7,6 +7,7 @@ import com.kostone.marble.domain.order.OrderRepository;
 import com.kostone.marble.domain.order.OrderStatus;
 import com.kostone.marble.dto.customer.CreateCustomerRequest;
 import com.kostone.marble.dto.customer.CustomerResponse;
+import com.kostone.marble.dto.customer.UpdateCustomerRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -73,6 +74,22 @@ public class CustomerService {
         return orderRepository.findFirstByCustomerIdAndDeletedAtIsNullAndStatusNotIn(customerId, CLOSED_STATUSES)
                 .map(Order::getId)
                 .orElse(null);
+    }
+
+    @Transactional
+    public CustomerResponse update(UUID id, UpdateCustomerRequest req) {
+        Customer customer = customerRepository.findByIdAndDeletedAtIsNull(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Customer not found"));
+        customer.setFullName(req.fullName());
+        customer.setPhoneNumber(req.phoneNumber());
+        customer.setEmailAddress(req.emailAddress());
+        customer.setSiteAddress(req.siteAddress());
+        customer.setSiteCity(req.siteCity());
+        customer.setSiteFloor(req.siteFloor());
+        customer.setSiteApt(req.siteApt());
+        customer.setArchitectName(req.architectName());
+        customer.setArchitectPhone(req.architectPhone());
+        return CustomerResponse.from(customerRepository.save(customer), activeOrderIdFor(customer.getId()));
     }
 
     /** Soft delete — sets deleted_at; never issues SQL DELETE. */

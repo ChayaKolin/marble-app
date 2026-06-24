@@ -206,6 +206,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
   /* ── Actions ──────────────────────────────────────────────────────── */
   const measurerFeeAmount = order.totalGrossAmount != null ? Number(order.totalGrossAmount) * 0.2 : 0
+  /** If the consultant typed a manual "למודד" amount, that overrides the 20% default. */
+  const effectiveMeasurerFee = measPmtMeasurer ? parseFloat(measPmtMeasurer) : measurerFeeAmount
+  const isManualMeasurerFee  = !!measPmtMeasurer
+  /** How much of the total is still outstanding (total minus all cleared ledger entries). */
+  const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
+  const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalCleared : null
 
   /* Auto-save notes on debounce — no save button needed */
   useEffect(() => {
@@ -245,7 +251,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     setBusy('measurer')
     try {
       const entry = await axios.post(`/api/v1/orders/${order.id}/payments`, {
-        amountAllocated: measurerFeeAmount.toFixed(2),
+        amountAllocated: effectiveMeasurerFee.toFixed(2),
         milestoneTier: 1,
       })
       await axios.put(`/api/v1/orders/${order.id}/payments/${entry.data.id}/clear`)
@@ -778,13 +784,39 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               ) : depositCleared ? (
                 <div className="flex items-center gap-2 mb-3 bg-emerald-900/20 border border-emerald-800/40 rounded-lg px-3 py-2">
                   <span className="text-emerald-400 text-sm">✓</span>
-                  <span className="text-emerald-300 text-sm">תשלום למודד אושר — ₪{measurerFeeAmount.toLocaleString('he-IL')}</span>
+                  <span className="text-emerald-300 text-sm">
+                    תשלום למודד אושר — ₪{ledger.find(l => l.milestoneTier === 1 && l.cleared)?.amountAllocated != null
+                      ? Number(ledger.find(l => l.milestoneTier === 1 && l.cleared)!.amountAllocated).toLocaleString('he-IL')
+                      : effectiveMeasurerFee.toLocaleString('he-IL')}
+                  </span>
                 </div>
               ) : (
                 <div className="mb-3 space-y-2">
+                  {/* Remaining balance summary */}
+                  {amountRemaining != null && (
+                    <div className="bg-slate-800/60 rounded-lg px-4 py-2.5 space-y-1 border border-slate-700">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="text-slate-400">סה"כ להזמנה</span>
+                        <span className="text-slate-200">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
+                      </div>
+                      {totalCleared > 0 && (
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">שולם עד כה</span>
+                          <span className="text-emerald-300">₪{totalCleared.toLocaleString('he-IL')}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center justify-between border-t border-slate-700 pt-1">
+                        <span className="text-slate-300 text-sm font-medium">נשאר לתשלום</span>
+                        <span className="text-amber-300 font-bold text-sm">₪{amountRemaining.toLocaleString('he-IL')}</span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Effective measurer fee */}
                   <div className="bg-slate-800 rounded-lg px-4 py-2 flex items-center justify-between">
-                    <span className="text-slate-400 text-sm">תשלום למודד (20%)</span>
-                    <span className="text-amber-300 font-bold">₪{measurerFeeAmount.toLocaleString('he-IL')}</span>
+                    <span className="text-slate-400 text-sm">
+                      תשלום למודד {isManualMeasurerFee ? <span className="text-slate-500 text-xs">(ידני)</span> : <span className="text-slate-500 text-xs">(20%)</span>}
+                    </span>
+                    <span className="text-amber-300 font-bold">₪{effectiveMeasurerFee.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                   </div>
                   <label className="flex items-start gap-3 cursor-pointer bg-slate-800/50 rounded-xl p-3 border border-slate-700 hover:border-amber-600 transition-colors">
                     <input type="checkbox" checked={measurerPaid} onChange={e => setMeasurerPaid(e.target.checked)}
@@ -796,7 +828,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                   </label>
                   <button onClick={recordMeasurerPayment} disabled={busy === 'measurer' || !measurerPaid}
                     className="w-full py-2.5 rounded-xl bg-amber-700 hover:bg-amber-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
-                    {busy === 'measurer' ? '...' : 'אשר תשלום למודד'}
+                    {busy === 'measurer' ? '...' : `אשר תשלום למודד — ₪${effectiveMeasurerFee.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`}
                   </button>
                 </div>
               )}
@@ -1299,7 +1331,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
               <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3" onBlur={tryAddSpecOnBlur}>
                 <p className="text-slate-300 text-sm font-medium">הוספת שיש / אבן</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <SF label="סוג / קוד שיש *" value={specForm.marbleModelCode} onChange={v => setSpecForm(f => ({ ...f, marbleModelCode: v }))} />
                   <div className="space-y-1">
                     <label className="text-slate-400 text-xs">סיום פני שטח</label>
@@ -1387,7 +1419,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
               <div className="bg-slate-900 border border-slate-700 rounded-xl p-4 space-y-3" onBlur={tryAddSinkOnBlur}>
                 <p className="text-slate-300 text-sm font-medium">הוספת כיור</p>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <SF label="מותג *" value={sinkForm.brand} onChange={v => setSinkForm(f => ({ ...f, brand: v }))} />
                   <SF label="דגם *" value={sinkForm.modelName} onChange={v => setSinkForm(f => ({ ...f, modelName: v }))} />
                   <SF label="רוחב (מ״מ)" value={sinkForm.widthMm} type="number" onChange={v => setSinkForm(f => ({ ...f, widthMm: v }))} dir="ltr" />

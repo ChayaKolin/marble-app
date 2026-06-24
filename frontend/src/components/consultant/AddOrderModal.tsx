@@ -202,7 +202,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
             <div className="grid grid-cols-1 gap-3 pt-2">
               <FieldSmall label="כתובת" value={form.siteAddress} onChange={v => set('siteAddress', v)} />
               <CitySelect label="עיר" value={form.siteCity} onChange={v => set('siteCity', v)} small />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FieldSmall label="קומה" value={form.siteFloor} onChange={v => set('siteFloor', v)} type="number" />
                 <FieldSmall label="דירה" value={form.siteApt}   onChange={v => set('siteApt', v)} />
               </div>
@@ -237,7 +237,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
             <div className="grid grid-cols-1 gap-3 pt-2">
               <FieldSmall label="סוג / קוד שיש" value={form.marbleModelCode}
                           onChange={v => set('marbleModelCode', v)} />
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-slate-500 text-xs">סוג גימור</label>
                   <select value={form.finishType} onChange={e => set('finishType', e.target.value)}
@@ -249,7 +249,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
                 <FieldSmall label='שטח (מ"ר)' value={form.squareMeters} type="number"
                             onChange={v => set('squareMeters', v)} dir="ltr" />
               </div>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <FieldSmall label="קאנט (עיבוי קאנט)" value={form.counterEdgeDetailing}
                             onChange={v => set('counterEdgeDetailing', v)} />
                 <FieldSmall label="עלות כיריים (₪)" value={form.cooktopBaseFee} type="number"

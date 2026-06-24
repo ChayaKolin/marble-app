@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
  * Only runs if no users exist — safe to restart without duplicates.
  *
  * Default credentials:
- *   Consultant : username=consultant  password=admin123
+ *   Consultant : username=consultant  password=ykyk9898
  *   Hotman     : username=hotman      password=admin123
  */
 @Component
@@ -34,7 +34,7 @@ public class LocalDataInitializer implements CommandLineRunner {
         User consultant = new User();
         consultant.setUsername("consultant");
         consultant.setFullName("יועץ ראשי");
-        consultant.setPasswordHash(passwordEncoder.encode("admin123"));
+        consultant.setPasswordHash(passwordEncoder.encode("ykyk9898"));
         consultant.setRole(UserRole.SUPER_ADMIN_OWNER);
         consultant.setPhoneNumber("+972500000001");
         userRepository.save(consultant);
@@ -49,7 +49,7 @@ public class LocalDataInitializer implements CommandLineRunner {
 
         log.info("=======================================================");
         log.info("  Local dev users seeded:");
-        log.info("  Consultant → username: consultant  password: admin123");
+        log.info("  Consultant → username: consultant  password: ykyk9898");
         log.info("  Hotman     → username: hotman      password: admin123");
         log.info("=======================================================");
     }

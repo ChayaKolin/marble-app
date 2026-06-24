@@ -2,6 +2,7 @@ package com.kostone.marble.controller;
 
 import com.kostone.marble.dto.customer.CreateCustomerRequest;
 import com.kostone.marble.dto.customer.CustomerResponse;
+import com.kostone.marble.dto.customer.UpdateCustomerRequest;
 import com.kostone.marble.service.customer.CustomerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,13 @@ public class CustomerController {
     @PreAuthorize("hasAnyAuthority('ROLE_SUPER_ADMIN_OWNER','ROLE_FACTORY_MANAGER')")
     public ResponseEntity<CustomerResponse> getById(@PathVariable UUID id) {
         return ResponseEntity.ok(customerService.getById(id));
+    }
+
+    /** Update customer details — Consultant only. */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
+    public ResponseEntity<CustomerResponse> update(@PathVariable UUID id, @Valid @RequestBody UpdateCustomerRequest req) {
+        return ResponseEntity.ok(customerService.update(id, req));
     }
 
     /** Soft delete — Consultant only. */

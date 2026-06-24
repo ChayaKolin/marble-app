@@ -9,6 +9,13 @@
 
   body {
     @apply bg-slate-950 text-slate-100 antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Prevent any child from breaking out of the viewport horizontally */
+  #root {
+    overflow-x: hidden;
+    min-width: 0;
   }
 
   /* RTL-safe directional utilities */

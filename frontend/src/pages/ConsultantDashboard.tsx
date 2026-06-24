@@ -33,7 +33,7 @@ export default function ConsultantDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100" dir="rtl">
+    <div className="min-h-screen bg-slate-950 text-slate-100 overflow-x-hidden" dir="rtl">
       {/* Top nav */}
       <header className="border-b border-slate-800 bg-slate-900 sticky top-0 z-40">
         <div className="flex items-center gap-2 sm:gap-4 px-3 sm:px-4 py-2.5 sm:py-3">

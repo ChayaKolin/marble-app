@@ -5,6 +5,7 @@ import { type OrderResponse, fetchOrderById } from '../../api/orders'
 import AddCustomerModal from './AddCustomerModal'
 import AddOrderModal from './AddOrderModal'
 import OrderDetailView from './OrderDetailView'
+import EditCustomerModal from './EditCustomerModal'
 
 export default function CustomerList() {
   const [customers, setCustomers] = useState<CustomerResponse[]>([])
@@ -13,6 +14,7 @@ export default function CustomerList() {
   const [addOrderForCustomer, setAddOrderForCustomer] = useState<string | null>(null)
   const [search, setSearch] = useState('')
   const [activeOrder, setActiveOrder] = useState<OrderResponse | null>(null)
+  const [editCustomer, setEditCustomer] = useState<CustomerResponse | null>(null)
 
   function load() {
     fetchActiveCustomers()
@@ -115,6 +117,16 @@ export default function CustomerList() {
                   אדריכל: {c.architectName}
                 </span>
               )}
+              {/* Details / edit button */}
+              <button
+                onClick={e => { e.stopPropagation(); setEditCustomer(c) }}
+                className="shrink-0 text-xs px-2.5 py-1.5 rounded-lg bg-slate-700/60
+                           hover:bg-slate-600 text-slate-300 border border-slate-600/50
+                           transition-colors"
+                title="פרטים ועריכה"
+              >
+                ✏
+              </button>
               {/* Quick order / active order button */}
               {c.activeOrderId ? (
                 <button
@@ -140,6 +152,16 @@ export default function CustomerList() {
         </div>
       )}
 
+      {editCustomer && (
+        <EditCustomerModal
+          customer={editCustomer}
+          onClose={() => setEditCustomer(null)}
+          onUpdated={updated => {
+            setCustomers(cs => cs.map(c => c.id === updated.id ? updated : c))
+            setEditCustomer(null)
+          }}
+        />
+      )}
       {showAdd && (
         <AddCustomerModal
           onClose={() => setShowAdd(false)}

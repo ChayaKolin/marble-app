@@ -31,3 +31,12 @@ export async function restoreCustomer(id: string): Promise<CustomerResponse> {
   const { data } = await axios.patch<CustomerResponse>(`/api/v1/customers/${id}/restore`)
   return data
 }
+
+export async function updateCustomer(id: string, body: {
+  fullName: string; phoneNumber: string; emailAddress: string;
+  siteAddress: string; siteCity: string; siteFloor: number | null; siteApt: string | null;
+  architectName: string | null; architectPhone: string | null;
+}): Promise<CustomerResponse> {
+  const { data } = await axios.put<CustomerResponse>(`/api/v1/customers/${id}`, body)
+  return data
+}

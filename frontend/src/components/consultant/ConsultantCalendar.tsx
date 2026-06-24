@@ -8,7 +8,8 @@ import {
 } from '../../api/calendar'
 import EventDetailPanel from '../shared/EventDetailPanel'
 
-const DAYS_HE = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+const DAYS_HE       = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+const DAYS_HE_SHORT = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 const MONTHS_HE = [
   'ינואר', 'פברואר', 'מרץ', 'אפריל', 'מאי', 'יוני',
   'יולי', 'אוגוסט', 'ספטמבר', 'אוקטובר', 'נובמבר', 'דצמבר',
@@ -73,8 +74,11 @@ export default function ConsultantCalendar() {
 
       {/* Day headers */}
       <div className="grid grid-cols-7 gap-1">
-        {DAYS_HE.map(d => (
-          <div key={d} className="text-center text-xs text-slate-500 py-1">{d}</div>
+        {DAYS_HE.map((d, i) => (
+          <div key={d} className="text-center text-xs text-slate-500 py-1">
+            <span className="hidden sm:inline">{d}</span>
+            <span className="sm:hidden">{DAYS_HE_SHORT[i]}</span>
+          </div>
         ))}
       </div>
 
