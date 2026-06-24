@@ -218,6 +218,26 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const depositIsCustom      = !!depositDraft && Math.abs(agreedDeposit - defaultDeposit20pct) > 0.01
   /** In STEP 2: manual "למודד" field overrides the agreed deposit; agreed deposit overrides 20% default. */
   const effectiveMeasurerFee = measPmtMeasurer ? parseFloat(measPmtMeasurer) : agreedDeposit
+  // Smart auto-fill: whenever two of the three measurement-payment fields are known, compute the third.
+  const onMeasTotalChange = (val: string) => {
+    setMeasPmtTotal(val)
+    const t = parseFloat(val), c = parseFloat(measPmtConsultant), m = parseFloat(measPmtMeasurer)
+    if (!isNaN(t) && !isNaN(c)) setMeasPmtMeasurer(String(+(t - c).toFixed(2)))
+    else if (!isNaN(t) && !isNaN(m)) setMeasPmtConsultant(String(+(t - m).toFixed(2)))
+  }
+  const onMeasConsultantChange = (val: string) => {
+    setMeasPmtConsultant(val)
+    const t = parseFloat(measPmtTotal), c = parseFloat(val), m = parseFloat(measPmtMeasurer)
+    if (!isNaN(t) && !isNaN(c)) setMeasPmtMeasurer(String(+(t - c).toFixed(2)))
+    else if (!isNaN(c) && !isNaN(m)) setMeasPmtTotal(String(+(c + m).toFixed(2)))
+  }
+  const onMeasMeasurerChange = (val: string) => {
+    setMeasPmtMeasurer(val)
+    const t = parseFloat(measPmtTotal), c = parseFloat(measPmtConsultant), m = parseFloat(val)
+    if (!isNaN(t) && !isNaN(m)) setMeasPmtConsultant(String(+(t - m).toFixed(2)))
+    else if (!isNaN(c) && !isNaN(m)) setMeasPmtTotal(String(+(c + m).toFixed(2)))
+  }
+
   /** How much of the total is still outstanding (total minus all cleared ledger entries). */
   const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
   // Consultant's measurement fee is stored on the order (not in the ledger) — must add it separately
@@ -774,7 +794,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <label className="text-slate-400 text-xs">סה"כ שהביא</label>
                     <input type="number" min="0" step="0.01" dir="ltr"
                       value={measPmtTotal}
-                      onChange={e => setMeasPmtTotal(e.target.value)}
+                      onChange={e => onMeasTotalChange(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentTotal', measPmtTotal)}
                       placeholder="₪"
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
@@ -783,7 +803,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <label className="text-slate-400 text-xs">אלייך</label>
                     <input type="number" min="0" step="0.01" dir="ltr"
                       value={measPmtConsultant}
-                      onChange={e => setMeasPmtConsultant(e.target.value)}
+                      onChange={e => onMeasConsultantChange(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentToConsultant', measPmtConsultant)}
                       placeholder="₪"
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
@@ -792,7 +812,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     <label className="text-slate-400 text-xs">למודד</label>
                     <input type="number" min="0" step="0.01" dir="ltr"
                       value={measPmtMeasurer}
-                      onChange={e => setMeasPmtMeasurer(e.target.value)}
+                      onChange={e => onMeasMeasurerChange(e.target.value)}
                       onBlur={() => saveMeasurementPayment('measurementPaymentToMeasurer', measPmtMeasurer)}
                       placeholder="₪"
                       className="w-full bg-slate-800 border border-slate-600 rounded-lg px-2 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600" />
