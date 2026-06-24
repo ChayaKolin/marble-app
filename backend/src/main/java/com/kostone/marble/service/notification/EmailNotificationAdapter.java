@@ -39,7 +39,7 @@ public class EmailNotificationAdapter {
             log.info("Email sent to {}: {}", to, subject);
             return true;
         } catch (Exception e) {
-            log.error("Failed to send email to {}: {}", to, e.getMessage());
+            log.error("Failed to send email to {} [{}]: {}", to, e.getClass().getSimpleName(), e.getMessage());
             return false;
         }
     }
