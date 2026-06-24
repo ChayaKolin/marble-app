@@ -126,3 +126,16 @@ Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
 2026-06-24T22:20:25.834+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.c.CalendarEventCreationListener  : Auto-created INSTALLATION calendar event for assignment ae5603e5-1fb1-411a-af2b-604cd22db592
 2026-06-24T22:50:03.423+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-8] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
 2026-06-24T22:51:30.872+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-5] c.k.m.s.c.CalendarEventCreationListener  : Auto-created INSTALLATION calendar event for assignment ae8bd96e-358e-4413-9da2-98788f5636c1
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD FAILURE
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time:  8 d 01:40 h
+[INFO] Finished at: 2026-06-24T23:01:50+03:00
+[INFO] ------------------------------------------------------------------------
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:3.3.5:run (default-cli) on project marble: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
