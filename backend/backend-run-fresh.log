@@ -75,3 +75,4 @@ Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
 2026-06-16T21:30:19.761+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
 2026-06-16T21:31:33.524+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-7] c.k.m.s.c.CalendarEventCreationListener  : Auto-created INSTALLATION calendar event for assignment ef09d620-1e4b-4939-a543-8f8518a3c235
 2026-06-16T21:46:42.733+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\a4d5df91-0823-4860-aa31-907ad465b81b\407b4bcb-069b-4322-9bad-3a737da04e11_______1.jpg
+2026-06-16T22:06:54.347+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-3] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
