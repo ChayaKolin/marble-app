@@ -1,0 +1,14 @@
+{
+  "properties": [
+    {
+      "name": "brevo.api-key",
+      "type": "java.lang.String",
+      "description": "Brevo transactional email REST API key (maps to BREVO_API_KEY env var)."
+    },
+    {
+      "name": "kostone.system.email",
+      "type": "java.lang.String",
+      "description": "Sender email address shown on outgoing emails (maps to KOSTONE_SYSTEM_EMAIL env var)."
+    }
+  ]
+}
