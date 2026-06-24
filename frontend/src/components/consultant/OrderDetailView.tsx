@@ -389,9 +389,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
       const url = res.data?.portalUrl ?? ''
       setPortalLink(url)
       if (res.data?.delivered) {
-        flash('✓ קישור נשלח למייל — ניתן גם להעתיק ידנית')
+        flash(`✓ קישור נשלח ל-${order.customerEmail} — ניתן גם להעתיק ידנית`)
       } else {
-        flash('⚠ הקישור נוצר אך השליחה למייל נכשלה — יש להעתיק ולשלוח ידנית', false)
+        flash(`⚠ הקישור נוצר אך השליחה ל-${order.customerEmail} נכשלה — יש להעתיק ולשלוח ידנית`, false)
       }
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה בשליחה', false) }
     finally { setBusy('') }
@@ -1098,9 +1098,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
               )}
 
               <button onClick={sendToCustomer} disabled={busy === 'send' || !quoteComplete}
-                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-3">
+                className="w-full py-3 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed transition-colors mb-1">
                 {busy === 'send' ? 'שולח...' : '📤 שלח הצעה מפורטת לאימייל של הלקוח'}
               </button>
+              <p className="text-slate-500 text-xs text-center mb-3">📧 {order.customerEmail}</p>
 
               {/* Portal link — shown after sending so consultant can also share manually */}
               {portalLink && (
@@ -1289,9 +1290,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 {/* Send portal link */}
                 <div className="space-y-2">
                   <button onClick={sendToCustomer} disabled={busy === 'send'}
-                    className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
+                    className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-50 transition-colors mb-1">
                     {busy === 'send' ? 'שולח...' : '📤 שלח קישור לאישור ההתקנה לאימייל'}
                   </button>
+                  <p className="text-slate-500 text-xs text-center">📧 {order.customerEmail}</p>
                   {portalLink && (
                     <div className="bg-slate-800 border border-purple-800/50 rounded-xl p-3 space-y-2">
                       <p className="text-slate-400 text-xs font-medium">קישור לשיתוף ידני:</p>
