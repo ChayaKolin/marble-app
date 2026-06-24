@@ -195,10 +195,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     return () => clearInterval(interval)
   }, [order.id, order.status, layoutSigned])
 
-  // Poll for the installer's post-installation signature so "סמן כהושלם"
-  // unlocks automatically once the installer collects it on their dashboard.
+  // Poll for the post-installation signature during AWAITING_INSTALLATION (installer signs)
+  // and AWAITING_CUSTOMER_APPROVAL (customer signs via portal to confirm work is done).
   useEffect(() => {
-    if (order.status !== 'AWAITING_INSTALLATION' || finalSigned) return
+    if ((order.status !== 'AWAITING_INSTALLATION' && order.status !== 'AWAITING_CUSTOMER_APPROVAL') || finalSigned) return
     const interval = setInterval(() => {
       axios.get(`/api/v1/orders/${order.id}/signatures`).then(r => setSigs(r.data)).catch(() => {})
     }, 10000)
