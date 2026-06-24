@@ -27,8 +27,7 @@ import java.util.HexFormat;
 public class PortalAuthService {
 
     private static final int TOKEN_BYTES = 32;
-    private static final long EMAIL_TTL_HOURS = 24;
-    private static final long WHATSAPP_TTL_HOURS = 2;
+    private static final long TOKEN_TTL_HOURS = 7 * 24; // 7 days — link stays valid until customer signs
 
     private final CustomerRepository customerRepository;
     private final CustomerPortalTokenRepository tokenRepository;
@@ -83,18 +82,18 @@ public class PortalAuthService {
         String plainToken = Base64.getUrlEncoder().withoutPadding().encodeToString(rawBytes);
         String tokenHash = sha256Hex(plainToken);
 
-        // Determine expiry based on delivery channel.
-        long ttlHours = "WHATSAPP".equals(channel) ? WHATSAPP_TTL_HOURS : EMAIL_TTL_HOURS;
-        OffsetDateTime expiresAt = OffsetDateTime.now().plusHours(ttlHours);
+        OffsetDateTime expiresAt = OffsetDateTime.now().plusHours(TOKEN_TTL_HOURS);
+        String portalUrl = baseUrl + "/portal/auth?token=" + plainToken;
 
         CustomerPortalToken token = new CustomerPortalToken();
         token.setCustomer(customer);
         token.setTokenHash(tokenHash);
         token.setDeliveryChannel(channel);
         token.setExpiresAt(expiresAt);
+        token.setPortalUrl(portalUrl);
         tokenRepository.save(token);
 
-        return baseUrl + "/portal/auth?token=" + plainToken;
+        return portalUrl;
     }
 
     /**
@@ -110,10 +109,16 @@ public class PortalAuthService {
                 .filter(CustomerPortalToken::isValid)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED));
 
-        token.setUsedAt(OffsetDateTime.now());
-        tokenRepository.save(token);
-
+        // Token is NOT marked used here — customer can reopen the link multiple times
+        // until they sign. The token is invalidated only when a new one is issued.
         return jwtUtil.issueCustomerToken(token.getCustomer().getId());
+    }
+
+    /** Returns the currently active portal URL for a customer, if one exists. */
+    @Transactional(readOnly = true)
+    public java.util.Optional<String> getCurrentLink(java.util.UUID customerId) {
+        return tokenRepository.findActiveByCustomerId(customerId, OffsetDateTime.now())
+                .map(CustomerPortalToken::getPortalUrl);
     }
 
     private static String sha256Hex(String input) {

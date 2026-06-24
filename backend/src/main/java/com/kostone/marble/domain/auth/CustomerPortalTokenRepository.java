@@ -12,6 +12,9 @@ public interface CustomerPortalTokenRepository extends JpaRepository<CustomerPor
 
     Optional<CustomerPortalToken> findByTokenHash(String tokenHash);
 
+    @Query("SELECT t FROM CustomerPortalToken t WHERE t.customer.id = :customerId AND t.usedAt IS NULL AND t.expiresAt > :now ORDER BY t.createdAt DESC")
+    Optional<CustomerPortalToken> findActiveByCustomerId(UUID customerId, OffsetDateTime now);
+
     @Modifying
     @Query("UPDATE CustomerPortalToken t SET t.usedAt = :now WHERE t.customer.id = :customerId AND t.usedAt IS NULL")
     void invalidateAllUnusedForCustomer(UUID customerId, OffsetDateTime now);

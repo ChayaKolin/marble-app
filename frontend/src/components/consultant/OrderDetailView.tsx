@@ -175,9 +175,12 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   // Reload when order changes (catches status changes after upload)
   useEffect(() => { reloadOrderData() }, [order.id, order.status])
 
-  // Portal tokens are single-use — reset the displayed link whenever the order
-  // moves to a new status so the old consumed token isn't shown in the next step.
-  useEffect(() => { setPortalLink(''); setCopied(false) }, [order.status])
+  // Fetch the current active portal link on mount so the consultant always sees it.
+  useEffect(() => {
+    axios.get<{ portalUrl: string }>(`/api/v1/portal/auth/current-link?customerId=${order.customerId}`)
+      .then(r => { if (r.data?.portalUrl) setPortalLink(r.data.portalUrl) })
+      .catch(() => {})
+  }, [order.id])
 
   // Keep local measurement URL in sync with refreshed order prop
   useEffect(() => {
@@ -1112,7 +1115,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                       {copied ? '✓ הועתק' : 'העתק'}
                     </button>
                   </div>
-                  <p className="text-slate-500 text-xs">⏱ הקישור תקף ל-24 שעות</p>
+                  <p className="text-slate-500 text-xs">⏱ הקישור תקף ל-7 ימים</p>
                 </div>
               )}
 

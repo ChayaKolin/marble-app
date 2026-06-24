@@ -36,9 +36,13 @@ public class CustomerPortalToken {
     @Column(name = "used_at")
     private OffsetDateTime usedAt;
 
+    @Column(name = "portal_url", columnDefinition = "TEXT")
+    private String portalUrl;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private OffsetDateTime createdAt = OffsetDateTime.now();
 
+    /** Token is valid until explicitly invalidated (usedAt set by issueMagicLink) or expired. */
     public boolean isValid() {
         return usedAt == null && expiresAt.isAfter(OffsetDateTime.now());
     }

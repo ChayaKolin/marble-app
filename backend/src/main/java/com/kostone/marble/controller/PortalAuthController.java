@@ -10,6 +10,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/portal/auth")
@@ -26,6 +27,15 @@ public class PortalAuthController {
     public ResponseEntity<java.util.Map<String, Object>> requestAccess(@Valid @RequestBody PortalAuthRequest request) {
         var result = portalAuthService.requestPortalAccess(request);
         return ResponseEntity.ok(java.util.Map.of("portalUrl", result.portalUrl(), "delivered", result.delivered()));
+    }
+
+    /** Consultant — fetch the current active portal link for a customer (if any). */
+    @GetMapping("/current-link")
+    @PreAuthorize("hasAuthority('ROLE_SUPER_ADMIN_OWNER')")
+    public ResponseEntity<Map<String, String>> currentLink(@RequestParam UUID customerId) {
+        return portalAuthService.getCurrentLink(customerId)
+                .map(url -> ResponseEntity.ok(Map.of("portalUrl", url)))
+                .orElse(ResponseEntity.noContent().build());
     }
 
     /** Public — customer clicks magic-link. Returns a 7-day JWT on success. */
