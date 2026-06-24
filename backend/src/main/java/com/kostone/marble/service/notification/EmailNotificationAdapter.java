@@ -1,43 +1,61 @@
 package com.kostone.marble.service.notification;
 
-import lombok.RequiredArgsConstructor;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Component;
+import sibApi.ApiClient;
+import sibApi.ApiException;
+import sibApi.Configuration;
+import sibApi.TransactionalEmailsApi;
+import sibApi.auth.ApiKeyAuth;
+import sibModel.SendSmtpEmail;
+import sibModel.SendSmtpEmailSender;
+import sibModel.SendSmtpEmailTo;
+
+import java.util.List;
 
 /**
- * Email delivery via Spring Mail / Gmail SMTP.
- * Activated when KOSTONE_SYSTEM_EMAIL env var is set.
- * The StubNotificationAdapter acts as fallback in tests / local dev.
+ * Email delivery via Brevo REST API (replaces Gmail SMTP).
+ * Uses HTTPS port 443 — no SMTP port-blocking issues in production.
  */
 @Component("emailNotificationAdapter")
-@RequiredArgsConstructor
 @Slf4j
 public class EmailNotificationAdapter {
 
-    private final JavaMailSender mailSender;
+    @Value("${brevo.api-key:}")
+    private String apiKey;
 
-    @Value("${spring.mail.username:kostonemarble@gmail.com}")
+    @Value("${kostone.system.email:kostonemarble@gmail.com}")
     private String fromAddress;
 
+    private TransactionalEmailsApi brevoApi;
+
+    @PostConstruct
+    public void init() {
+        ApiClient client = Configuration.getDefaultApiClient();
+        ((ApiKeyAuth) client.getAuthentication("api-key")).setApiKey(apiKey);
+        brevoApi = new TransactionalEmailsApi();
+    }
+
     /**
-     * Sends an email. Returns true on success; on failure (e.g. SMTP connectivity
-     * issues) logs the error and returns false rather than throwing, since email
-     * delivery is a best-effort side effect that must not fail the calling
-     * business operation (magic-link issuance, layout upload, etc.).
+     * Sends an email via Brevo. Returns true on success; logs and returns false on
+     * failure rather than throwing — email delivery is best-effort and must not
+     * abort the calling business operation (magic-link issuance, layout upload, etc.).
      */
     public boolean send(String to, String subject, String body) {
         try {
-            SimpleMailMessage msg = new SimpleMailMessage();
-            msg.setFrom(fromAddress);
-            msg.setTo(to);
-            msg.setSubject(subject);
-            msg.setText(body);
-            mailSender.send(msg);
+            SendSmtpEmail email = new SendSmtpEmail();
+            email.setSender(new SendSmtpEmailSender().email(fromAddress).name("Kostone Marble"));
+            email.setTo(List.of(new SendSmtpEmailTo().email(to)));
+            email.setSubject(subject);
+            email.setTextContent(body);
+            brevoApi.sendTransacEmail(email);
             log.info("Email sent to {}: {}", to, subject);
             return true;
+        } catch (ApiException e) {
+            log.error("Failed to send email to {} [HTTP {}]: {}", to, e.getCode(), e.getResponseBody());
+            return false;
         } catch (Exception e) {
             log.error("Failed to send email to {} [{}]: {}", to, e.getClass().getSimpleName(), e.getMessage());
             return false;

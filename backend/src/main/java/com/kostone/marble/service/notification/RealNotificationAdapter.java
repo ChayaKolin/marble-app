@@ -11,13 +11,13 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 /**
- * Real notification adapter — active when either Twilio or Gmail SMTP is configured.
+ * Real notification adapter — active when either Twilio or Brevo is configured.
  * Sends WhatsApp messages via Twilio when available; falls back to email on WhatsApp
  * failure or when Twilio isn't configured (13.5). All message content is in Hebrew.
  */
 @Component("realNotificationAdapter")
 @Primary
-@ConditionalOnExpression("'${twilio.account-sid:}'.length() > 0 or '${spring.mail.password:}'.length() > 0")
+@ConditionalOnExpression("'${twilio.account-sid:}'.length() > 0 or '${brevo.api-key:}'.length() > 0")
 @RequiredArgsConstructor
 @Slf4j
 public class RealNotificationAdapter implements NotificationPort {
@@ -30,7 +30,7 @@ public class RealNotificationAdapter implements NotificationPort {
     @Value("${twilio.whatsapp-from:whatsapp:+14155238886}")
     private String whatsappFrom;
 
-    @Value("${spring.mail.username:kostonemarble@gmail.com}")
+    @Value("${kostone.system.email:kostonemarble@gmail.com}")
     private String systemEmail;
 
     // ── Hebrew message templates ─────────────────────────────────────────
