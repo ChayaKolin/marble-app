@@ -161,6 +161,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   // Reload when order changes (catches status changes after upload)
   useEffect(() => { reloadOrderData() }, [order.id, order.status])
 
+  // Portal tokens are single-use — reset the displayed link whenever the order
+  // moves to a new status so the old consumed token isn't shown in the next step.
+  useEffect(() => { setPortalLink(''); setCopied(false) }, [order.status])
+
   // Keep local measurement URL in sync with refreshed order prop
   useEffect(() => {
     if (order.measurementsDocumentUrl) setLocalMeasureUrl(order.measurementsDocumentUrl)
