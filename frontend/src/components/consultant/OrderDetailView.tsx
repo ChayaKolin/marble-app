@@ -22,7 +22,8 @@ const STATUS_STEPS = [
   { status: 'CLOSED_AWAITING_MEASUREMENT', label: 'ממתין למדידה' },
   { status: 'REVIEWING_LAYOUT',            label: 'בדיקת תוכנית' },
   { status: 'PRODUCTION',                  label: 'ייצור' },
-  { status: 'AWAITING_INSTALLATION',       label: 'ממתין להתקנה' },
+  { status: 'AWAITING_INSTALLATION',       label: 'התקנה' },
+  { status: 'AWAITING_CUSTOMER_APPROVAL',  label: 'אישור לקוח' },
   { status: 'COMPLETED',                   label: 'הושלם' },
 ]
 const STATUS_COLOR: Record<string, string> = {
@@ -77,6 +78,9 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const [busy, setBusy]       = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteReason, setDeleteReason] = useState('')
+  /* step-4 final payment */
+  const [finalPmtAmount, setFinalPmtAmount] = useState('')
+  const [finalPmtNote, setFinalPmtNote]     = useState('')
 
   /* step-2 checkboxes */
   const [measurerPaid, setMeasurerPaid]     = useState(false)
@@ -219,7 +223,11 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
   const measurerFeeAmount    = defaultDeposit20pct
   /** How much of the total is still outstanding (total minus all cleared ledger entries). */
   const totalCleared  = ledger.filter(l => l.cleared).reduce((s, l) => s + Number(l.amountAllocated), 0)
-  const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalCleared : null
+  // Consultant's measurement fee is stored on the order (not in the ledger) — must add it separately
+  const consultantMeasurementFee = measPmtConsultant ? parseFloat(measPmtConsultant) : 0
+  const totalPaidSoFar  = totalCleared + consultantMeasurementFee
+  const amountRemaining = order.totalGrossAmount != null ? Number(order.totalGrossAmount) - totalPaidSoFar : null
+  const finalPaymentCleared = ledger.some(l => l.milestoneTier === 2 && l.cleared)
 
   /* Auto-save notes on debounce — no save button needed */
   useEffect(() => {
@@ -266,6 +274,23 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
       flash('תשלום למודד נרשם')
       setLedger(l => [...l, { ...entry.data, cleared: true }])
       setMeasurerPaid(false)
+    } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה', false) }
+    finally { setBusy('') }
+  }
+
+  async function confirmFinalPaymentAndAdvance() {
+    const effectiveAmount = finalPmtAmount ? parseFloat(finalPmtAmount) : (amountRemaining ?? 0)
+    if (!(effectiveAmount > 0)) { flash('יש להזין סכום גדול מ-0', false); return }
+    setBusy('final-pmt')
+    try {
+      const entry = await axios.post(`/api/v1/orders/${order.id}/payments`, {
+        amountAllocated: effectiveAmount.toFixed(2),
+        milestoneTier: 2,
+      })
+      await axios.put(`/api/v1/orders/${order.id}/payments/${entry.data.id}/clear`)
+      await axios.put(`/api/v1/orders/${order.id}/status`, { targetStatus: 'AWAITING_CUSTOMER_APPROVAL' })
+      flash('✓ תשלום אושר — ממתין לאישור לקוח')
+      onUpdated()
     } catch (e: any) { flash(e?.response?.data?.detail || 'שגיאה', false) }
     finally { setBusy('') }
   }
@@ -793,8 +818,8 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 <div className="flex items-center gap-2 mb-3 bg-emerald-900/20 border border-emerald-800/40 rounded-lg px-3 py-2">
                   <span className="text-emerald-400 text-sm">✓</span>
                   <span className="text-emerald-300 text-sm">
-                    תשלום למודד אושר — ₪{ledger.find(l => l.milestoneTier === 1 && l.cleared)?.amountAllocated != null
-                      ? Number(ledger.find(l => l.milestoneTier === 1 && l.cleared)!.amountAllocated).toLocaleString('he-IL')
+                    מקדמה אושרה — ₪{totalPaidSoFar > 0
+                      ? totalPaidSoFar.toLocaleString('he-IL')
                       : effectiveMeasurerFee.toLocaleString('he-IL')}
                   </span>
                 </div>
@@ -807,10 +832,10 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                         <span className="text-slate-400">סה"כ להזמנה</span>
                         <span className="text-slate-200">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
                       </div>
-                      {totalCleared > 0 && (
+                      {totalPaidSoFar > 0 && (
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-slate-400">שולם עד כה</span>
-                          <span className="text-emerald-300">₪{totalCleared.toLocaleString('he-IL')}</span>
+                          <span className="text-emerald-300">₪{totalPaidSoFar.toLocaleString('he-IL')}</span>
                         </div>
                       )}
                       <div className="flex items-center justify-between border-t border-slate-700 pt-1">
@@ -827,7 +852,7 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                         ? <span className="text-slate-500 text-xs">(ידני)</span>
                         : depositIsCustom
                         ? <span className="text-slate-500 text-xs">(מקדמה מוסכמת)</span>
-                        : <span className="text-slate-500 text-xs">(20% ברירת מחדל)</span>}
+                        : <span className="text-slate-500 text-xs">(ברירת מחדל)</span>}
                     </span>
                     <span className="text-amber-300 font-bold">₪{effectiveMeasurerFee.toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}</span>
                   </div>
@@ -1171,12 +1196,76 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
                 <hr className="border-slate-700" />
 
-                {/* Send portal link for remote customer signature */}
+                {/* Final payment + advance — single action */}
                 <div className="space-y-2">
-                  <p className="text-slate-300 text-sm font-medium">שלח ללקוח לאישור ההתקנה</p>
-                  <p className="text-slate-500 text-xs">
-                    הלקוח יקבל קישור לחתימה דיגיטלית מהטלפון שלו. לחלופין, המתקין יכול לקבל חתימה ישירות בדשבורד המתקין.
-                  </p>
+                  <p className="text-slate-300 text-sm font-medium">ב. קבלת תשלום יתרה</p>
+                  {order.totalGrossAmount != null ? (
+                    <div className="bg-slate-800/60 border border-slate-700 rounded-xl px-4 py-3 space-y-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between text-xs">
+                          <span className="text-slate-400">סה"כ להזמנה</span>
+                          <span className="text-slate-200">₪{Number(order.totalGrossAmount).toLocaleString('he-IL')}</span>
+                        </div>
+                        {totalPaidSoFar > 0 && (
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-slate-400">שולם עד כה (מקדמה)</span>
+                            <span className="text-emerald-300">₪{totalPaidSoFar.toLocaleString('he-IL')}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between border-t border-slate-700 pt-1">
+                          <span className="text-slate-300 text-sm font-medium">יתרה לגבייה</span>
+                          <span className="text-amber-300 font-bold text-sm">₪{(amountRemaining ?? 0).toLocaleString('he-IL')}</span>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-slate-400 text-xs">סכום שהתקבל</label>
+                        <div className="flex items-center gap-1">
+                          <span className="text-slate-400 text-sm">₪</span>
+                          <input
+                            type="number" min="0" step="0.01" dir="ltr"
+                            placeholder={String(Math.round((amountRemaining ?? 0) * 100) / 100)}
+                            value={finalPmtAmount}
+                            onChange={e => setFinalPmtAmount(e.target.value)}
+                            className="flex-1 bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600"
+                          />
+                        </div>
+                      </div>
+                      {finalPmtAmount && parseFloat(finalPmtAmount) < (amountRemaining ?? 0) - 0.01 && (
+                        <div className="space-y-1">
+                          <label className="text-slate-400 text-xs">סיבה לתשלום חלקי</label>
+                          <input
+                            value={finalPmtNote}
+                            onChange={e => setFinalPmtNote(e.target.value)}
+                            placeholder="למשל: שאר ישולם בשבוע הבא..."
+                            className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-amber-500 placeholder:text-slate-600"
+                          />
+                        </div>
+                      )}
+                      <button onClick={confirmFinalPaymentAndAdvance} disabled={busy === 'final-pmt'}
+                        className="w-full py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors">
+                        {busy === 'final-pmt' ? '...' : `✓ קיבלתי ₪${(finalPmtAmount ? parseFloat(finalPmtAmount) : (amountRemaining ?? 0)).toLocaleString('he-IL', { minimumFractionDigits: 0, maximumFractionDigits: 2 })} — העבר לאישור לקוח`}
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={() => advanceTo('AWAITING_CUSTOMER_APPROVAL')} disabled={busy === 'advance'}
+                      className="w-full py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm font-semibold disabled:opacity-50 transition-colors">
+                      {busy === 'advance' ? '...' : '✓ העבר לאישור לקוח'}
+                    </button>
+                  )}
+                </div>
+              </div>
+            </StepCard>
+          )}
+
+          {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
+            <StepCard title="שלב 5 — אישור לקוח">
+              <div className="space-y-4">
+                <p className="text-slate-400 text-xs">
+                  ההתקנה הושלמה והתשלום התקבל. שלח ללקוח קישור לאישור דיגיטלי, או המתקין יגיש את המכשיר לחתימה.
+                </p>
+
+                {/* Send portal link */}
+                <div className="space-y-2">
                   <button onClick={sendToCustomer} disabled={busy === 'send'}
                     className="w-full py-2.5 rounded-xl bg-purple-700 hover:bg-purple-600 text-white text-sm font-medium disabled:opacity-50 transition-colors">
                     {busy === 'send' ? 'שולח...' : '📤 שלח קישור לאישור ההתקנה לאימייל'}
@@ -1203,21 +1292,20 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                 {finalSigned ? (
                   <div className="flex items-center gap-2 rounded-lg bg-emerald-900/30 border border-emerald-700/50 px-3 py-2.5">
                     <span className="text-emerald-400 text-sm">✓</span>
-                    <p className="text-emerald-300 text-sm">הלקוח חתם על אישור סיום ההתקנה</p>
+                    <p className="text-emerald-300 text-sm">הלקוח חתם על אישור קבלת העבודה</p>
                   </div>
                 ) : (
                   <div className="rounded-lg bg-amber-900/20 border border-amber-700/40 px-3 py-2.5 space-y-1">
                     <p className="text-amber-300 text-sm font-medium">ממתין לחתימת הלקוח</p>
                     <p className="text-amber-200/70 text-xs">
-                      לאחר ביצוע ההתקנה, המתקין פותח את הדשבורד שלו ← "סיום עבודה — חתימת לקוח"
-                      ומגיש את המכשיר ללקוח לחתימה. הדף יתעדכן אוטומטית.
+                      הלקוח יקבל קישור לאישור דיגיטלי, או המתקין יכול לגבות חתימה ישירות בדשבורד המתקין. הדף יתעדכן אוטומטית.
                     </p>
                   </div>
                 )}
 
                 <button onClick={() => advanceTo('COMPLETED')} disabled={busy === 'advance' || !finalSigned}
                   className="w-full py-2.5 rounded-lg bg-emerald-700 hover:bg-emerald-600 text-white text-sm disabled:opacity-50 transition-colors">
-                  {busy === 'advance' ? '...' : '✓ סמן כהושלם (80% שולמה)'}
+                  {busy === 'advance' ? '...' : '✓ סמן כהושלם'}
                 </button>
               </div>
             </StepCard>

@@ -67,6 +67,11 @@ public class PortalOrderService {
                 order.getId(), SignatureCategory.FINAL_POST_INSTALLATION);
 
         List<FinancialLedger> ledgerEntries = ledgerRepository.findByOrderId(order.getId());
+        // Consultant's measurement fee is stored on the order (not in the ledger) —
+        // add it to tier 1 so the customer sees the full amount they paid during measurement.
+        java.math.BigDecimal consultantFee = order.getMeasurementPaymentToConsultant() != null
+                ? order.getMeasurementPaymentToConsultant()
+                : java.math.BigDecimal.ZERO;
         List<PaymentMilestoneStatus> milestones = ledgerEntries.stream()
                 .collect(Collectors.groupingBy(FinancialLedger::getMilestoneTier))
                 .entrySet().stream()
@@ -77,6 +82,10 @@ public class PortalOrderService {
                     var total = entries.stream()
                             .map(FinancialLedger::getAmountAllocated)
                             .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                    // For tier 1, include the consultant's share (not in ledger)
+                    if (tier == 1 && consultantFee.compareTo(java.math.BigDecimal.ZERO) > 0) {
+                        total = total.add(consultantFee);
+                    }
                     boolean cleared = entries.stream().anyMatch(FinancialLedger::isCleared);
                     return PaymentMilestoneStatus.of(tier, total, cleared);
                 })

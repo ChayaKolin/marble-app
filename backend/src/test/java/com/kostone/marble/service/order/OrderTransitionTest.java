@@ -62,7 +62,7 @@ class OrderTransitionTest {
     }
 
     // -------------------------------------------------------------------------
-    // All 9 valid transitions — status changes accepted
+    // All 12 valid transitions — status changes accepted
     // -------------------------------------------------------------------------
 
     @ParameterizedTest(name = "{0} → {1}")
@@ -71,9 +71,12 @@ class OrderTransitionTest {
         "CLOSED_AWAITING_MEASUREMENT, REVIEWING_LAYOUT",
         "REVIEWING_LAYOUT, PRODUCTION",
         "PRODUCTION, AWAITING_INSTALLATION",
-        "AWAITING_INSTALLATION, COMPLETED",
+        "AWAITING_INSTALLATION, AWAITING_CUSTOMER_APPROVAL",
         "AWAITING_INSTALLATION, PENDING_REPAIR",
+        "AWAITING_CUSTOMER_APPROVAL, COMPLETED",
+        "AWAITING_CUSTOMER_APPROVAL, PENDING_REPAIR",
         "PENDING_REPAIR, AWAITING_INSTALLATION",
+        "PENDING_REPAIR, AWAITING_CUSTOMER_APPROVAL",
         "PENDING_REPAIR, COMPLETED",
         "COMPLETED, ARCHIVED"
     })
@@ -86,10 +89,6 @@ class OrderTransitionTest {
         when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         // Satisfy gates for guarded transitions
-        if (fromStatus == QUOTATION) {
-            when(ledgerRepository.sumClearedAmountByOrderAndTier(order.getId(), 1))
-                    .thenReturn(new BigDecimal("2000.00")); // exactly 20%
-        }
         if (fromStatus == REVIEWING_LAYOUT) {
             when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.SLAB_LAYOUT_APPROVAL))
                     .thenReturn(true);
@@ -113,6 +112,7 @@ class OrderTransitionTest {
         "QUOTATION, COMPLETED",
         "REVIEWING_LAYOUT, AWAITING_INSTALLATION",
         "PRODUCTION, QUOTATION",
+        "AWAITING_INSTALLATION, COMPLETED",
         "ARCHIVED, QUOTATION"
     })
     void invalid_transitions_throw_400(String from, String to) {
@@ -128,32 +128,8 @@ class OrderTransitionTest {
     }
 
     // -------------------------------------------------------------------------
-    // Gate: 20% deposit — 409 when insufficient
-    // -------------------------------------------------------------------------
-
-    @Test
-    void quotation_to_closed_blocked_when_deposit_insufficient() {
-        Order order = makeOrder(QUOTATION);
-        when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
-        when(ledgerRepository.sumClearedAmountByOrderAndTier(order.getId(), 1))
-                .thenReturn(new BigDecimal("1000.00")); // 10%, needs 20%
-
-        assertThatThrownBy(() -> orderService.transition(order.getId(), CLOSED_AWAITING_MEASUREMENT))
-                .isInstanceOf(ResponseStatusException.class)
-                .satisfies(ex -> assertThat(((ResponseStatusException) ex).getStatusCode().value()).isEqualTo(409));
-    }
-
-    @Test
-    void quotation_to_closed_allowed_when_deposit_exact() {
-        Order order = makeOrder(QUOTATION);
-        when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
-        when(ledgerRepository.sumClearedAmountByOrderAndTier(order.getId(), 1))
-                .thenReturn(new BigDecimal("2000.00")); // exactly 20% of 10000
-        when(orderRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
-        var result = orderService.transition(order.getId(), CLOSED_AWAITING_MEASUREMENT);
-        assertThat(result.status()).isEqualTo(CLOSED_AWAITING_MEASUREMENT);
-    }
+    // Gate: layout signature — 409 when absent
+    // (No financial gate on QUOTATION → CLOSED_AWAITING_MEASUREMENT; deposit is recorded after measurement)
 
     // -------------------------------------------------------------------------
     // Gate: layout signature — 409 when absent
@@ -188,8 +164,8 @@ class OrderTransitionTest {
     // -------------------------------------------------------------------------
 
     @Test
-    void awaiting_installation_to_completed_blocked_when_unsigned() {
-        Order order = makeOrder(AWAITING_INSTALLATION);
+    void awaiting_customer_approval_to_completed_blocked_when_unsigned() {
+        Order order = makeOrder(AWAITING_CUSTOMER_APPROVAL);
         when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
         when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
                 .thenReturn(false);
@@ -200,8 +176,8 @@ class OrderTransitionTest {
     }
 
     @Test
-    void awaiting_installation_to_completed_allowed_when_signed() {
-        Order order = makeOrder(AWAITING_INSTALLATION);
+    void awaiting_customer_approval_to_completed_allowed_when_signed() {
+        Order order = makeOrder(AWAITING_CUSTOMER_APPROVAL);
         when(orderRepository.findByIdAndDeletedAtIsNull(order.getId())).thenReturn(Optional.of(order));
         when(signatureRepository.existsByOrderIdAndCategory(order.getId(), SignatureCategory.FINAL_POST_INSTALLATION))
                 .thenReturn(true);

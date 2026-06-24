@@ -6,6 +6,7 @@ export type OrderStatus =
   | 'REVIEWING_LAYOUT'
   | 'PRODUCTION'
   | 'AWAITING_INSTALLATION'
+  | 'AWAITING_CUSTOMER_APPROVAL'
   | 'PENDING_REPAIR'
   | 'COMPLETED'
   | 'ARCHIVED'
@@ -16,6 +17,7 @@ export const ORDER_STATUS_HE: Record<OrderStatus, string> = {
   REVIEWING_LAYOUT: 'לעבור על התוכנית',
   PRODUCTION: 'ייצור',
   AWAITING_INSTALLATION: 'מחכה להתקנה',
+  AWAITING_CUSTOMER_APPROVAL: 'ממתין לאישור לקוח',
   PENDING_REPAIR: 'מחכה לתיקון',
   COMPLETED: 'מושלם',
   ARCHIVED: 'ארכיון',

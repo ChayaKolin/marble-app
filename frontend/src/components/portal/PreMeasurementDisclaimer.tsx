@@ -4,10 +4,11 @@ import { submitSignature } from '../../api/signatures'
 
 interface Props {
   orderId: string
+  depositAmount?: number
   onComplete: () => void
 }
 
-export default function PreMeasurementDisclaimer({ orderId, onComplete }: Props) {
+export default function PreMeasurementDisclaimer({ orderId, depositAmount, onComplete }: Props) {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [accepted, setAccepted] = useState(false)
@@ -37,6 +38,21 @@ export default function PreMeasurementDisclaimer({ orderId, onComplete }: Props)
           בחתימתך אתה/את מאשר/ת שקראת והבנת הצהרה זו.
         </p>
       </div>
+
+      {depositAmount != null && depositAmount > 0 && (
+        <div className="bg-emerald-900/20 border border-emerald-800 rounded-xl p-4 space-y-1">
+          <p className="text-emerald-300 text-xs font-medium">אישור תשלום מקדמה</p>
+          <p className="text-slate-200 text-sm">
+            סכום המקדמה ששולמה:{' '}
+            <span className="font-semibold text-emerald-300">
+              ₪{depositAmount.toLocaleString('he-IL', { minimumFractionDigits: 2 })}
+            </span>
+          </p>
+          <p className="text-slate-400 text-xs">
+            סכום זה יינוכה מהתשלום הסופי לאחר השלמת המדידה.
+          </p>
+        </div>
+      )}
 
       <div className="flex items-start gap-3">
         <input

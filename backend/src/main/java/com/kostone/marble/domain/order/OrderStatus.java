@@ -6,6 +6,7 @@ public enum OrderStatus {
     REVIEWING_LAYOUT,            // לעבור על התוכנית
     PRODUCTION,                  // ייצור
     AWAITING_INSTALLATION,       // מחכה להתקנה
+    AWAITING_CUSTOMER_APPROVAL,  // ממתין לאישור לקוח (לאחר קבלת תשלום יתרה)
     PENDING_REPAIR,              // מחכה לתיקון
     COMPLETED,                   // מושלם
     ARCHIVED                     // ארכיון

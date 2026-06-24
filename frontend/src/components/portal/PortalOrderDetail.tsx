@@ -16,9 +16,11 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
   const [screen, setScreen] = useState<ActiveScreen>('detail')
 
   if (screen === 'disclaimer') {
+    const tier1 = order.paymentMilestones.find(m => m.tier === 1)
     return (
       <PreMeasurementDisclaimer
         orderId={order.id}
+        depositAmount={tier1 ? Number(tier1.amount) : undefined}
         onComplete={() => { setScreen('detail'); onActionComplete() }}
       />
     )
@@ -120,7 +122,7 @@ export default function PortalOrderDetail({ order, onActionComplete }: Props) {
         )}
 
         {/* Final installation approval */}
-        {order.status === 'AWAITING_INSTALLATION' && (
+        {order.status === 'AWAITING_CUSTOMER_APPROVAL' && (
           <div className={`rounded-xl border p-4 space-y-3 ${
             order.finalInstallationSigned
               ? 'border-emerald-800 bg-emerald-950/20'

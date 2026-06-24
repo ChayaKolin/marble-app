@@ -32,3 +32,14 @@ The customer portal SHALL display the order's marble/stone and sink specificatio
 #### Scenario: Customer reviews the specification before signing
 - **WHEN** a customer opens the layout-approval screen for an order with marble/stone and/or sink specifications
 - **THEN** the screen shows a summary of those specifications alongside the layout document, before the signature canvas
+
+### Requirement: Pre-measurement disclaimer shows the actual deposit amount paid
+The pre-measurement disclaimer form (`PRE_MEASUREMENT_DISCLAIMER` signature at `CLOSED_AWAITING_MEASUREMENT`) SHALL display the deposit amount that has been recorded (consultant's share + measurer's share) when a tier-1 payment milestone exists for the order. This amount SHALL be displayed as an explicit acknowledgement that the customer has paid a deposit which will be deducted from the final payment, replacing any reference to a fixed "20%" fraction.
+
+#### Scenario: Customer sees deposit amount in disclaimer form
+- **WHEN** a customer opens the pre-measurement disclaimer signing screen and the consultant has already recorded the measurement payment
+- **THEN** the form shows a green "אישור תשלום מקדמה" block with the exact amount (consultant + measurer combined) and a note that it will be deducted from the final invoice
+
+#### Scenario: No deposit recorded yet
+- **WHEN** a customer opens the pre-measurement disclaimer signing screen but no tier-1 milestone has been recorded
+- **THEN** the deposit block is not shown; the customer signs only the measurement disclaimer text
