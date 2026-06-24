@@ -9,6 +9,12 @@ interface Props {
   onCreated: (customer: CustomerResponse) => void
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_RE = /^\d{10}$/
+
+function phoneError(v: string) { return v && !PHONE_RE.test(v) ? PHONE_TITLE_HE : '' }
+function emailError(v: string) { return v && !EMAIL_RE.test(v) ? 'כתובת דוא"ל לא תקינה' : '' }
+
 export default function AddCustomerModal({ onClose, onCreated }: Props) {
   const [form, setForm] = useState({
     fullName: '', phoneNumber: '', emailAddress: '',
@@ -17,26 +23,16 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
   })
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
 
+  // Touch on every keystroke — real-time validation
   function set(field: string, value: string) {
     setForm(f => ({ ...f, [field]: value }))
-    if (fieldErrors[field]) setFieldErrors(fe => ({ ...fe, [field]: '' }))
+    setTouched(t => ({ ...t, [field]: true }))
   }
 
-  /** Validates phone/email fields on blur so the customer sees the problem immediately, not only after clicking שמור. */
-  function handleBlur(field: 'phoneNumber' | 'emailAddress' | 'architectPhone') {
-    const value = form[field]
-    let message = ''
-    if (field === 'phoneNumber') {
-      message = /^\d{10}$/.test(value) ? '' : PHONE_TITLE_HE
-    } else if (field === 'emailAddress') {
-      message = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'כתובת דוא"ל לא תקינה'
-    } else if (field === 'architectPhone' && value) {
-      message = /^\d{10}$/.test(value) ? '' : PHONE_TITLE_HE
-    }
-    setFieldErrors(fe => ({ ...fe, [field]: message }))
-  }
+  // Also touch on blur so fields skipped without typing (e.g. city) still turn red if empty
+  const touch = (field: string) => setTouched(t => ({ ...t, [field]: true }))
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -69,24 +65,30 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
         <form onSubmit={handleSubmit} className="p-5 space-y-4">
           {/* Required fields */}
           <div className="grid grid-cols-1 gap-4">
-            <Field label="שם מלא *" value={form.fullName} onChange={v => set('fullName', v)} required />
+            <Field label="שם מלא *" value={form.fullName} onChange={v => set('fullName', v)}
+                   onBlur={() => touch('fullName')} required touched={!!touched.fullName} />
             <Field label="טלפון *" value={form.phoneNumber} onChange={v => set('phoneNumber', sanitizePhoneInput(v))}
-                   onBlur={() => handleBlur('phoneNumber')} error={fieldErrors.phoneNumber}
-                   required dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
+                   onBlur={() => touch('phoneNumber')} error={phoneError(form.phoneNumber)}
+                   required dir="ltr" type="tel" inputMode="numeric" maxLength={10}
+                   pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} touched={!!touched.phoneNumber} />
             <Field label='דוא"ל *' value={form.emailAddress} onChange={v => set('emailAddress', v)}
-                   onBlur={() => handleBlur('emailAddress')} error={fieldErrors.emailAddress}
-                   required dir="ltr" type="email" />
+                   onBlur={() => touch('emailAddress')} error={emailError(form.emailAddress)}
+                   required dir="ltr" type="email" touched={!!touched.emailAddress} />
           </div>
 
           <hr className="border-slate-700" />
           <p className="text-slate-400 text-xs font-medium">כתובת האתר</p>
 
           <div className="grid grid-cols-1 gap-3">
-            <Field label="כתובת *" value={form.siteAddress} onChange={v => set('siteAddress', v)} required />
-            <CitySelect label="עיר *" value={form.siteCity} onChange={v => set('siteCity', v)} required />
+            <Field label="כתובת *" value={form.siteAddress} onChange={v => set('siteAddress', v)}
+                   onBlur={() => touch('siteAddress')} required touched={!!touched.siteAddress} />
+            <CitySelect label="עיר *" value={form.siteCity} onChange={v => set('siteCity', v)}
+                        required touched={!!touched.siteCity} onBlur={() => touch('siteCity')} />
             <div className="grid grid-cols-2 gap-3">
-              <Field label="קומה" value={form.siteFloor} onChange={v => set('siteFloor', v)} type="number" />
-              <Field label="דירה" value={form.siteApt} onChange={v => set('siteApt', v)} />
+              <Field label="קומה" value={form.siteFloor} onChange={v => set('siteFloor', v)}
+                     onBlur={() => touch('siteFloor')} type="number" touched={!!touched.siteFloor} />
+              <Field label="דירה" value={form.siteApt} onChange={v => set('siteApt', v)}
+                     onBlur={() => touch('siteApt')} touched={!!touched.siteApt} />
             </div>
           </div>
 
@@ -94,10 +96,13 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
           <p className="text-slate-400 text-xs font-medium">אדריכל / מעצב (אופציונלי)</p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Field label="שם אדריכל" value={form.architectName} onChange={v => set('architectName', v)} />
-            <Field label="טלפון אדריכל" value={form.architectPhone} onChange={v => set('architectPhone', sanitizePhoneInput(v))}
-                   onBlur={() => handleBlur('architectPhone')} error={fieldErrors.architectPhone}
-                   dir="ltr" type="tel" inputMode="numeric" maxLength={10} pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} />
+            <Field label="שם אדריכל" value={form.architectName} onChange={v => set('architectName', v)}
+                   onBlur={() => touch('architectName')} touched={!!touched.architectName} />
+            <Field label="טלפון אדריכל" value={form.architectPhone}
+                   onChange={v => set('architectPhone', sanitizePhoneInput(v))}
+                   onBlur={() => touch('architectPhone')} error={phoneError(form.architectPhone)}
+                   dir="ltr" type="tel" inputMode="numeric" maxLength={10}
+                   pattern={PHONE_PATTERN} title={PHONE_TITLE_HE} touched={!!touched.architectPhone} />
           </div>
 
           {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -120,11 +125,25 @@ export default function AddCustomerModal({ onClose, onCreated }: Props) {
   )
 }
 
-function Field({ label, value, onChange, onBlur, error, required, dir, type = 'text', inputMode, maxLength, pattern, title }: {
+function Field({ label, value, onChange, onBlur, error, required, dir, type = 'text', inputMode, maxLength, pattern, title, touched }: {
   label: string; value: string; onChange: (v: string) => void; onBlur?: () => void; error?: string;
   required?: boolean; dir?: string; type?: string;
   inputMode?: React.HTMLAttributes<HTMLInputElement>['inputMode']; maxLength?: number; pattern?: string; title?: string;
+  touched?: boolean;
 }) {
+  let borderCls: string
+  if (!touched) {
+    borderCls = 'border-slate-600 focus:border-emerald-500'
+  } else if (error) {
+    borderCls = 'border-red-500 focus:border-red-500'
+  } else if (value.trim()) {
+    borderCls = 'border-emerald-500 focus:border-emerald-500'
+  } else if (required) {
+    borderCls = 'border-red-500 focus:border-red-500'
+  } else {
+    borderCls = 'border-slate-600 focus:border-emerald-500'
+  }
+
   return (
     <div className="space-y-1">
       <label className="text-slate-400 text-xs">{label}</label>
@@ -139,13 +158,10 @@ function Field({ label, value, onChange, onBlur, error, required, dir, type = 't
         maxLength={maxLength}
         pattern={pattern}
         title={title}
-        className={[
-          'w-full bg-slate-800 border rounded-lg px-3 py-2 text-slate-100 text-sm',
-          'focus:outline-none placeholder:text-slate-600',
-          error ? 'border-red-500 focus:border-red-500' : 'border-slate-600 focus:border-emerald-500',
-        ].join(' ')}
+        className={`w-full bg-slate-800 border rounded-lg px-3 py-2 text-slate-100 text-sm
+                    focus:outline-none placeholder:text-slate-600 transition-colors ${borderCls}`}
       />
-      {error && <p className="text-red-400 text-xs">{error}</p>}
+      {touched && error && <p className="text-red-400 text-xs mt-0.5">{error}</p>}
     </div>
   )
 }

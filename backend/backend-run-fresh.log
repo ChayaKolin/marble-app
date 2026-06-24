@@ -87,3 +87,13 @@ Picked up JAVA_TOOL_OPTIONS: -Dstdout.encoding=UTF-8 -Dstderr.encoding=UTF-8
 2026-06-24T18:13:43.720+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-4] c.k.m.s.storage.FileStorageService       : Stored file: C:\tmp\uploads\photos\7dce68eb-31f7-4536-a56a-aeaa213236d0\72d2e047-e6c5-4918-b3e9-ed8df5dff4d8_______1.jpg
 2026-06-24T18:13:57.870+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
 2026-06-24T18:14:45.527+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-7] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-24T18:52:35.116+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-2] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-24T18:53:22.161+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-3] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-24T20:14:43.325+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-4] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח
+2026-06-24T20:14:47.377+03:00  INFO 14468 --- [kostone-marble] [io-8080-exec-10] c.k.m.s.n.RealNotificationAdapter        : WhatsApp delivery skipped — Twilio not configured, using email fallback
+2026-06-24T20:14:47.378+03:00  WARN 14468 --- [kostone-marble] [io-8080-exec-10] c.k.m.s.n.RealNotificationAdapter        : WhatsApp magic-link delivery unavailable for חיותא — share the portal link manually
+2026-06-24T20:14:48.559+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-3] c.k.m.s.n.RealNotificationAdapter        : WhatsApp delivery skipped — Twilio not configured, using email fallback
+2026-06-24T20:14:48.559+03:00  WARN 14468 --- [kostone-marble] [nio-8080-exec-3] c.k.m.s.n.RealNotificationAdapter        : WhatsApp magic-link delivery unavailable for חיותא — share the portal link manually
+2026-06-24T20:15:15.861+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-1] c.k.m.s.n.RealNotificationAdapter        : WhatsApp delivery skipped — Twilio not configured, using email fallback
+2026-06-24T20:15:15.861+03:00  WARN 14468 --- [kostone-marble] [nio-8080-exec-1] c.k.m.s.n.RealNotificationAdapter        : WhatsApp magic-link delivery unavailable for חיותא — share the portal link manually
+2026-06-24T20:15:34.963+03:00  INFO 14468 --- [kostone-marble] [nio-8080-exec-6] c.k.m.s.n.EmailNotificationAdapter       : Email sent to kolinchaya@gmail.com: Kostone Marble — גישה לפורטל הלקוח

@@ -9,6 +9,8 @@ export default function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [usernameTouched, setUsernameTouched] = useState(false)
+  const [passwordTouched, setPasswordTouched] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -26,6 +28,18 @@ export default function LoginPage() {
       setLoading(false)
     }
   }
+
+  const usernameBorder = !usernameTouched
+    ? 'border-slate-600 focus:border-emerald-500'
+    : username.trim()
+    ? 'border-emerald-500 focus:border-emerald-500'
+    : 'border-red-500 focus:border-red-500'
+
+  const passwordBorder = !passwordTouched
+    ? 'border-slate-600 focus:border-emerald-500'
+    : password
+    ? 'border-emerald-500 focus:border-emerald-500'
+    : 'border-red-500 focus:border-red-500'
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center px-4">
@@ -46,10 +60,11 @@ export default function LoginPage() {
             <input
               type="text"
               value={username}
-              onChange={e => setUsername(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5
-                         text-slate-100 text-sm focus:outline-none focus:border-emerald-500
-                         placeholder:text-slate-600"
+              onChange={e => { setUsername(e.target.value); setUsernameTouched(true) }}
+              onBlur={() => setUsernameTouched(true)}
+              className={`w-full bg-slate-800 border rounded-lg px-3 py-2.5
+                          text-slate-100 text-sm focus:outline-none placeholder:text-slate-600
+                          transition-colors ${usernameBorder}`}
               placeholder="consultant"
               dir="ltr"
               required
@@ -61,9 +76,11 @@ export default function LoginPage() {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5
-                         text-slate-100 text-sm focus:outline-none focus:border-emerald-500"
+              onChange={e => { setPassword(e.target.value); setPasswordTouched(true) }}
+              onBlur={() => setPasswordTouched(true)}
+              className={`w-full bg-slate-800 border rounded-lg px-3 py-2.5
+                          text-slate-100 text-sm focus:outline-none transition-colors
+                          ${passwordBorder}`}
               required
             />
           </div>

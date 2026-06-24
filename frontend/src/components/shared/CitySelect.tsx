@@ -6,19 +6,14 @@ interface Props {
   value: string
   onChange: (city: string) => void
   required?: boolean
-  /** Matches the compact "FieldSmall" styling used in some forms */
   small?: boolean
+  touched?: boolean
+  onBlur?: () => void
 }
 
 const MAX_RESULTS = 40
 
-/**
- * Searchable "city" picker restricted to the predefined Israeli cities list.
- * Typing filters the dropdown, but the stored value is only ever set by
- * picking an item from the list — free text can never be submitted, and on
- * blur the field reverts to the last picked value.
- */
-export default function CitySelect({ label, value, onChange, required, small }: Props) {
+export default function CitySelect({ label, value, onChange, required, small, touched, onBlur }: Props) {
   const [query, setQuery] = useState(value)
   const [open, setOpen] = useState(false)
   const [highlight, setHighlight] = useState(0)
@@ -42,10 +37,23 @@ export default function CitySelect({ label, value, onChange, required, small }: 
     else if (e.key === 'Escape') { setOpen(false); setQuery(value) }
   }
 
+  function handleBlur() {
+    setOpen(false)
+    setQuery(value)
+    onBlur?.()
+  }
+
   const labelCls = small ? 'text-slate-500 text-xs' : 'text-slate-400 text-xs'
-  const inputCls = small
-    ? 'w-full bg-slate-800 border border-slate-700 rounded-lg px-3 py-1.5 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600'
-    : 'w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500 placeholder:text-slate-600'
+
+  const baseCls = 'w-full bg-slate-800 rounded-lg px-3 text-slate-100 text-sm focus:outline-none placeholder:text-slate-600 transition-colors'
+  const sizeCls = small ? 'py-1.5' : 'py-2'
+  const borderCls = !touched
+    ? 'border border-slate-600 focus:border-emerald-500'
+    : value.trim()
+    ? 'border border-emerald-500 focus:border-emerald-500'
+    : required
+    ? 'border border-red-500 focus:border-red-500'
+    : 'border border-slate-600 focus:border-emerald-500'
 
   return (
     <div className="space-y-1 relative">
@@ -55,12 +63,12 @@ export default function CitySelect({ label, value, onChange, required, small }: 
         value={query}
         onChange={e => { setQuery(e.target.value); setOpen(true); setHighlight(0) }}
         onFocus={() => setOpen(true)}
-        onBlur={() => { setOpen(false); setQuery(value) }}
+        onBlur={handleBlur}
         onKeyDown={handleKeyDown}
         required={required}
         placeholder="הקלד לחיפוש עיר..."
         autoComplete="off"
-        className={inputCls}
+        className={`${baseCls} ${sizeCls} ${borderCls}`}
       />
       {open && (
         <div className="absolute z-20 mt-1 w-full max-h-52 overflow-y-auto rounded-lg border border-slate-700 bg-slate-800 shadow-xl">

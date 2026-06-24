@@ -48,6 +48,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
       siteFloor:   c?.siteFloor != null ? String(c.siteFloor) : '',
       siteApt:     c?.siteApt ?? '',
     }))
+    setCustomerTouched(true)
   }
 
   function set(field: string, value: string | boolean) {
@@ -116,6 +117,7 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
     onCreated(created)
   }
 
+  const [customerTouched, setCustomerTouched] = useState(false)
   const selectedCustomer = customers.find(c => c.id === form.customerId)
 
   return (
@@ -134,9 +136,15 @@ export default function AddOrderModal({ onClose, onCreated, preselectedCustomerI
             <select
               value={form.customerId}
               onChange={e => handleCustomerChange(e.target.value)}
+              onBlur={() => setCustomerTouched(true)}
               required
-              className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2.5
-                         text-slate-100 text-sm focus:outline-none focus:border-emerald-500"
+              className={`w-full bg-slate-800 border rounded-lg px-3 py-2.5
+                          text-slate-100 text-sm focus:outline-none transition-colors
+                          ${!customerTouched
+                            ? 'border-slate-600 focus:border-emerald-500'
+                            : form.customerId
+                            ? 'border-emerald-500 focus:border-emerald-500'
+                            : 'border-red-500 focus:border-red-500'}`}
             >
               <option value="">בחר לקוח...</option>
               {customers.map(c => (

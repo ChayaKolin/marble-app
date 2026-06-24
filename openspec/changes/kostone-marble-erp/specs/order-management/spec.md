@@ -24,6 +24,16 @@ All views SHALL be fully usable on mobile screens (≥ 320 px wide). Specific re
 - Delete buttons on photos use `start-1.5` (logical RTL) instead of `left-1.5`.
 - The customer portal (`/portal`) is `max-w-lg mx-auto` and designed mobile-first.
 
+### Requirement: Real-time field validation feedback on blur
+All form fields with validation rules SHALL provide immediate visual feedback when the user leaves (blurs) the field:
+- A field that is **required and empty** after blur SHALL show a **red border** (`border-red-500`).
+- A field that has a **format error** (invalid phone/email pattern) after blur SHALL show a **red border** with a descriptive error message below the field.
+- A field that is **valid and non-empty** after blur SHALL show a **green border** (`border-emerald-500`).
+- A field that has **not yet been visited** (not yet blurred) SHALL show the **neutral border** (`border-slate-600`), never red.
+- This applies to: `AddCustomerModal` (all required and validated fields), `AddOrderModal` (customer selector), `LoginPage` (username and password), and `CitySelect` (required city picker).
+- Optional fields show green when filled, neutral when empty (never red for optional fields).
+- The `CitySelect` component accepts `touched` and `onBlur` props; the parent passes them to participate in the same scheme.
+
 ### Requirement: Orders support a free-text notes field with auto-save
 Every order SHALL have a `notes TEXT` field for general internal notes. The Consultant SHALL be able to create and update order notes at any time. Notes SHALL be visible to the Consultant in the order detail view and on the calendar event side panel. Notes SHALL save automatically via a debounce (1.2 s after the Consultant stops typing) with no explicit "save" button; a subtle "שומר..." / "✓ נשמר" status indicator replaces the button.
 

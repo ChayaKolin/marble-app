@@ -37,6 +37,14 @@ const STATUS_COLOR: Record<string, string> = {
 }
 const FINISH_TYPES = ['מבריק', 'מלוטש', 'מט', 'חלק', 'מוברש']
 
+/** 4-hour arrival windows from 07:00 to 22:00 (12 slots, 1-hour steps) */
+const MEASURE_TIME_SLOTS = Array.from({ length: 12 }, (_, i) => {
+  const start = 7 + i
+  const end = start + 4
+  const fmt = (h: number) => `${String(h).padStart(2, '0')}:00`
+  return { value: fmt(start), label: `${fmt(start)}–${fmt(end)}` }
+})
+
 /** Adds whole hours to an "HH:mm" string, wrapping past midnight. */
 function addHours(time: string, hours: number): string {
   const [h, m] = time.split(':').map(Number)
@@ -406,6 +414,21 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
     }
   }
 
+  // Switching between marble/sink sub-tabs while an add-form has pending data:
+  // onMouseDown fires before blur, so we save + switch atomically here and call
+  // e.preventDefault() to suppress the subsequent blur-triggered save (which
+  // would otherwise double-save or, worse, swallow the tab click entirely).
+  function handleSpecsTabSwitch(e: React.MouseEvent, newTab: 'marble' | 'sinks') {
+    e.preventDefault()
+    if (newTab === 'sinks' && specForm.marbleModelCode.trim() && parseFloat(specForm.squareMeters) > 0 && busy !== 'spec') {
+      addSpec()
+    }
+    if (newTab === 'marble' && sinkForm.brand.trim() && sinkForm.modelName.trim() && busy !== 'sink') {
+      addSink()
+    }
+    setSpecsTab(newTab)
+  }
+
   function startEditSpec(s: MatSpec) {
     setEditingSpecId(s.id)
     setEditSpecForm({
@@ -664,19 +687,18 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
                     className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-slate-400 text-xs">תחילת התווך (4 שעות) *</label>
-                  <input type="time" value={measureSchedule.time} dir="ltr"
+                  <label className="text-slate-400 text-xs">תווך הגעת המודד *</label>
+                  <select value={measureSchedule.time} dir="ltr"
                     onChange={e => setMeasureSchedule(f => ({ ...f, time: e.target.value }))}
-                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500" />
+                    className="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-slate-100 text-sm focus:outline-none focus:border-emerald-500">
+                    <option value="">בחר תווך...</option>
+                    {MEASURE_TIME_SLOTS.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              {measureSchedule.time && (
-                <p className="text-slate-500 text-xs mb-3">
-                  המודד יגיע בין השעה <span className="text-slate-300 font-medium" dir="ltr">{measureSchedule.time}</span> לבין
-                  {' '}<span className="text-slate-300 font-medium" dir="ltr">{addHours(measureSchedule.time, 4)}</span>
-                </p>
-              )}
-              {!measureSchedule.time && <div className="mb-3" />}
+              <div className="mb-3" />
               <button onClick={closeDealAndScheduleMeasurement} disabled={busy === 'advance'}
                 className="w-full py-3 rounded-xl bg-blue-700 hover:bg-blue-600 text-white text-sm font-semibold disabled:opacity-40 transition-colors">
                 {busy === 'advance' ? '...' : '✓ סגור עסקה — קבע תור למודד'}
@@ -1204,11 +1226,13 @@ export default function OrderDetailView({ order, onBack, onUpdated }: Props) {
 
           {/* Sub-tabs: Marble / Sinks */}
           <div className="flex gap-1 border-b border-slate-800">
-            <button onClick={() => setSpecsTab('marble')}
+            <button
+              onMouseDown={e => handleSpecsTabSwitch(e, 'marble')}
               className={`px-3 py-2 text-sm transition-colors ${specsTab==='marble' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
               שיש ואבן {specs.length > 0 && `(${specs.length})`}
             </button>
-            <button onClick={() => setSpecsTab('sinks')}
+            <button
+              onMouseDown={e => handleSpecsTabSwitch(e, 'sinks')}
               className={`px-3 py-2 text-sm transition-colors ${specsTab==='sinks' ? 'text-emerald-400 border-b-2 border-emerald-400' : 'text-slate-500 hover:text-slate-300'}`}>
               כיורים {sinks.length > 0 && `(${sinks.length})`}
             </button>
